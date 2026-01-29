@@ -2,8 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit --amend -m \"$\\(cat <<''EOF''\nUpdate project setup and documentation\n\n- Rename project to nilpath-marketplace\n- Add reference to inspiration source\n- Add .gitignore to exclude .stuff and .DS_Store\nEOF\n\\)\")",
-      "Bash(git checkout:*)"
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(gh search:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr list:*)"
     ]
   }
 }
