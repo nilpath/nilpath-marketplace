@@ -1,11 +1,7 @@
 ---
 name: managing-git
 description: Comprehensive git workflow management including well-formatted commits, branch workflows, stacked PRs, merge conflict resolution, history analysis, and advanced operations (rebase, cherry-pick, etc.). Use when working with git repositories or when the user mentions git, commits, branches, pull requests, stacked PRs, merge conflicts, rebasing, or git history.
-allowed-tools:
-  - Bash
-  - Read
-  - Edit
-  - Write
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*), Read, Edit, Write
 ---
 
 # Managing Git
@@ -50,17 +46,17 @@ Includes middleware for protected routes and token validation."
 ### Create Feature Branch
 
 ```bash
-git checkout -b user-auth
+git checkout -b feat/user-auth
 # Work on feature...
 git add <files>
 git commit -m "Implement feature"
-git push -u origin user-auth
+git push -u origin feat/user-auth
 ```
 
 **Naming conventions:**
-- Use descriptive names: `user-auth`, `payment-flow`, `dashboard-ui`
-- For related changes (stacks), use common prefix: `auth_base`, `auth_middleware`, `auth_ui`
-- Keep names concise but meaningful
+- Use type prefix: `feat/`, `fix/`, `refactor/`, `docs/`
+- For stacked PRs: `feat/<stack-name>/<component>` (e.g., `feat/auth/base`, `feat/auth/middleware`)
+- Keep names descriptive but concise
 
 ### Resolve Merge Conflict
 
@@ -82,18 +78,10 @@ Resolved conflicts in:
 
 ## Context
 
-Before performing git operations, always load the current repository state:
-
-```bash
-!git status
-!git branch -vv
-!git log --oneline -5
-```
-
-This provides:
-- Current branch and working tree status
-- Branch tracking information
-- Recent commit history for understanding commit style
+- Current git status: !`git status`
+- Current git diff (staged and unstaged changes): !`git diff HEAD`
+- Current branch: !`git branch --show-current`
+- Recent commits: !`git log --oneline -10`
 
 ## Core Workflows
 
@@ -124,10 +112,10 @@ See [commit-guidelines.md](references/commit-guidelines.md) for detailed guidanc
 ```bash
 git checkout main
 git pull origin main
-git checkout -b new-feature
+git checkout -b feat/new-feature
 
 # Work and commit...
-git push -u origin new-feature
+git push -u origin feat/new-feature
 
 # Keep updated
 git fetch origin
@@ -144,33 +132,33 @@ Break large features into reviewable chunks:
 git checkout main
 
 # First PR
-git checkout -b auth_base
+git checkout -b feat/auth/base
 # Implement...
 git commit -m "Add authentication base"
-git push -u origin auth_base
+git push -u origin feat/auth/base
 
 # Second PR (stacked on first)
-git checkout -b auth_middleware
+git checkout -b feat/auth/middleware
 # Implement...
 git commit -m "Add authentication middleware"
-git push -u origin auth_middleware
+git push -u origin feat/auth/middleware
 
 # Third PR (stacked on second)
-git checkout -b auth_ui
+git checkout -b feat/auth/ui
 # Implement...
 git commit -m "Add authentication UI"
-git push -u origin auth_ui
+git push -u origin feat/auth/ui
 ```
 
 **Update stack when first PR changes:**
 ```bash
-# After updating auth_base
-git checkout auth_middleware
-git rebase auth_base
+# After updating feat/auth/base
+git checkout feat/auth/middleware
+git rebase feat/auth/base
 git push --force-with-lease
 
-git checkout auth_ui
-git rebase auth_middleware
+git checkout feat/auth/ui
+git rebase feat/auth/middleware
 git push --force-with-lease
 ```
 

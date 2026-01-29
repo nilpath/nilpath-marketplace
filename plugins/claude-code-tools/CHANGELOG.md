@@ -8,18 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2026-01-29
 
 ### Added
-- `allowed-tools` section to managing-git skill frontmatter (Bash, Read, Edit, Write)
-- Context section in managing-git skill using `!cmd` pattern for loading git state
-- Branch naming convention section in stacked-prs.md with underscore format
-- PR title and description format section in stacked-prs.md with stack order
-- Co-authored commit message section in commit-guidelines.md with heredoc syntax
+- Specific `allowed-tools` syntax to managing-git skill frontmatter: `Bash(git add:*)`, `Bash(git status:*)`, `Bash(git commit:*)`
+- Context section with detailed git commands: `!git status`, `!git diff HEAD`, `!git branch --show-current`, `!git log --oneline -10`
+- Structured commit message format in commit-guidelines.md: `type(scope): summary` with body and footer sections
+- Branch naming pattern in stacked-prs.md: `feat/<stack-name>/<component>`
+- PR title format with stack name: `[<Stack Name> X/Y] Description`
+- PR description template with Stack Information section
 
 ### Changed
-- Updated branch naming convention from slash-based (`feature/`, `fix/`) to underscore-based (`feature_component`)
-- All stacked PR examples now use underscore naming: `auth_base`, `auth_middleware`, `auth_ui`
+- Updated branch naming convention to hierarchical format: `feat/auth/base`, `feat/auth/middleware`, `feat/auth/ui`
+- All stacked PR examples now use hierarchical naming throughout documentation
 - SKILL.md updated from 290 to 308 lines
-- commit-guidelines.md expanded with co-author attribution guidelines
-- stacked-prs.md enhanced with comprehensive PR formatting templates
+- commit-guidelines.md restructured with type/scope/summary format instead of co-author section
+- stacked-prs.md reorganized with branch naming pattern integrated into Step 1
 
 ## [0.1.0] - 2026-01-29
 

@@ -138,59 +138,50 @@ changes
 
 ### Structure
 
-```
-Capitalized summary (50 chars or less)
-<blank line>
-More detailed explanatory text, wrapped at 72 characters.
-In some contexts, the first line is treated as the subject
-of an email and the rest as the body. The blank line
-separating the summary from the body is critical.
+#### 1. Subject Line (`<type>(<scope>): <summary>`)
 
-Further paragraphs come after blank lines.
+The first line must follow this structure: `type(scope): summary`
 
-- Bullet points are okay, too
-- Typically a hyphen or asterisk is used for the bullet
-- Preceded by a single space, with blank lines in between
-- Use a hanging indent
-```
+- **type**: Choose one: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`.
+- **scope** (optional): The part of the codebase affected (e.g., `api`, `auth`, `ui`).
+- **summary**: A concise description of the change (max 50 characters). Use the imperative mood (e.g., "Add user login" not "Adds user login").
 
-### Commit Message with Co-Authors
+**Example:** `feat(auth): Add user authentication endpoint`
 
-When committing code created with AI assistance or pair programming, include co-author attribution:
+#### 2. Body (Optional)
+
+After the subject line, leave one blank line and then write a more detailed explanation. Explain the "what" and "why" of the change, not the "how". Describe the problem, the solution, and contrast the new behaviour with the old.
+
+**Example:**
 
 ```
-Capitalized summary (50 chars or less)
-
-More detailed explanatory text if needed, wrapped at 72
-characters. Explain what and why, not how.
-
-Co-Authored-By: Partner Name <email@example.com>
+The application previously lacked a formal authentication process.
+This change introduces a /login endpoint that validates user credentials
+and returns a JSON Web Token (JWT) for accessing protected routes.
 ```
 
-**Example with Claude Code:**
-```bash
-git commit -m "$(cat <<'EOF'
-Add JWT authentication middleware
+#### 3. Footer (Optional)
 
-Implements token-based authentication with refresh tokens.
-Includes middleware for protected routes and token validation.
+After another blank line, add any footer information. This is used for referencing issue tracker IDs or declaring breaking changes.
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
-EOF
-)"
+**Example:**
+
+```
+Closes #78
+BREAKING CHANGE: The /users endpoint now requires authentication.
 ```
 
-**When to use:**
-- Code written with AI assistance (Claude Code, Copilot, etc.)
-- Pair programming sessions
-- Collaborative commits
-- Significant contributions from multiple authors
+### Full Commit Message Example
 
-**Format rules:**
-- Use heredoc syntax for multi-line commits with co-authors
-- Place Co-Authored-By trailer at the end after a blank line
-- Can include multiple co-authors (one per line)
-- Each co-author line follows the format: `Co-Authored-By: Name <email>`
+```
+feat(auth): Add user authentication endpoint
+
+The application previously lacked a formal authentication process.
+This change introduces a /login endpoint that validates user credentials
+and returns a JSON Web Token (JWT) for accessing protected routes.
+
+Closes #78
+```
 
 ## Examples
 

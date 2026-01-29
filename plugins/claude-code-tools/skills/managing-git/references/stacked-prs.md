@@ -91,11 +91,26 @@ Break down the feature into logical, reviewable chunks:
 Feature: User Profile System
 
 Stack plan:
-1. profile_model      - Database schema and model
-2. profile_api        - CRUD API endpoints
-3. profile_validation - Input validation and tests
-4. profile_ui         - Frontend components
-5. profile_integration - Full integration and E2E tests
+1. feat/profile/model      - Database schema and model
+2. feat/profile/api        - CRUD API endpoints
+3. feat/profile/validation - Input validation and tests
+4. feat/profile/ui         - Frontend components
+5. feat/profile/integration - Full integration and E2E tests
+```
+
+**Branch Naming Pattern:** `feat/<stack-name>/<component>`
+
+Where:
+- `feat` is the type (or `fix`, `refactor`, etc.)
+- `<stack-name>` groups related branches (e.g., `profile`, `auth`, `dashboard`)
+- `<component>` describes the specific part (e.g., `model`, `api`, `ui`)
+
+**Example:**
+```
+feat/auth/base           # First PR in auth stack
+feat/auth/middleware     # Second PR in auth stack
+feat/auth/endpoints      # Third PR in auth stack
+feat/auth/ui             # Fourth PR in auth stack
 ```
 
 **Each PR should:**
@@ -103,26 +118,6 @@ Stack plan:
 - Have passing tests
 - Not break the application
 - Represent a complete logical unit
-
-### Branch Naming Convention for Stacks
-
-Use a common prefix with underscores for all branches in the stack:
-
-**Pattern:** `<feature-name>_<component>`
-
-**Example:**
-```
-auth_base           # First PR in auth stack
-auth_middleware     # Second PR in auth stack
-auth_endpoints      # Third PR in auth stack
-auth_ui             # Fourth PR in auth stack
-```
-
-**Benefits:**
-- Clearly groups related branches
-- Easy to identify stack members
-- Works well with tab completion
-- Prevents confusion with unrelated branches
 
 ### Step 2: Create Base Branch
 
@@ -137,7 +132,7 @@ git pull origin main
 
 ```bash
 # Create first branch
-git checkout -b profile_model
+git checkout -b feat/profile/model
 
 # Implement changes
 # ... edit files ...
@@ -151,7 +146,7 @@ git commit -m "Add user profile model and schema
 - Add model tests"
 
 # Push branch
-git push -u origin profile_model
+git push -u origin feat/profile/model
 ```
 
 Create PR on GitHub/GitLab targeting main.
@@ -160,7 +155,7 @@ Create PR on GitHub/GitLab targeting main.
 
 ```bash
 # Create second branch FROM first branch
-git checkout -b profile_api
+git checkout -b feat/profile/api
 
 # Implement changes
 # ... edit files ...
@@ -175,29 +170,30 @@ git commit -m "Add profile CRUD API endpoints
 - Add API integration tests"
 
 # Push branch
-git push -u origin profile_api
+git push -u origin feat/profile/api
 ```
 
-**Important:** Create PR targeting `profile_model`, NOT main.
+**Important:** Create PR targeting `feat/profile/model`, NOT main.
 
 ### PR Title and Description Format
 
 **Title Format:**
 ```
-[Stack X/Y] Feature description
+[<Stack Name> X/Y] Feature description
 ```
 
 Where:
+- Stack Name = name of the stack
 - X = Position in stack (1, 2, 3...)
 - Y = Total PRs in stack
 - Feature description = What this PR does
 
 **Examples:**
 ```
-[Stack 1/4] Add user profile model and schema
-[Stack 2/4] Add profile CRUD API endpoints
-[Stack 3/4] Add input validation and tests
-[Stack 4/4] Add frontend components and integration
+[Profile 1/4] Add user profile model and schema
+[Profile 2/4] Add profile CRUD API endpoints
+[Profile 3/4] Add input validation and tests
+[Profile 4/4] Add frontend components and integration
 ```
 
 **Description Template:**
@@ -229,14 +225,14 @@ Repeat for each subsequent PR, always branching from and targeting the previous 
 
 ```bash
 # Third PR stacked on second
-git checkout -b profile_validation
+git checkout -b feat/profile/validation
 
 # ... implement and commit ...
 
-git push -u origin profile_validation
+git push -u origin feat/profile/validation
 ```
 
-Create PR targeting `profile_api`.
+Create PR targeting `feat/profile/api`.
 
 ## Managing Stack Updates
 
@@ -250,19 +246,19 @@ git checkout main
 git pull origin main
 
 # Rebase first branch
-git checkout profile_model
+git checkout feat/profile/model
 git rebase main
 
 # Force push (your branch, safe to force push)
 git push --force-with-lease
 
 # Rebase each subsequent branch
-git checkout profile_api
-git rebase profile_model
+git checkout feat/profile/api
+git rebase feat/profile/model
 git push --force-with-lease
 
-git checkout profile_validation
-git rebase profile_api
+git checkout feat/profile/validation
+git rebase feat/profile/api
 git push --force-with-lease
 ```
 
@@ -272,7 +268,7 @@ When you need to update the first PR in the stack:
 
 ```bash
 # Make changes to first PR
-git checkout profile_model
+git checkout feat/profile/model
 
 # Edit files based on feedback
 # ... edit files ...
@@ -287,12 +283,12 @@ git commit -m "Address review feedback
 git push
 
 # Now rebase all dependent branches
-git checkout profile_api
-git rebase profile_model
+git checkout feat/profile/api
+git rebase feat/profile/model
 git push --force-with-lease
 
-git checkout profile_validation
-git rebase profile_api
+git checkout feat/profile/validation
+git rebase feat/profile/api
 git push --force-with-lease
 ```
 
@@ -300,18 +296,18 @@ git push --force-with-lease
 
 ```bash
 # Make changes to middle PR
-git checkout profile_api
+git checkout feat/profile/api
 
 # Edit files
 git commit -m "Address review feedback"
 git push
 
 # Rebase only branches that come AFTER
-git checkout profile_validation
-git rebase profile_api
+git checkout feat/profile/validation
+git rebase feat/profile/api
 git push --force-with-lease
 
-# Branches before (profile_model) are unaffected
+# Branches before (feat/profile/model) are unaffected
 ```
 
 ## Handling Conflicts
@@ -321,8 +317,8 @@ git push --force-with-lease
 When rebasing a stacked branch, conflicts may occur:
 
 ```bash
-git checkout profile_api
-git rebase profile_model
+git checkout feat/profile/api
+git rebase feat/profile/model
 
 # If conflicts occur:
 # Auto-merging api/profile.py
@@ -371,22 +367,22 @@ Merge PRs from bottom to top, one at a time:
 
 ```bash
 # 1. Merge first PR into main
-#    (profile_model → main)
+#    (feat/profile/model → main)
 #    Use GitHub/GitLab UI or:
 git checkout main
-git merge profile_model
+git merge feat/profile/model
 git push
 
 # 2. Update second PR to target main
-#    Change PR target from profile_model to main
+#    Change PR target from feat/profile/model to main
 #    Rebase onto main:
-git checkout profile_api
+git checkout feat/profile/api
 git rebase main
 git push --force-with-lease
 
 # 3. Merge second PR into main
 git checkout main
-git merge profile_api
+git merge feat/profile/api
 git push
 
 # 4. Repeat for remaining PRs
@@ -404,12 +400,12 @@ Squash each PR when merging to keep main history clean:
 ```bash
 # Merge with squash (GitHub UI or):
 git checkout main
-git merge --squash profile_model
+git merge --squash feat/profile/model
 git commit -m "Add user profile model (#123)"
 git push
 
 # Update and rebase next PR
-git checkout profile_api
+git checkout feat/profile/api
 git rebase main
 # Resolve any conflicts
 git push --force-with-lease
@@ -430,11 +426,11 @@ Merge only the final PR after all PRs in stack are approved:
 
 ```bash
 # Approve all PRs in stack
-# Merge final PR (profile_integration → main)
+# Merge final PR (feat/profile/integration → main)
 # This brings in all changes from the stack
 
 git checkout main
-git merge profile_integration
+git merge feat/profile/integration
 git push
 ```
 
@@ -453,11 +449,11 @@ git push
 
 ```bash
 # Create stacked PRs with gh CLI
-gh pr create --base main --head profile_model \
+gh pr create --base main --head feat/profile/model \
   --title "Add user profile model" \
   --body "First PR in profile system stack"
 
-gh pr create --base profile_model --head profile_api \
+gh pr create --base feat/profile/model --head feat/profile/api \
   --title "Add profile API endpoints" \
   --body "Stacked on #123"
 ```
@@ -502,11 +498,11 @@ git fetch origin main
 
 CURRENT_BRANCH=$(git branch --show-current)
 STACK=(
-  "profile_model"
-  "profile_api"
-  "profile_validation"
-  "profile_ui"
-  "profile_integration"
+  "feat/profile/model"
+  "feat/profile/api"
+  "feat/profile/validation"
+  "feat/profile/ui"
+  "feat/profile/integration"
 )
 
 echo "Rebasing stack..."
