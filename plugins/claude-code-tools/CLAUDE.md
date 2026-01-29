@@ -2,11 +2,12 @@
 
 ## Versioning Requirements
 
-IMPORTANT: Every change to this plugin MUST include updates to all three files:
+IMPORTANT: Every change to this plugin MUST include updates to all four files:
 
 1. .claude-plugin/plugin.json - Bump version using semver
-2. CHANGELOG.md - Document changes using Keep a Changelog format
-3. README.md - Verify/update component counts and tables
+2. ../../.claude-plugin/marketplace.json - Update plugin version in marketplace registry
+3. CHANGELOG.md - Document changes using Keep a Changelog format
+4. README.md - Verify/update component counts and tables
 
 ### Version Bumping Rules
 
@@ -18,7 +19,10 @@ IMPORTANT: Every change to this plugin MUST include updates to all three files:
 
 Before committing ANY changes:
 
-- Version bumped in .claude-plugin/plugin.json
-- CHANGELOG.md updated with changes
-- README.md component counts verified
-- README.md tables accurate (agents, commands, skills)
+- [ ] Version bumped in .claude-plugin/plugin.json
+- [ ] Version updated in ../../.claude-plugin/marketplace.json
+- [ ] CHANGELOG.md updated with changes
+- [ ] README.md component counts verified
+- [ ] README.md tables accurate (agents, commands, skills)
+
+**Note:** The marketplace.json file is at the root level (.claude-plugin/marketplace.json) and must be kept in sync with the plugin's version.
