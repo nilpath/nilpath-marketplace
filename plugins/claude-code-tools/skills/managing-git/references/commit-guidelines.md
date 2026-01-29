@@ -183,6 +183,8 @@ and returns a JSON Web Token (JWT) for accessing protected routes.
 Closes #78
 ```
 
+**Template:** See [commit-message.txt](../templates/commit-message.txt) for a reusable template.
+
 ## Examples
 
 ### Example 1: Simple Commit (No Body)

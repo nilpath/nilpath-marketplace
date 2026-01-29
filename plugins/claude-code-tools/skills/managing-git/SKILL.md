@@ -14,6 +14,7 @@ Git workflow guidance following best practices for commits, branching, stacked P
 - **[Create stacked PRs from changes](workflows/create-stacked-prs.md)** - Organize unstaged changes into reviewable stack
 - **[Update stack after merge](workflows/update-stack-after-merge.md)** - Rebase and update PR targets after merging
 - **[Recover from rebase mistakes](workflows/recover-from-rebase.md)** - Fix rebase errors using reflog
+- **[Complete guide](references/stacked-prs.md)** - Comprehensive stacked PR workflow
 
 ### Common Tasks
 - **Create commit** - See Quick Start below
@@ -23,8 +24,11 @@ Git workflow guidance following best practices for commits, branching, stacked P
 
 ### References
 - **[Commit guidelines](references/commit-guidelines.md)** - Detailed commit formatting and best practices
-- **[Stacked PRs guide](references/stacked-prs.md)** - Comprehensive stacked PR workflow
 - **[Common commands](references/common-commands.md)** - Quick reference for git commands
+
+### Templates
+- **[Commit message template](templates/commit-message.txt)** - Structured commit message format
+- **[PR description template](templates/pr-description.md)** - Stacked PR description format
 
 ## Quick Start
 
@@ -122,50 +126,6 @@ git fetch origin
 git rebase origin/main
 git push --force-with-lease
 ```
-
-### Stacked PRs
-
-Break large features into reviewable chunks:
-
-```bash
-# Base branch
-git checkout main
-
-# First PR
-git checkout -b feat/auth/base
-# Implement...
-git commit -m "Add authentication base"
-git push -u origin feat/auth/base
-
-# Second PR (stacked on first)
-git checkout -b feat/auth/middleware
-# Implement...
-git commit -m "Add authentication middleware"
-git push -u origin feat/auth/middleware
-
-# Third PR (stacked on second)
-git checkout -b feat/auth/ui
-# Implement...
-git commit -m "Add authentication UI"
-git push -u origin feat/auth/ui
-```
-
-**Update stack when first PR changes:**
-```bash
-# After updating feat/auth/base
-git checkout feat/auth/middleware
-git rebase feat/auth/base
-git push --force-with-lease
-
-git checkout feat/auth/ui
-git rebase feat/auth/middleware
-git push --force-with-lease
-```
-
-See workflows:
-- [create-stacked-prs.md](workflows/create-stacked-prs.md) - Create stack from changes
-- [update-stack-after-merge.md](workflows/update-stack-after-merge.md) - Update after merge
-- [stacked-prs.md](references/stacked-prs.md) - Complete guide
 
 ### Conflict Resolution
 

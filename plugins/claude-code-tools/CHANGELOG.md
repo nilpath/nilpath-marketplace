@@ -13,14 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structured commit message format in commit-guidelines.md: `type(scope): summary` with body and footer sections
 - Branch naming pattern in stacked-prs.md: `feat/<stack-name>/<component>`
 - PR title format with stack name: `[<Stack Name> X/Y] Description`
-- PR description template with Stack Information section
+- Templates folder with reusable templates:
+  - commit-message.txt - Structured commit message template
+  - pr-description.md - Stacked PR description template
 
 ### Changed
 - Updated branch naming convention to hierarchical format: `feat/auth/base`, `feat/auth/middleware`, `feat/auth/ui`
 - All stacked PR examples now use hierarchical naming throughout documentation
-- SKILL.md updated from 290 to 308 lines
-- commit-guidelines.md restructured with type/scope/summary format instead of co-author section
+- SKILL.md streamlined by removing redundant Stacked PRs subsection (covered in references)
+- commit-guidelines.md restructured with type/scope/summary format
 - stacked-prs.md reorganized with branch naming pattern integrated into Step 1
+
+### Removed
+- Redundant Stacked PRs subsection from SKILL.md (now referenced via workflows and references)
 
 ## [0.1.0] - 2026-01-29
 

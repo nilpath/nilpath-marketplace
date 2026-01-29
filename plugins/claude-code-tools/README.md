@@ -17,7 +17,7 @@ A collection of Agents and Skills for coding with Claude.
 
 ### managing-git Skill Structure
 
-- **Main file**: SKILL.md (308 lines)
+- **Main file**: SKILL.md
 - **Workflows**: 3 workflow files
   - create-stacked-prs.md
   - update-stack-after-merge.md
@@ -27,6 +27,9 @@ A collection of Agents and Skills for coding with Claude.
   - stacked-prs.md
   - advanced-operations.md
   - common-commands.md
+- **Templates**: 2 template files
+  - commit-message.txt
+  - pr-description.md
 
 ### create-agent-skills Skill Structure
 

@@ -197,6 +197,10 @@ Where:
 ```
 
 **Description Template:**
+
+See [pr-description.md](../templates/pr-description.md) for a complete template.
+
+Quick reference:
 ```markdown
 ## Summary
 [What this PR does]
