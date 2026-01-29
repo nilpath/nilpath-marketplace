@@ -1,0 +1,25 @@
+{
+  "name": "nilpath-marketplace",
+  "owner": {
+      "name": "Christoffer Ahrling",
+      "url": "https://github.com/nilpath"
+  },
+  "metadata": {
+    "description": "A marketplace for my claude code extensions",
+    "version": "0.0.1"
+  },
+  "plugins": [
+    {
+      "name": "claude-code-tools",
+      "source": "./plugins/claude-code-tools",
+      "description": "A collection Agents and Skills I use for coding with Claude.",
+      "version": "0.0.1",
+      "author": {
+        "name": "Christoffer Ahrling",
+        "url": "https://github.com/nilpath"
+      },
+      "homepage": "https://github.com/nilpath/nilpath-marketplace",
+      "tags": []
+    }
+  ]
+}
