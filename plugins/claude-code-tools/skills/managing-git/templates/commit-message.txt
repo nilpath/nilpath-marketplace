@@ -1,0 +1,10 @@
+type(scope): Summary in imperative mood (max 50 chars)
+
+More detailed explanatory text if needed, wrapped at 72 characters.
+Explain the "what" and "why" of the change, not the "how".
+
+Describe the problem this change solves, the solution approach taken,
+and how the new behavior differs from the old behavior.
+
+Closes #issue-number
+BREAKING CHANGE: Description of breaking change if applicable

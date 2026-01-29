@@ -1,6 +1,7 @@
 ---
 name: managing-git
 description: Comprehensive git workflow management including well-formatted commits, branch workflows, stacked PRs, merge conflict resolution, history analysis, and advanced operations (rebase, cherry-pick, etc.). Use when working with git repositories or when the user mentions git, commits, branches, pull requests, stacked PRs, merge conflicts, rebasing, or git history.
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*), Read, Edit, Write
 ---
 
 # Managing Git
@@ -13,6 +14,7 @@ Git workflow guidance following best practices for commits, branching, stacked P
 - **[Create stacked PRs from changes](workflows/create-stacked-prs.md)** - Organize unstaged changes into reviewable stack
 - **[Update stack after merge](workflows/update-stack-after-merge.md)** - Rebase and update PR targets after merging
 - **[Recover from rebase mistakes](workflows/recover-from-rebase.md)** - Fix rebase errors using reflog
+- **[Complete guide](references/stacked-prs.md)** - Comprehensive stacked PR workflow
 
 ### Common Tasks
 - **Create commit** - See Quick Start below
@@ -22,8 +24,11 @@ Git workflow guidance following best practices for commits, branching, stacked P
 
 ### References
 - **[Commit guidelines](references/commit-guidelines.md)** - Detailed commit formatting and best practices
-- **[Stacked PRs guide](references/stacked-prs.md)** - Comprehensive stacked PR workflow
 - **[Common commands](references/common-commands.md)** - Quick reference for git commands
+
+### Templates
+- **[Commit message template](templates/commit-message.txt)** - Structured commit message format
+- **[PR description template](templates/pr-description.md)** - Stacked PR description format
 
 ## Quick Start
 
@@ -45,19 +50,17 @@ Includes middleware for protected routes and token validation."
 ### Create Feature Branch
 
 ```bash
-git checkout -b feature/user-auth
+git checkout -b feat/user-auth
 # Work on feature...
 git add <files>
 git commit -m "Implement feature"
-git push -u origin feature/user-auth
+git push -u origin feat/user-auth
 ```
 
 **Naming conventions:**
-- `feature/` - New features
-- `fix/` - Bug fixes
-- `refactor/` - Code refactoring
-- `docs/` - Documentation
-- `test/` - Tests
+- Use type prefix: `feat/`, `fix/`, `refactor/`, `docs/`
+- For stacked PRs: `feat/<stack-name>/<component>` (e.g., `feat/auth/base`, `feat/auth/middleware`)
+- Keep names descriptive but concise
 
 ### Resolve Merge Conflict
 
@@ -76,6 +79,13 @@ Resolved conflicts in:
 - auth.ts: Combined token logic from both branches
 - types.ts: Kept incoming interface definitions"
 ```
+
+## Current Git Context
+
+- Current git status: !`git status`
+- Current git diff (staged and unstaged changes): !`git diff HEAD`
+- Current branch: !`git branch --show-current`
+- Recent commits: !`git log --oneline -10`
 
 ## Core Workflows
 
@@ -106,60 +116,16 @@ See [commit-guidelines.md](references/commit-guidelines.md) for detailed guidanc
 ```bash
 git checkout main
 git pull origin main
-git checkout -b feature/new-feature
+git checkout -b feat/new-feature
 
 # Work and commit...
-git push -u origin feature/new-feature
+git push -u origin feat/new-feature
 
 # Keep updated
 git fetch origin
 git rebase origin/main
 git push --force-with-lease
 ```
-
-### Stacked PRs
-
-Break large features into reviewable chunks:
-
-```bash
-# Base branch
-git checkout main
-
-# First PR
-git checkout -b feature/auth-base
-# Implement...
-git commit -m "Add authentication base"
-git push -u origin feature/auth-base
-
-# Second PR (stacked on first)
-git checkout -b feature/auth-middleware
-# Implement...
-git commit -m "Add authentication middleware"
-git push -u origin feature/auth-middleware
-
-# Third PR (stacked on second)
-git checkout -b feature/auth-ui
-# Implement...
-git commit -m "Add authentication UI"
-git push -u origin feature/auth-ui
-```
-
-**Update stack when first PR changes:**
-```bash
-# After updating feature/auth-base
-git checkout feature/auth-middleware
-git rebase feature/auth-base
-git push --force-with-lease
-
-git checkout feature/auth-ui
-git rebase feature/auth-middleware
-git push --force-with-lease
-```
-
-See workflows:
-- [create-stacked-prs.md](workflows/create-stacked-prs.md) - Create stack from changes
-- [update-stack-after-merge.md](workflows/update-stack-after-merge.md) - Update after merge
-- [stacked-prs.md](references/stacked-prs.md) - Complete guide
 
 ### Conflict Resolution
 

@@ -138,86 +138,52 @@ changes
 
 ### Structure
 
-```
-Capitalized summary (50 chars or less)
-<blank line>
-More detailed explanatory text, wrapped at 72 characters.
-In some contexts, the first line is treated as the subject
-of an email and the rest as the body. The blank line
-separating the summary from the body is critical.
+#### 1. Subject Line (`<type>(<scope>): <summary>`)
 
-Further paragraphs come after blank lines.
+The first line must follow this structure: `type(scope): summary`
 
-- Bullet points are okay, too
-- Typically a hyphen or asterisk is used for the bullet
-- Preceded by a single space, with blank lines in between
-- Use a hanging indent
-```
+- **type**: Choose one: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`.
+- **scope** (optional): The part of the codebase affected (e.g., `api`, `auth`, `ui`).
+- **summary**: A concise description of the change (max 50 characters). Use the imperative mood (e.g., "Add user login" not "Adds user login").
 
-## Examples
+**Example:** `feat(auth): Add user authentication endpoint`
 
-### Example 1: Simple Commit (No Body)
+#### 2. Body (Optional)
+
+After the subject line, leave one blank line and then write a more detailed explanation. Explain the "what" and "why" of the change, not the "how". Describe the problem, the solution, and contrast the new behaviour with the old.
+
+**Example:**
 
 ```
-commit 3114a97ba188895daff4a3d337b2c73855d4632d
-Author: Developer Name
-Date:   Mon Jun 11 17:16:10 2012 +0100
-
-    Update default policies for KVM guest PIT & RTC timers
+The application previously lacked a formal authentication process.
+This change introduces a /login endpoint that validates user credentials
+and returns a JSON Web Token (JWT) for accessing protected routes.
 ```
 
-**When to use:** The change is self-explanatory and doesn't need additional context.
+#### 3. Footer (Optional)
 
-### Example 2: Commit with Bullet Points
+After another blank line, add any footer information. This is used for referencing issue tracker IDs or declaring breaking changes.
 
-```
-commit ae878fc8b9761d099a4145617e4a48cbeb390623
-Author: Developer Name
-Date:   Fri Jun 1 01:44:02 2012 +0000
-
-    Refactor libvirt create calls
-
-     - Minimize duplicated code for create
-
-     - Make wait_for_destroy happen on shutdown instead of undefine
-
-     - Allow for destruction of an instance while leaving the domain
-```
-
-**When to use:** Multiple related changes that benefit from being listed separately.
-
-### Example 3: Commit with Detailed Explanation
+**Example:**
 
 ```
-commit 31336b35b4604f70150d0073d77dbf63b9bf7598
-Author: Developer Name
-Date:   Wed Jun 6 22:45:25 2012 -0400
-
-    Add CPU arch filter scheduler support
-
-    In a mixed environment of running different CPU architectures,
-    one would not want to run an ARM instance on a X86_64 host and
-    vice versa.
-
-    This scheduler filter option will prevent instances running
-    on a host that it is not intended for.
-
-    The libvirt driver queries the guest capabilities of the
-    host and stores the guest arches in the permitted_instances_types
-    list in the cpu_info dict of the host.
-
-    The Xen equivalent will be done later in another commit.
-
-    The arch filter will compare the instance arch against
-    the permitted_instances_types of a host
-    and filter out invalid hosts.
-
-    Also adds ARM as a valid arch to the filter.
-
-    The ArchFilter is not turned on by default.
+Closes #78
+BREAKING CHANGE: The /users endpoint now requires authentication.
 ```
 
-**When to use:** Complex changes that require context about motivation, approach, and implementation details.
+### Full Commit Message Example
+
+```
+feat(auth): Add user authentication endpoint
+
+The application previously lacked a formal authentication process.
+This change introduces a /login endpoint that validates user credentials
+and returns a JSON Web Token (JWT) for accessing protected routes.
+
+Closes #78
+```
+
+**Template:** See [commit-message.txt](../templates/commit-message.txt) for a reusable template.
 
 ## Testing Requirements
 
