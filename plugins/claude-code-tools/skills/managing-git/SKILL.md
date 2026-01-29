@@ -5,204 +5,224 @@ description: Comprehensive git workflow management including well-formatted comm
 
 # Managing Git
 
-Comprehensive git workflow guidance following best practices for commits, branching, stacked PRs, and advanced operations.
+Git workflow guidance following best practices for commits, branching, stacked PRs, and advanced operations.
+
+## What Would You Like To Do?
+
+### Stacked PRs
+- **[Create stacked PRs from changes](workflows/create-stacked-prs.md)** - Organize unstaged changes into reviewable stack
+- **[Update stack after merge](workflows/update-stack-after-merge.md)** - Rebase and update PR targets after merging
+- **[Recover from rebase mistakes](workflows/recover-from-rebase.md)** - Fix rebase errors using reflog
+
+### Common Tasks
+- **Create commit** - See Quick Start below
+- **Resolve merge conflicts** - See Conflict Resolution section
+- **Analyze history** - See History Analysis section
+- **Advanced operations** - See [advanced-operations.md](references/advanced-operations.md)
+
+### References
+- **[Commit guidelines](references/commit-guidelines.md)** - Detailed commit formatting and best practices
+- **[Stacked PRs guide](references/stacked-prs.md)** - Comprehensive stacked PR workflow
+- **[Common commands](references/common-commands.md)** - Quick reference for git commands
 
 ## Quick Start
 
-**Create a well-formatted commit:**
-```bash
-git add <files>
-git commit -m "Add user authentication
+### Create Well-Formatted Commit
 
-Implements JWT-based authentication with refresh tokens.
-Includes middleware for protected routes."
+```bash
+git add src/auth.ts src/types.ts
+git commit -m "Add JWT authentication
+
+Implements token-based authentication with refresh tokens.
+Includes middleware for protected routes and token validation."
 ```
 
-**Create a feature branch:**
+**Format:**
+- First line: Imperative mood, capitalized, < 50 chars
+- Blank line
+- Body: Wrap at 72 chars, explain what and why
+
+### Create Feature Branch
+
 ```bash
 git checkout -b feature/user-auth
+# Work on feature...
+git add <files>
+git commit -m "Implement feature"
+git push -u origin feature/user-auth
 ```
 
-**Handle merge conflict:**
+**Naming conventions:**
+- `feature/` - New features
+- `fix/` - Bug fixes
+- `refactor/` - Code refactoring
+- `docs/` - Documentation
+- `test/` - Tests
+
+### Resolve Merge Conflict
+
 ```bash
-git status                    # Identify conflicted files
-# Edit files to resolve conflicts
+git status                    # Identify conflicts
+
+# Edit conflicted files, remove markers:
+# <<<<<<< HEAD
+# =======
+# >>>>>>> branch-name
+
 git add <resolved-files>
-git commit -m "Merge feature/user-auth into main"
+git commit -m "Merge branch-name
+
+Resolved conflicts in:
+- auth.ts: Combined token logic from both branches
+- types.ts: Kept incoming interface definitions"
 ```
 
 ## Core Workflows
 
-### Creating Commits
+### Commits
 
-Follow these principles:
+**Principles:**
+1. One logical change per commit
+2. Test before committing
+3. Clear, imperative messages
+4. Commit often
 
-1. **Commit related changes** - One logical change per commit
-2. **Commit often** - Small, frequent commits are better
-3. **Test before committing** - Ensure tests pass
-4. **Write clear messages** - Imperative mood, 50 char summary
+**Example:**
+```bash
+# Bad: Multiple unrelated changes
+git commit -m "Fix bug and add feature and update docs"
 
-**Commit message format:**
+# Good: Separate commits
+git commit -m "Fix authentication timeout bug"
+git commit -m "Add password reset feature"
+git commit -m "Update API documentation"
 ```
-Capitalized summary (50 chars or less)
 
-Detailed explanation wrapped at 72 characters.
-- What was the motivation?
-- How does it differ from before?
-
-Use imperative mood: "Fix bug" not "Fixed bug"
-```
-
-For detailed commit guidelines and examples, see [commit-guidelines.md](references/commit-guidelines.md).
+See [commit-guidelines.md](references/commit-guidelines.md) for detailed guidance.
 
 ### Branch Management
 
 **Feature branch workflow:**
 ```bash
-# On main/master/dev
-git checkout -b feature/feature-name
+git checkout main
+git pull origin main
+git checkout -b feature/new-feature
 
-# Work on feature
-git add <files>
-git commit -m "Implement feature"
+# Work and commit...
+git push -u origin feature/new-feature
 
-# Keep branch updated
+# Keep updated
 git fetch origin
 git rebase origin/main
-
-# Push feature
-git push -u origin feature/feature-name
+git push --force-with-lease
 ```
 
-**Branch naming conventions:**
-- `feature/` - New features
-- `fix/` - Bug fixes
-- `refactor/` - Code refactoring
-- `docs/` - Documentation updates
-- `test/` - Test additions/updates
+### Stacked PRs
 
-### Stacked PRs Workflow
+Break large features into reviewable chunks:
 
-Stacked PRs allow you to break large features into small, reviewable chunks while maintaining dependencies between them.
-
-**Basic stacked PR pattern:**
 ```bash
-# Base branch (main)
+# Base branch
 git checkout main
 
-# First PR in stack
+# First PR
 git checkout -b feature/auth-base
-# Implement base functionality
+# Implement...
 git commit -m "Add authentication base"
 git push -u origin feature/auth-base
 
-# Second PR stacked on first
+# Second PR (stacked on first)
 git checkout -b feature/auth-middleware
-# Implement middleware (depends on auth-base)
+# Implement...
 git commit -m "Add authentication middleware"
 git push -u origin feature/auth-middleware
 
-# Third PR stacked on second
+# Third PR (stacked on second)
 git checkout -b feature/auth-ui
-# Implement UI (depends on middleware)
+# Implement...
 git commit -m "Add authentication UI"
 git push -u origin feature/auth-ui
 ```
 
-**Managing stack updates:**
+**Update stack when first PR changes:**
 ```bash
-# When feature/auth-base gets updated
+# After updating feature/auth-base
 git checkout feature/auth-middleware
 git rebase feature/auth-base
+git push --force-with-lease
 
 git checkout feature/auth-ui
 git rebase feature/auth-middleware
+git push --force-with-lease
 ```
 
-For detailed stacked PR workflows including handling rebases, merges, and conflicts, see [stacked-prs.md](references/stacked-prs.md).
+See workflows:
+- [create-stacked-prs.md](workflows/create-stacked-prs.md) - Create stack from changes
+- [update-stack-after-merge.md](workflows/update-stack-after-merge.md) - Update after merge
+- [stacked-prs.md](references/stacked-prs.md) - Complete guide
 
-### Merge Conflict Resolution
+### Conflict Resolution
 
-**Step-by-step conflict resolution:**
+**Process:**
 
-1. **Identify conflicts:**
+1. Identify conflicts:
 ```bash
-git status
-# Look for "both modified" files
+git status  # Look for "both modified"
 ```
 
-2. **Open conflicted files** - Look for conflict markers:
+2. Open files, resolve conflicts:
 ```
 <<<<<<< HEAD
-Your current changes
+Current changes
 =======
 Incoming changes
 >>>>>>> branch-name
 ```
 
-3. **Resolve conflicts** - Edit files to keep desired changes, remove markers
-
-4. **Mark as resolved:**
+3. Stage and commit:
 ```bash
-git add <resolved-file>
+git add <resolved-files>
+git commit  # Use merge commit message
 ```
 
-5. **Complete merge:**
-```bash
-git commit -m "Merge branch-name into current-branch
+**Tips:**
+- Keep changes small to minimize conflicts
+- Rebase frequently
+- Communicate with team on shared files
 
-Resolved conflicts in:
-- file1.py: Kept authentication logic from both branches
-- file2.js: Used incoming changes for API endpoints"
+### History Analysis
+
+**View history:**
+```bash
+git log --oneline --graph --all    # Visual history
+git log -p                         # History with diffs
+git log --author="Name"            # Filter by author
+git log --grep="keyword"           # Search messages
 ```
 
-### Git History Analysis
-
-**View commit history:**
+**Find when bug introduced:**
 ```bash
-# Compact log
-git log --oneline --graph --all
-
-# Detailed log with changes
-git log -p
-
-# Find commits by author
-git log --author="Name"
-
-# Find commits by message
-git log --grep="keyword"
-```
-
-**Find when bug was introduced:**
-```bash
-# Binary search through history
 git bisect start
-git bisect bad                 # Current version is bad
-git bisect good <commit>       # Known good commit
-# Test each commit git provides
-git bisect good/bad            # Mark each test result
-git bisect reset               # When done
+git bisect bad                    # Current is bad
+git bisect good <commit>          # Known good commit
+# Test each commit git provides...
+git bisect good/bad               # Mark results
+git bisect reset                  # Done
 ```
 
-**View file history:**
+**File history:**
 ```bash
-# Show changes to specific file
-git log -p <file>
-
-# Show who changed each line
-git blame <file>
+git log -p <file>                 # Changes to file
+git blame <file>                  # Who changed each line
 ```
 
 ## Advanced Operations
 
-For detailed guidance on advanced git operations, see [advanced-operations.md](references/advanced-operations.md).
-
-**Common advanced operations:**
-
+See [advanced-operations.md](references/advanced-operations.md) for:
 - **Interactive rebase** - Reorder, squash, edit commits
-- **Cherry-pick** - Apply specific commits to current branch
+- **Cherry-pick** - Apply specific commits
 - **Reflog** - Recover lost commits
-- **Stash** - Temporarily save uncommitted changes
+- **Stash** - Save uncommitted changes
 - **Reset** - Undo commits (soft, mixed, hard)
 - **Clean** - Remove untracked files
 
@@ -210,64 +230,61 @@ For detailed guidance on advanced git operations, see [advanced-operations.md](r
 
 ### Safety Rules
 
-- **Never force push to main/master** - Destroys team's history
-- **Never rewrite public history** - Use revert instead
+- **Never force push to main/master** - Use revert instead
+- **Never rewrite public history** - Others may have pulled it
 - **Always backup before complex operations** - Create a branch
-- **Test before committing** - Run tests, linters
-- **Review before pushing** - Check `git diff` and `git log`
+- **Test before committing** - Ensure tests pass
+- **Use --force-with-lease** - Safer than --force
 
-### Branch Strategy
+### Best Practices
 
+**Branching:**
 - Work on feature branches, not main
-- Keep main/master stable and deployable
+- Keep main stable and deployable
 - Delete branches after merge
-- Use descriptive branch names
 - Keep feature branches short-lived
 
-### Commit Hygiene
-
+**Commits:**
 - One logical change per commit
 - Test each commit independently
-- Write clear, descriptive messages
-- Don't commit generated files or secrets
+- Write clear messages
+- Don't commit secrets or generated files
 - Use `.gitignore` appropriately
 
-## Common Commands
+**Stacked PRs:**
+- Plan stack before starting
+- Keep each PR < 400 lines
+- Ensure tests pass per PR
+- Document dependencies in PR descriptions
+- Rebase frequently
 
+## Quick Reference
+
+See [common-commands.md](references/common-commands.md) for complete command reference.
+
+**Most used:**
 ```bash
-# Status and info
-git status                      # Show working tree status
-git log --oneline --graph      # View commit history
-git diff                       # Show unstaged changes
-git diff --staged              # Show staged changes
-
-# Basic operations
-git add <file>                 # Stage file
-git commit -m "message"        # Commit staged changes
-git push                       # Push to remote
-git pull                       # Fetch and merge from remote
-
-# Branching
-git branch                     # List branches
-git checkout -b <branch>       # Create and switch to branch
-git merge <branch>             # Merge branch into current
-git branch -d <branch>         # Delete branch
-
-# Stashing
-git stash                      # Save uncommitted changes
-git stash list                 # List stashes
-git stash pop                  # Apply and remove latest stash
-git stash apply                # Apply latest stash (keep it)
-
-# Undoing
-git reset HEAD <file>          # Unstage file
-git checkout -- <file>         # Discard changes to file
-git revert <commit>            # Create new commit undoing changes
-git reset --hard <commit>      # Reset to commit (DESTRUCTIVE)
+git status                       # Check status
+git add <file>                   # Stage changes
+git commit -m "message"          # Commit
+git push                         # Push to remote
+git pull --rebase                # Update branch
+git checkout -b <branch>         # Create branch
+git rebase <branch>              # Rebase onto branch
+git push --force-with-lease      # Safe force push
+git stash                        # Save work temporarily
+git reflog                       # View history (recovery)
 ```
 
 ## References
 
-- [commit-guidelines.md](references/commit-guidelines.md) - Detailed commit best practices and formatting
-- [stacked-prs.md](references/stacked-prs.md) - Comprehensive stacked PR workflow
-- [advanced-operations.md](references/advanced-operations.md) - Rebase, cherry-pick, reflog, and more
+- [commit-guidelines.md](references/commit-guidelines.md) - Commit best practices
+- [stacked-prs.md](references/stacked-prs.md) - Comprehensive stacked PR guide
+- [advanced-operations.md](references/advanced-operations.md) - Rebase, cherry-pick, reflog
+- [common-commands.md](references/common-commands.md) - Command reference
+
+## Workflows
+
+- [create-stacked-prs.md](workflows/create-stacked-prs.md) - Create stack from changes
+- [update-stack-after-merge.md](workflows/update-stack-after-merge.md) - Update after merge
+- [recover-from-rebase.md](workflows/recover-from-rebase.md) - Fix rebase mistakes
