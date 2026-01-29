@@ -1,6 +1,11 @@
 ---
 name: managing-git
 description: Comprehensive git workflow management including well-formatted commits, branch workflows, stacked PRs, merge conflict resolution, history analysis, and advanced operations (rebase, cherry-pick, etc.). Use when working with git repositories or when the user mentions git, commits, branches, pull requests, stacked PRs, merge conflicts, rebasing, or git history.
+allowed-tools:
+  - Bash
+  - Read
+  - Edit
+  - Write
 ---
 
 # Managing Git
@@ -45,19 +50,17 @@ Includes middleware for protected routes and token validation."
 ### Create Feature Branch
 
 ```bash
-git checkout -b feature/user-auth
+git checkout -b user-auth
 # Work on feature...
 git add <files>
 git commit -m "Implement feature"
-git push -u origin feature/user-auth
+git push -u origin user-auth
 ```
 
 **Naming conventions:**
-- `feature/` - New features
-- `fix/` - Bug fixes
-- `refactor/` - Code refactoring
-- `docs/` - Documentation
-- `test/` - Tests
+- Use descriptive names: `user-auth`, `payment-flow`, `dashboard-ui`
+- For related changes (stacks), use common prefix: `auth_base`, `auth_middleware`, `auth_ui`
+- Keep names concise but meaningful
 
 ### Resolve Merge Conflict
 
@@ -76,6 +79,21 @@ Resolved conflicts in:
 - auth.ts: Combined token logic from both branches
 - types.ts: Kept incoming interface definitions"
 ```
+
+## Context
+
+Before performing git operations, always load the current repository state:
+
+```bash
+!git status
+!git branch -vv
+!git log --oneline -5
+```
+
+This provides:
+- Current branch and working tree status
+- Branch tracking information
+- Recent commit history for understanding commit style
 
 ## Core Workflows
 
@@ -106,10 +124,10 @@ See [commit-guidelines.md](references/commit-guidelines.md) for detailed guidanc
 ```bash
 git checkout main
 git pull origin main
-git checkout -b feature/new-feature
+git checkout -b new-feature
 
 # Work and commit...
-git push -u origin feature/new-feature
+git push -u origin new-feature
 
 # Keep updated
 git fetch origin
@@ -126,33 +144,33 @@ Break large features into reviewable chunks:
 git checkout main
 
 # First PR
-git checkout -b feature/auth-base
+git checkout -b auth_base
 # Implement...
 git commit -m "Add authentication base"
-git push -u origin feature/auth-base
+git push -u origin auth_base
 
 # Second PR (stacked on first)
-git checkout -b feature/auth-middleware
+git checkout -b auth_middleware
 # Implement...
 git commit -m "Add authentication middleware"
-git push -u origin feature/auth-middleware
+git push -u origin auth_middleware
 
 # Third PR (stacked on second)
-git checkout -b feature/auth-ui
+git checkout -b auth_ui
 # Implement...
 git commit -m "Add authentication UI"
-git push -u origin feature/auth-ui
+git push -u origin auth_ui
 ```
 
 **Update stack when first PR changes:**
 ```bash
-# After updating feature/auth-base
-git checkout feature/auth-middleware
-git rebase feature/auth-base
+# After updating auth_base
+git checkout auth_middleware
+git rebase auth_base
 git push --force-with-lease
 
-git checkout feature/auth-ui
-git rebase feature/auth-middleware
+git checkout auth_ui
+git rebase auth_middleware
 git push --force-with-lease
 ```
 

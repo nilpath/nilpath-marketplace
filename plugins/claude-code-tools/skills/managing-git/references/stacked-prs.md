@@ -91,11 +91,11 @@ Break down the feature into logical, reviewable chunks:
 Feature: User Profile System
 
 Stack plan:
-1. feature/profile-model      - Database schema and model
-2. feature/profile-api         - CRUD API endpoints
-3. feature/profile-validation  - Input validation and tests
-4. feature/profile-ui          - Frontend components
-5. feature/profile-integration - Full integration and E2E tests
+1. profile_model      - Database schema and model
+2. profile_api        - CRUD API endpoints
+3. profile_validation - Input validation and tests
+4. profile_ui         - Frontend components
+5. profile_integration - Full integration and E2E tests
 ```
 
 **Each PR should:**
@@ -103,6 +103,26 @@ Stack plan:
 - Have passing tests
 - Not break the application
 - Represent a complete logical unit
+
+### Branch Naming Convention for Stacks
+
+Use a common prefix with underscores for all branches in the stack:
+
+**Pattern:** `<feature-name>_<component>`
+
+**Example:**
+```
+auth_base           # First PR in auth stack
+auth_middleware     # Second PR in auth stack
+auth_endpoints      # Third PR in auth stack
+auth_ui             # Fourth PR in auth stack
+```
+
+**Benefits:**
+- Clearly groups related branches
+- Easy to identify stack members
+- Works well with tab completion
+- Prevents confusion with unrelated branches
 
 ### Step 2: Create Base Branch
 
@@ -117,7 +137,7 @@ git pull origin main
 
 ```bash
 # Create first branch
-git checkout -b feature/profile-model
+git checkout -b profile_model
 
 # Implement changes
 # ... edit files ...
@@ -131,7 +151,7 @@ git commit -m "Add user profile model and schema
 - Add model tests"
 
 # Push branch
-git push -u origin feature/profile-model
+git push -u origin profile_model
 ```
 
 Create PR on GitHub/GitLab targeting main.
@@ -140,7 +160,7 @@ Create PR on GitHub/GitLab targeting main.
 
 ```bash
 # Create second branch FROM first branch
-git checkout -b feature/profile-api
+git checkout -b profile_api
 
 # Implement changes
 # ... edit files ...
@@ -155,10 +175,53 @@ git commit -m "Add profile CRUD API endpoints
 - Add API integration tests"
 
 # Push branch
-git push -u origin feature/profile-api
+git push -u origin profile_api
 ```
 
-**Important:** Create PR targeting `feature/profile-model`, NOT main.
+**Important:** Create PR targeting `profile_model`, NOT main.
+
+### PR Title and Description Format
+
+**Title Format:**
+```
+[Stack X/Y] Feature description
+```
+
+Where:
+- X = Position in stack (1, 2, 3...)
+- Y = Total PRs in stack
+- Feature description = What this PR does
+
+**Examples:**
+```
+[Stack 1/4] Add user profile model and schema
+[Stack 2/4] Add profile CRUD API endpoints
+[Stack 3/4] Add input validation and tests
+[Stack 4/4] Add frontend components and integration
+```
+
+**Description Template:**
+```markdown
+## Summary
+[What this PR does]
+
+## Stack Information
+- **Stack Order**: X of Y
+- **Merge Order**: Must merge after #[previous-pr-number]
+- **Depends On**: #[previous-pr-number]
+- **Blocks**: #[next-pr-number]
+
+## Changes
+- [Change 1]
+- [Change 2]
+
+## Testing
+[How to test these changes]
+
+## Related PRs
+- Previous: #[previous-pr] (or "None - first in stack")
+- Next: #[next-pr] (or "None - last in stack")
+```
 
 ### Step 5: Continue the Stack
 
@@ -166,14 +229,14 @@ Repeat for each subsequent PR, always branching from and targeting the previous 
 
 ```bash
 # Third PR stacked on second
-git checkout -b feature/profile-validation
+git checkout -b profile_validation
 
 # ... implement and commit ...
 
-git push -u origin feature/profile-validation
+git push -u origin profile_validation
 ```
 
-Create PR targeting `feature/profile-api`.
+Create PR targeting `profile_api`.
 
 ## Managing Stack Updates
 
@@ -187,19 +250,19 @@ git checkout main
 git pull origin main
 
 # Rebase first branch
-git checkout feature/profile-model
+git checkout profile_model
 git rebase main
 
 # Force push (your branch, safe to force push)
 git push --force-with-lease
 
 # Rebase each subsequent branch
-git checkout feature/profile-api
-git rebase feature/profile-model
+git checkout profile_api
+git rebase profile_model
 git push --force-with-lease
 
-git checkout feature/profile-validation
-git rebase feature/profile-api
+git checkout profile_validation
+git rebase profile_api
 git push --force-with-lease
 ```
 
@@ -209,7 +272,7 @@ When you need to update the first PR in the stack:
 
 ```bash
 # Make changes to first PR
-git checkout feature/profile-model
+git checkout profile_model
 
 # Edit files based on feedback
 # ... edit files ...
@@ -224,12 +287,12 @@ git commit -m "Address review feedback
 git push
 
 # Now rebase all dependent branches
-git checkout feature/profile-api
-git rebase feature/profile-model
+git checkout profile_api
+git rebase profile_model
 git push --force-with-lease
 
-git checkout feature/profile-validation
-git rebase feature/profile-api
+git checkout profile_validation
+git rebase profile_api
 git push --force-with-lease
 ```
 
@@ -237,18 +300,18 @@ git push --force-with-lease
 
 ```bash
 # Make changes to middle PR
-git checkout feature/profile-api
+git checkout profile_api
 
 # Edit files
 git commit -m "Address review feedback"
 git push
 
 # Rebase only branches that come AFTER
-git checkout feature/profile-validation
-git rebase feature/profile-api
+git checkout profile_validation
+git rebase profile_api
 git push --force-with-lease
 
-# Branches before (feature/profile-model) are unaffected
+# Branches before (profile_model) are unaffected
 ```
 
 ## Handling Conflicts
@@ -258,8 +321,8 @@ git push --force-with-lease
 When rebasing a stacked branch, conflicts may occur:
 
 ```bash
-git checkout feature/profile-api
-git rebase feature/profile-model
+git checkout profile_api
+git rebase profile_model
 
 # If conflicts occur:
 # Auto-merging api/profile.py
@@ -308,22 +371,22 @@ Merge PRs from bottom to top, one at a time:
 
 ```bash
 # 1. Merge first PR into main
-#    (feature/profile-model → main)
+#    (profile_model → main)
 #    Use GitHub/GitLab UI or:
 git checkout main
-git merge feature/profile-model
+git merge profile_model
 git push
 
 # 2. Update second PR to target main
-#    Change PR target from feature/profile-model to main
+#    Change PR target from profile_model to main
 #    Rebase onto main:
-git checkout feature/profile-api
+git checkout profile_api
 git rebase main
 git push --force-with-lease
 
 # 3. Merge second PR into main
 git checkout main
-git merge feature/profile-api
+git merge profile_api
 git push
 
 # 4. Repeat for remaining PRs
@@ -341,12 +404,12 @@ Squash each PR when merging to keep main history clean:
 ```bash
 # Merge with squash (GitHub UI or):
 git checkout main
-git merge --squash feature/profile-model
+git merge --squash profile_model
 git commit -m "Add user profile model (#123)"
 git push
 
 # Update and rebase next PR
-git checkout feature/profile-api
+git checkout profile_api
 git rebase main
 # Resolve any conflicts
 git push --force-with-lease
@@ -367,11 +430,11 @@ Merge only the final PR after all PRs in stack are approved:
 
 ```bash
 # Approve all PRs in stack
-# Merge final PR (feature/profile-integration → main)
+# Merge final PR (profile_integration → main)
 # This brings in all changes from the stack
 
 git checkout main
-git merge feature/profile-integration
+git merge profile_integration
 git push
 ```
 
@@ -390,11 +453,11 @@ git push
 
 ```bash
 # Create stacked PRs with gh CLI
-gh pr create --base main --head feature/profile-model \
+gh pr create --base main --head profile_model \
   --title "Add user profile model" \
   --body "First PR in profile system stack"
 
-gh pr create --base feature/profile-model --head feature/profile-api \
+gh pr create --base profile_model --head profile_api \
   --title "Add profile API endpoints" \
   --body "Stacked on #123"
 ```
@@ -439,11 +502,11 @@ git fetch origin main
 
 CURRENT_BRANCH=$(git branch --show-current)
 STACK=(
-  "feature/profile-model"
-  "feature/profile-api"
-  "feature/profile-validation"
-  "feature/profile-ui"
-  "feature/profile-integration"
+  "profile_model"
+  "profile_api"
+  "profile_validation"
+  "profile_ui"
+  "profile_integration"
 )
 
 echo "Rebasing stack..."
@@ -491,54 +554,54 @@ git checkout main
 git pull
 
 # PR 1: Database schema
-git checkout -b auth/add-user-model
+git checkout -b auth_user-model
 # ... implement ...
 git commit -m "Add User model and database schema"
-git push -u origin auth/add-user-model
-# Create PR: auth/add-user-model → main
+git push -u origin auth_user-model
+# Create PR: auth_user-model → main
 
 # PR 2: Token generation (depends on PR 1)
-git checkout -b auth/add-jwt-tokens
+git checkout -b auth_jwt-tokens
 # ... implement ...
 git commit -m "Add JWT token generation and validation"
-git push -u origin auth/add-jwt-tokens
-# Create PR: auth/add-jwt-tokens → auth/add-user-model
+git push -u origin auth_jwt-tokens
+# Create PR: auth_jwt-tokens → auth_user-model
 
 # PR 3: Middleware (depends on PR 2)
-git checkout -b auth/add-middleware
+git checkout -b auth_middleware
 # ... implement ...
 git commit -m "Add authentication middleware"
-git push -u origin auth/add-middleware
-# Create PR: auth/add-middleware → auth/add-jwt-tokens
+git push -u origin auth_middleware
+# Create PR: auth_middleware → auth_jwt-tokens
 
 # Review feedback on PR 1
-git checkout auth/add-user-model
+git checkout auth_user-model
 # ... make changes ...
 git commit -m "Address review feedback"
 git push
 
 # Rebase dependent PRs
-git checkout auth/add-jwt-tokens
-git rebase auth/add-user-model
+git checkout auth_jwt-tokens
+git rebase auth_user-model
 git push --force-with-lease
 
-git checkout auth/add-middleware
-git rebase auth/add-jwt-tokens
+git checkout auth_middleware
+git rebase auth_jwt-tokens
 git push --force-with-lease
 
 # PR 1 approved and merged into main
 # Update PR 2 to target main
-git checkout auth/add-jwt-tokens
+git checkout auth_jwt-tokens
 git rebase main
 git push --force-with-lease
-# Update PR target: auth/add-jwt-tokens → main
+# Update PR target: auth_jwt-tokens → main
 
 # PR 2 approved and merged into main
 # Update PR 3 to target main
-git checkout auth/add-middleware
+git checkout auth_middleware
 git rebase main
 git push --force-with-lease
-# Update PR target: auth/add-middleware → main
+# Update PR target: auth_middleware → main
 
 # PR 3 approved and merged into main
 # Stack complete!
@@ -580,10 +643,10 @@ After merging PR 1 into main, PR 2 should target main:
 
 ```bash
 # Update PR 2
-git checkout feature/pr-2
+git checkout pr_2
 git rebase main
 git push --force-with-lease
 
 # Update PR target on GitHub/GitLab:
-# Change base branch from feature/pr-1 to main
+# Change base branch from pr_1 to main
 ```

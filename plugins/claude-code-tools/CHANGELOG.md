@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-01-29
+
+### Added
+- `allowed-tools` section to managing-git skill frontmatter (Bash, Read, Edit, Write)
+- Context section in managing-git skill using `!cmd` pattern for loading git state
+- Branch naming convention section in stacked-prs.md with underscore format
+- PR title and description format section in stacked-prs.md with stack order
+- Co-authored commit message section in commit-guidelines.md with heredoc syntax
+
+### Changed
+- Updated branch naming convention from slash-based (`feature/`, `fix/`) to underscore-based (`feature_component`)
+- All stacked PR examples now use underscore naming: `auth_base`, `auth_middleware`, `auth_ui`
+- SKILL.md updated from 290 to 308 lines
+- commit-guidelines.md expanded with co-author attribution guidelines
+- stacked-prs.md enhanced with comprehensive PR formatting templates
+
 ## [0.1.0] - 2026-01-29
 
 ### Added

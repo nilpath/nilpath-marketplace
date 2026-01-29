@@ -154,6 +154,44 @@ Further paragraphs come after blank lines.
 - Use a hanging indent
 ```
 
+### Commit Message with Co-Authors
+
+When committing code created with AI assistance or pair programming, include co-author attribution:
+
+```
+Capitalized summary (50 chars or less)
+
+More detailed explanatory text if needed, wrapped at 72
+characters. Explain what and why, not how.
+
+Co-Authored-By: Partner Name <email@example.com>
+```
+
+**Example with Claude Code:**
+```bash
+git commit -m "$(cat <<'EOF'
+Add JWT authentication middleware
+
+Implements token-based authentication with refresh tokens.
+Includes middleware for protected routes and token validation.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+EOF
+)"
+```
+
+**When to use:**
+- Code written with AI assistance (Claude Code, Copilot, etc.)
+- Pair programming sessions
+- Collaborative commits
+- Significant contributions from multiple authors
+
+**Format rules:**
+- Use heredoc syntax for multi-line commits with co-authors
+- Place Co-Authored-By trailer at the end after a blank line
+- Can include multiple co-authors (one per line)
+- Each co-author line follows the format: `Co-Authored-By: Name <email>`
+
 ## Examples
 
 ### Example 1: Simple Commit (No Body)
