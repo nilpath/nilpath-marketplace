@@ -200,29 +200,6 @@ Where:
 
 See [pr-description.md](../templates/pr-description.md) for a complete template.
 
-Quick reference:
-```markdown
-## Summary
-[What this PR does]
-
-## Stack Information
-- **Stack Order**: X of Y
-- **Merge Order**: Must merge after #[previous-pr-number]
-- **Depends On**: #[previous-pr-number]
-- **Blocks**: #[next-pr-number]
-
-## Changes
-- [Change 1]
-- [Change 2]
-
-## Testing
-[How to test these changes]
-
-## Related PRs
-- Previous: #[previous-pr] (or "None - first in stack")
-- Next: #[next-pr] (or "None - last in stack")
-```
-
 ### Step 5: Continue the Stack
 
 Repeat for each subsequent PR, always branching from and targeting the previous branch in the stack.

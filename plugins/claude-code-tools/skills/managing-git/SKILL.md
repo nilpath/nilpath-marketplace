@@ -80,7 +80,7 @@ Resolved conflicts in:
 - types.ts: Kept incoming interface definitions"
 ```
 
-## Context
+## Current Git Context
 
 - Current git status: !`git status`
 - Current git diff (staged and unstaged changes): !`git diff HEAD`
