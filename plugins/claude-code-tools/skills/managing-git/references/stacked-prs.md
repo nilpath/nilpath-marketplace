@@ -531,54 +531,54 @@ git checkout main
 git pull
 
 # PR 1: Database schema
-git checkout -b auth_user-model
+git checkout -b feat/auth/user-model
 # ... implement ...
 git commit -m "Add User model and database schema"
-git push -u origin auth_user-model
-# Create PR: auth_user-model → main
+git push -u origin feat/auth/user-model
+# Create PR: feat/auth/user-model → main
 
 # PR 2: Token generation (depends on PR 1)
-git checkout -b auth_jwt-tokens
+git checkout -b feat/auth/jwt-tokens
 # ... implement ...
 git commit -m "Add JWT token generation and validation"
-git push -u origin auth_jwt-tokens
-# Create PR: auth_jwt-tokens → auth_user-model
+git push -u origin feat/auth/jwt-tokens
+# Create PR: feat/auth/jwt-tokens → feat/auth/user-model
 
 # PR 3: Middleware (depends on PR 2)
-git checkout -b auth_middleware
+git checkout -b feat/auth/middleware
 # ... implement ...
 git commit -m "Add authentication middleware"
-git push -u origin auth_middleware
-# Create PR: auth_middleware → auth_jwt-tokens
+git push -u origin feat/auth/middleware
+# Create PR: feat/auth/middleware → feat/auth/jwt-tokens
 
 # Review feedback on PR 1
-git checkout auth_user-model
+git checkout feat/auth/user-model
 # ... make changes ...
 git commit -m "Address review feedback"
 git push
 
 # Rebase dependent PRs
-git checkout auth_jwt-tokens
-git rebase auth_user-model
+git checkout feat/auth/jwt-tokens
+git rebase feat/auth/user-model
 git push --force-with-lease
 
-git checkout auth_middleware
-git rebase auth_jwt-tokens
+git checkout feat/auth/middleware
+git rebase feat/auth/jwt-tokens
 git push --force-with-lease
 
 # PR 1 approved and merged into main
 # Update PR 2 to target main
-git checkout auth_jwt-tokens
+git checkout feat/auth/jwt-tokens
 git rebase main
 git push --force-with-lease
-# Update PR target: auth_jwt-tokens → main
+# Update PR target: feat/auth/jwt-tokens → main
 
 # PR 2 approved and merged into main
 # Update PR 3 to target main
-git checkout auth_middleware
+git checkout feat/auth/middleware
 git rebase main
 git push --force-with-lease
-# Update PR target: auth_middleware → main
+# Update PR target: feat/auth/middleware → main
 
 # PR 3 approved and merged into main
 # Stack complete!
