@@ -1,0 +1,13 @@
+{
+  "name": "claude-code-tools",
+  "version": "0.0.1",
+  "description": "A collection Agents and Skills I use for coding with Claude.",
+  "author": {
+    "name": "Christoffer Ahrling",
+    "url": "https://github.com/nilpath"
+  },
+  "homepage": "https://github.com/nilpath/nilpath-marketplace",
+  "repository": "https://github.com/nilpath/nilpath-marketplace",
+  "license": "MIT",
+  "keywords": []
+}
