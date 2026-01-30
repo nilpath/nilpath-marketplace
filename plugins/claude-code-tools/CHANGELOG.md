@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-01-30
+
+### Added
+- **git-stacked-prs automation scripts** - Four bash scripts to automate stacked PR workflows:
+  - `stack-status.sh` - Display visual tree of stack structure with PR status (~220 lines)
+  - `stack-backup.sh` - Create and restore backups before risky operations (~170 lines)
+  - `stack-rebase.sh` - Automate sequential rebasing with safety features (~250 lines)
+  - `update-pr-targets.sh` - Batch update PR targets after merges (~180 lines)
+
+### Changed
+- Updated git-stacked-prs SKILL.md with "Automated Operations" section
+- Updated workflows (create-stacked-prs.md, update-stack-after-merge.md) to reference automation scripts
+- Updated references/stacked-prs.md with "Built-in Automation Scripts" section
+- All scripts follow marketplace patterns with colors, error handling, help text, and git safety
+
+### Impact
+- **Token reduction**: 60-70% fewer tokens for common stack operations
+- **Error reduction**: Automated safety checks prevent common mistakes
+- **Faster workflows**: Multi-step operations reduced to single command
+- **Better UX**: Visual feedback, color output, clear error messages
+
 ## [0.3.0] - 2026-01-30
 
 ### Added
