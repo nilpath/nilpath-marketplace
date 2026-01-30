@@ -140,44 +140,41 @@ git rebase --continue
 git push --force-with-lease
 ```
 
-## Automation Script
+## Automation Scripts
 
-Create `update-stack.sh`:
+### Automated Stack Rebase
+
+Use the built-in `stack-rebase.sh` script to automate the entire rebase process:
 
 ```bash
-#!/bin/bash
-# update-stack.sh - Update stack after base PR merges
-
-set -e
-
-BASE_BRANCH=$1
-STACK_BRANCHES=("${@:2}")
-
-if [ -z "$BASE_BRANCH" ]; then
-  echo "Usage: ./update-stack.sh <base-branch> <branch1> <branch2> ..."
-  exit 1
-fi
-
-echo "Updating $BASE_BRANCH..."
-git checkout "$BASE_BRANCH"
-git pull origin "$BASE_BRANCH"
-
-PREV="$BASE_BRANCH"
-for BRANCH in "${STACK_BRANCHES[@]}"; do
-  echo "Rebasing $BRANCH onto $PREV..."
-  git checkout "$BRANCH"
-  git rebase "$PREV"
-  git push --force-with-lease
-  PREV="$BRANCH"
-done
-
-echo "Stack updated successfully!"
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh main feature/auth-models feature/auth-api feature/auth-ui
 ```
 
-Usage:
+Features:
+- Creates automatic backups before rebasing
+- Updates base branch from remote
+- Rebases each branch sequentially
+- Runs tests after each rebase
+- Uses `--force-with-lease` for safety
+- Provides detailed progress output
+
+### Update PR Targets
+
+Use the `update-pr-targets.sh` script to automatically update PR targets after a merge:
+
 ```bash
-./update-stack.sh main feature/auth-models feature/auth-api feature/auth-ui
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/update-pr-targets.sh feature/auth-setup main
 ```
+
+This script will:
+- Auto-detect all PRs targeting the merged branch
+- Rebase each branch onto the new target
+- Update PR targets via `gh` CLI
+- Handle conflicts gracefully
+
+Options:
+- `--no-rebase` - Only update PR targets, skip rebasing
+- Specify PR numbers: `update-pr-targets.sh feature/auth-setup main 2 3 4`
 
 ## Tips
 

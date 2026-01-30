@@ -125,12 +125,30 @@ gh pr create --base feature/auth-api --head feature/auth-ui \
   --body "Stacked on #3. Part of stacked PRs: 4/4"
 ```
 
+## Visualizing Your Stack
+
+After creating branches, use the stack status script to verify structure:
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh --pr-status
+```
+
+This will show:
+```
+main
+├─ feature/auth-setup (PR #123: under review)
+│  └─ feature/auth-models (PR #124: draft)
+│     └─ feature/auth-api (PR #125: draft)
+│        └─ feature/auth-ui (PR #126: draft)
+```
+
 ## Tips
 
 - **Keep PRs small** - Aim for < 400 lines per PR
 - **Test each commit** - Ensure each branch works independently
 - **Document dependencies** - Always mention "Stacked on #N" in PR descriptions
 - **Use force-with-lease** - When rebasing, use `--force-with-lease` not `--force`
+- **Create backups** - Before complex operations: `${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh create feature/auth-setup feature/auth-models`
 
 ## Common Patterns
 
