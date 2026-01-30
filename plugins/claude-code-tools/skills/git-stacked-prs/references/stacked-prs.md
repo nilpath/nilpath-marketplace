@@ -426,6 +426,64 @@ git push
 
 ## Tools and Automation
 
+### Built-in Automation Scripts
+
+The git-stacked-prs skill includes powerful automation scripts:
+
+#### Stack Status
+Display visual tree of stack structure with PR status:
+```bash
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh --pr-status --detail
+```
+
+Output:
+```
+main
+├─ feat/auth-base (PR #123: ✓ approved)
+│  └─ feat/auth-middleware (PR #124: under review)
+│     └─ feat/auth-api (PR #125: draft)
+```
+
+#### Stack Rebase
+Automate sequential rebasing with safety features:
+```bash
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh main feat/auth-base feat/auth-middleware feat/auth-api
+```
+
+Features:
+- Creates automatic backups
+- Updates base branch
+- Rebases each branch sequentially
+- Runs tests after each rebase
+- Uses `--force-with-lease` for safety
+
+#### Update PR Targets
+Batch update PR targets after merging:
+```bash
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/update-pr-targets.sh feat/auth-base main
+```
+
+Auto-detects dependent PRs and:
+- Rebases branches onto new target
+- Updates PR targets via `gh` CLI
+- Handles conflicts gracefully
+
+#### Stack Backup
+Create backups before risky operations:
+```bash
+# Create backups
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh create feat/auth-base feat/auth-middleware
+
+# List backups
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh list
+
+# Restore from backup
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh restore feat/auth-base
+
+# Clean old backups
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh clean --older-than 30
+```
+
 ### GitHub CLI
 
 ```bash
@@ -465,40 +523,6 @@ Consider using specialized tools:
 - **git-stack** - Manage stacks of git branches
 - **Gerrit** - Code review system with native stack support
 - **Phabricator** - Review tool with differential revisions
-
-### Example Workflow Script
-
-```bash
-#!/bin/bash
-# rebase-stack.sh - Rebase entire stack on main
-
-set -e
-
-echo "Fetching latest main..."
-git fetch origin main
-
-CURRENT_BRANCH=$(git branch --show-current)
-STACK=(
-  "feat/profile/model"
-  "feat/profile/api"
-  "feat/profile/validation"
-  "feat/profile/ui"
-  "feat/profile/integration"
-)
-
-echo "Rebasing stack..."
-PREV="origin/main"
-for BRANCH in "${STACK[@]}"; do
-  echo "Rebasing $BRANCH onto $PREV..."
-  git checkout "$BRANCH"
-  git rebase "$PREV"
-  git push --force-with-lease
-  PREV="$BRANCH"
-done
-
-git checkout "$CURRENT_BRANCH"
-echo "Stack rebased successfully!"
-```
 
 ## Best Practices
 
