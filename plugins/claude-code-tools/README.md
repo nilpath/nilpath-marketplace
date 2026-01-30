@@ -4,7 +4,7 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.3.1
+0.3.2
 
 ## Components
 
@@ -53,8 +53,14 @@ Inspired by:
 - [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin)
 - [Anthropic Agent Skills Documentation](https://code.claude.com/docs/en/skills)
 
-### Source Skills
+### Sourced Skills
 
 | Skill | Source |
 |-------|--------|
 | create-agent-skills | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |
+
+### Sourced Commands
+
+| Command | Source |
+|---------|--------|
+| create-agent-skill | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |
