@@ -4,7 +4,7 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.3.0
+0.3.1
 
 ## Components
 
@@ -35,6 +35,11 @@ A collection of Agents and Skills for coding with Claude.
 - References: stacked-prs.md
 - Workflows: create-stacked-prs.md, update-stack-after-merge.md, recover-from-rebase.md
 - Templates: pr-description.md
+- **Scripts**: 4 automation scripts (820 lines total)
+  - `stack-status.sh` - Display visual tree of stack structure with PR status
+  - `stack-backup.sh` - Create and restore backups before risky operations
+  - `stack-rebase.sh` - Automate sequential rebasing with safety features
+  - `update-pr-targets.sh` - Batch update PR targets after merges
 
 **git-advanced** (350 lines)
 - Interactive rebase, cherry-pick, reflog, stash, reset, clean, bisect
