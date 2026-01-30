@@ -53,8 +53,14 @@ Inspired by:
 - [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin)
 - [Anthropic Agent Skills Documentation](https://code.claude.com/docs/en/skills)
 
-### Source Skills
+### Sourced Skills
 
 | Skill | Source |
 |-------|--------|
 | create-agent-skills | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |
+
+### Sourced Commands
+
+| Command | Source |
+|---------|--------|
+| create-agent-skill | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |
