@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-01-30
+
+### Changed
+- Restructured README credits section to use markdown tables for better readability
+- Renamed "Source Skills" to "Sourced Skills" with Skill/Source columns
+- Added "Sourced Commands" table documenting command origins
+- Fixed typo in skill name (createing → create)
+
 ## [0.3.1] - 2026-01-30
 
 ### Added
