@@ -182,6 +182,72 @@ This PR can be reviewed independently, but depends on #123 being merged first.
 
 See [templates/pr-description.md](templates/pr-description.md) for a reusable template.
 
+## Automated Operations
+
+The git-stacked-prs skill includes scripts to automate common workflows:
+
+### Rebase Entire Stack
+
+Automatically rebase all branches in a stack with safety features:
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh main feat/auth-base feat/auth-middleware feat/auth-api
+```
+
+Features:
+- Creates automatic backups before rebasing
+- Updates base branch from remote
+- Rebases each branch sequentially
+- Runs tests after each rebase
+- Uses `--force-with-lease` for safety
+- Supports `--dry-run` for preview
+
+### View Stack Status
+
+Display visual tree of stack structure with PR status:
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh --pr-status
+```
+
+Options:
+- `--detail` - Show commit summaries
+- `--pr-status` - Include GitHub PR status (requires `gh` CLI)
+- `--json` - JSON output for parsing
+
+### Update PR Targets After Merge
+
+Batch update PR base branches after merging a base PR:
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/update-pr-targets.sh feat/auth-base main
+```
+
+Features:
+- Auto-detects dependent PRs
+- Rebases branches onto new target
+- Updates PR targets via `gh` CLI
+- Handles conflicts gracefully
+- Supports `--no-rebase` to only update targets
+
+### Backup and Restore Stack
+
+Create backups before risky operations:
+
+```bash
+# Create backups
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh create feat/auth-base feat/auth-middleware
+
+# List backups
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh list
+
+# Restore from backup
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh restore feat/auth-base
+
+# Clean old backups
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh clean --older-than 30
+```
+
 ## Common Operations
 
 ### View Stack Structure
@@ -196,9 +262,20 @@ git branch -a
 # Compare branches
 git log main..feat/auth/base --oneline
 git log feat/auth/base..feat/auth/middleware --oneline
+
+# Or use the automated script
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh
 ```
 
 ### Rebase a Stack
+
+Use the automated script for safe, sequential rebasing:
+
+```bash
+${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh main feat/auth/base feat/auth/middleware feat/auth/api
+```
+
+Or manually rebase each branch:
 
 ```bash
 # Update base branch
