@@ -17,7 +17,24 @@ Create a code writer agent when you need:
 - Understand verification requirements
 - Decide on tool access scope
 
-## Step 1: Determine Tool Access
+## Step 1: Choose Storage Location
+
+**Project-level** (`.claude/agents/`):
+- Shared with team via version control
+- Specific to this codebase
+- Best for: Project-specific fixers and implementers
+
+**User-level** (`~/.claude/agents/`):
+- Personal, available in all projects
+- Not shared with team
+- Best for: Personal productivity agents
+
+**Plugin-level** (`plugins/<plugin-name>/agents/`):
+- Distributed with a Claude plugin
+- Available wherever plugin is enabled
+- Best for: Agents bundled with plugin functionality
+
+## Step 2: Determine Tool Access
 
 Code writers need modification tools, but scope appropriately:
 
@@ -29,7 +46,7 @@ Code writers need modification tools, but scope appropriately:
 | Refactorer | Read, Write, Edit, Glob, Grep |
 | Migration assistant | Read, Write, Edit, Bash, Glob, Grep |
 
-## Step 2: Create the Agent File
+## Step 3: Create the Agent File
 
 ### Basic Template
 
@@ -130,7 +147,7 @@ You are an expert debugger specializing in root cause analysis and minimal fixes
 - If the fix is complex, explain the tradeoffs before implementing
 ```
 
-## Step 3: Add Verification Steps
+## Step 4: Add Verification Steps
 
 Code writers MUST verify their changes. Include in the system prompt:
 
@@ -147,7 +164,7 @@ If tests fail:
 - Either fix the failing tests or explain what went wrong
 ```
 
-## Step 4: Add Constraints
+## Step 5: Add Constraints
 
 Prevent scope creep and unintended changes:
 
@@ -160,7 +177,7 @@ Prevent scope creep and unintended changes:
 - If the task scope grows, pause and discuss
 ```
 
-## Step 5: Load and Test
+## Step 6: Load and Test
 
 ### Load the Agent
 
@@ -312,7 +329,7 @@ You are a senior developer improving code quality.
 - Small steps are safer than big rewrites
 ```
 
-## Step 6: Add Safety Hooks (Optional)
+## Step 7: Add Safety Hooks (Optional)
 
 For additional safety, add hooks to validate changes:
 

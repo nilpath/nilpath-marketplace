@@ -29,6 +29,11 @@ Create a read-only agent when you need:
 - Not shared with team
 - Best for: Personal productivity agents
 
+**Plugin-level** (`plugins/<plugin-name>/agents/`):
+- Distributed with a Claude plugin
+- Available wherever plugin is enabled
+- Best for: Agents bundled with plugin functionality
+
 ## Step 2: Create the File
 
 Create the agent file with YAML frontmatter and system prompt.

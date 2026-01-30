@@ -17,7 +17,24 @@ Create a research agent when you need:
 - Understand output format requirements
 - Decide on web access scope
 
-## Step 1: Determine Tool Access
+## Step 1: Choose Storage Location
+
+**Project-level** (`.claude/agents/`):
+- Shared with team via version control
+- Specific to this codebase
+- Best for: Project-specific researchers
+
+**User-level** (`~/.claude/agents/`):
+- Personal, available in all projects
+- Not shared with team
+- Best for: Personal productivity agents
+
+**Plugin-level** (`plugins/<plugin-name>/agents/`):
+- Distributed with a Claude plugin
+- Available wherever plugin is enabled
+- Best for: Agents bundled with plugin functionality
+
+## Step 2: Determine Tool Access
 
 | Research Type | Recommended Tools |
 | ------------- | ----------------- |
@@ -26,7 +43,7 @@ Create a research agent when you need:
 | General web | Read, Grep, Glob, WebFetch, WebSearch |
 | Hybrid | Read, Grep, Glob, WebFetch, WebSearch |
 
-## Step 2: Create the Agent File
+## Step 3: Create the Agent File
 
 ### Basic Template
 
@@ -138,7 +155,7 @@ You are a technical research specialist finding accurate documentation and examp
 - Limit web searches to 5-10 queries to avoid excessive token use
 ```
 
-## Step 3: Define Search Strategy
+## Step 4: Define Search Strategy
 
 Help the agent search effectively:
 
@@ -170,7 +187,7 @@ Help the agent search effectively:
 4. Official Discord/Slack communities (via web search)
 ```
 
-## Step 4: Set Resource Limits
+## Step 5: Set Resource Limits
 
 Prevent excessive searching:
 
@@ -188,7 +205,7 @@ If hitting limits:
 3. Recommend specific sites to check manually
 ```
 
-## Step 5: Load and Test
+## Step 6: Load and Test
 
 ### Load the Agent
 
@@ -302,7 +319,7 @@ You are a code archaeologist understanding existing systems.
 5. Create architecture diagram (text-based)
 ```
 
-## Step 6: Handle Edge Cases
+## Step 7: Handle Edge Cases
 
 ```markdown
 ## Edge Cases
