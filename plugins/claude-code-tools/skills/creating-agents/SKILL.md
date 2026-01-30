@@ -240,13 +240,16 @@ See [examples/real-world-agents.md](examples/real-world-agents.md) for battle-te
 - Test writer
 - Migration assistant
 
-## Key Takeaways
+## Success Criteria
 
-1. **Single responsibility** - One agent, one job, minimal tools
-2. **Description is critical** - Include what AND when to use
-3. **Start simple** - Single agent before multi-agent orchestration
-4. **Test thoroughly** - Verify delegation, tools, and edge cases
-5. **Preserve context** - Use subagents for verbose operations
+A well-designed agent:
+
+- [ ] Has a **single responsibility** - one job, minimal tools
+- [ ] Has a **specific description** with trigger keywords (what AND when)
+- [ ] Uses **minimal tool access** appropriate for its role
+- [ ] Includes **verification steps** in its system prompt
+- [ ] **Handles failures gracefully** with useful error messages
+- [ ] Has been **tested** with explicit invocation and automatic delegation
 
 ## References
 
