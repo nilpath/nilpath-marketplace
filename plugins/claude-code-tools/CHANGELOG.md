@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `domain-expert.md` - Customizable domain expert template
   - **Examples:**
     - `real-world-agents.md` - Battle-tested agent configurations
+- **code-reviewer agent** - Expert code reviewer for quality, security, and best practices
+  - Comprehensive review checklist covering code quality, error handling, security, performance, testing, architecture, and documentation
+  - Structured output format with file:line references
+  - Tools: Read, Glob, Grep (strictly read-only)
+  - Model: sonnet for balanced performance
 
 ### Research Sources
 - [Official Claude Code Docs](https://code.claude.com/docs/en/sub-agents)
