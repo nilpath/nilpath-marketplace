@@ -4,20 +4,44 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.3.2
+0.4.0
 
 ## Components
 
-### Skills (4)
+### Agents (1)
+
+| Agent | Description |
+|-------|-------------|
+| **code-reviewer** | Expert code reviewer for quality, security, and best practices across multiple languages |
+
+### Agent Details
+
+**code-reviewer**
+- Comprehensive review checklist: code quality, error handling, security, performance, testing, architecture, documentation
+- Structured output with file:line references for all issues
+- Proactive invocation after code changes
+- Tools: Read, Glob, Grep (strictly read-only)
+- Model: sonnet
+
+### Skills (5)
 
 | Skill | Description |
 |-------|-------------|
+| **creating-agents** | Expert guidance for designing and implementing Claude Code subagents |
 | **create-agent-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
 | **git-commits** | Git commit best practices and message formatting guidelines |
 | **git-stacked-prs** | Stacked (dependent) pull request workflow and management |
 | **git-advanced** | Advanced git operations, analysis tools, recovery, and command reference |
 
 ### Skill Details
+
+**creating-agents** (~280 lines)
+- Comprehensive guide for designing and implementing Claude Code subagents
+- Core principles: context preservation, parallelization, specialization
+- References: official-spec.md, orchestration-patterns.md, tool-permissions.md, anti-patterns.md
+- Workflows: create-read-only-agent.md, create-code-writer-agent.md, create-research-agent.md, audit-existing-agent.md
+- Templates: code-reviewer.md, debugger.md, researcher.md, domain-expert.md
+- Examples: real-world-agents.md with battle-tested configurations
 
 **create-agent-skills**
 - Expert guidance for authoring Claude Code Skills
