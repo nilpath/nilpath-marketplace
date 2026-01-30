@@ -7,35 +7,7 @@ description: Expert guidance for creating Claude Code subagents and multi-agent 
 
 Expert guidance for designing and implementing Claude Code subagents based on Anthropic's official specification and industry best practices.
 
-## Quick Start
-
-Create a code reviewer subagent in under 5 minutes:
-
-**1. Create the file** at `.claude/agents/code-reviewer.md`:
-
-```markdown
----
-name: code-reviewer
-description: Reviews code for quality, security, and best practices. Use proactively after code changes.
-tools: Read, Grep, Glob
-model: sonnet
----
-
-You are a senior code reviewer. When invoked:
-1. Run `git diff` to see recent changes
-2. Review modified files for:
-   - Code clarity and readability
-   - Security vulnerabilities
-   - Performance issues
-   - Best practices violations
-3. Provide specific, actionable feedback organized by priority
-```
-
-**2. Load it** by running `/agents` or restarting Claude Code.
-
-**3. Use it** naturally: "Review my recent changes" or "Use code-reviewer to check authentication module"
-
-## Why Subagents?
+## Core principles
 
 Subagents solve three fundamental problems:
 
@@ -77,18 +49,6 @@ description: Reviews code for quality, security, and best practices. Use proacti
 ```yaml
 description: Helps with code
 ```
-
-## Built-in Agents
-
-Claude Code includes these agents by default:
-
-| Agent | Model | Tools | Purpose |
-| ----- | ----- | ----- | ------- |
-| Explore | Haiku | Read-only | Fast codebase search and analysis |
-| Plan | Inherits | Read-only | Research for plan mode |
-| general-purpose | Inherits | All | Complex multi-step tasks |
-
-You can also explicitly request any agent: "Use the Explore agent to find error handling patterns"
 
 ## Agent Design Principles
 
@@ -176,27 +136,6 @@ Best for: Complex features, large-scale refactoring.
 
 See [references/orchestration-patterns.md](references/orchestration-patterns.md) for detailed patterns.
 
-## What Would You Like To Do?
-
-### Create a New Agent
-
-- **[Read-only agent](workflows/create-read-only-agent.md)** - Reviewers, analyzers, auditors
-- **[Code writer agent](workflows/create-code-writer-agent.md)** - Implementers, fixers, generators
-- **[Research agent](workflows/create-research-agent.md)** - Documentation and web researchers
-
-### Use Templates
-
-Ready-to-use templates you can customize:
-
-- **[Code reviewer](templates/code-reviewer.md)** - Quality and security review
-- **[Debugger](templates/debugger.md)** - Bug diagnosis and fixing
-- **[Researcher](templates/researcher.md)** - Web and documentation research
-- **[Domain expert](templates/domain-expert.md)** - Specialized domain knowledge
-
-### Improve Existing Agents
-
-- **[Audit an agent](workflows/audit-existing-agent.md)** - Check against best practices
-
 ## Common Anti-Patterns
 
 Avoid these mistakes when creating agents:
@@ -210,6 +149,42 @@ Avoid these mistakes when creating agents:
 | Generic naming | Hard to discover and delegate | Use specific, task-focused names |
 
 See [references/anti-patterns.md](references/anti-patterns.md) for detailed guidance.
+
+## What Would You Like To Do?
+
+1. **Create a new agent** - Step-by-step workflow guides
+2. **Use a template** - Copy and customize ready-made agents
+3. **Audit an existing agent** - Check against best practices
+4. **Learn design patterns** - Understand orchestration and anti-patterns
+
+---
+
+### 1. Create a New Agent
+
+Choose by agent type:
+
+- [Read-only agent](workflows/create-read-only-agent.md) - Reviewers, analyzers, auditors
+- [Code writer agent](workflows/create-code-writer-agent.md) - Implementers, fixers, generators
+- [Research agent](workflows/create-research-agent.md) - Documentation and web researchers
+
+### 2. Use a Template
+
+Ready-to-use agents you can customize:
+
+- [Code reviewer](templates/code-reviewer.md) - Quality and security review
+- [Debugger](templates/debugger.md) - Bug diagnosis and fixing
+- [Researcher](templates/researcher.md) - Web and documentation research
+- [Domain expert](templates/domain-expert.md) - Specialized domain expertise
+
+### 3. Audit an Existing Agent
+
+- [Audit workflow](workflows/audit-existing-agent.md) - Checklist and improvement process
+
+### 4. Learn Design Patterns
+
+- [Orchestration patterns](references/orchestration-patterns.md) - Fan-out, pipeline, orchestrator-worker
+- [Tool permissions](references/tool-permissions.md) - Selecting tools by role
+- [Anti-patterns](references/anti-patterns.md) - Common mistakes to avoid
 
 ## Testing Your Agent
 
