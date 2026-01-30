@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-01-30
+
+### Added
+- **creating-agents** - Comprehensive skill for designing and implementing Claude Code subagents (14 files)
+  - SKILL.md main entry point with quick start, core concepts, and design principles (~280 lines)
+  - **References:**
+    - `official-spec.md` - Complete YAML frontmatter specification
+    - `orchestration-patterns.md` - Fan-out, pipeline, and orchestrator-worker patterns
+    - `tool-permissions.md` - Tool selection guidance by agent role
+    - `anti-patterns.md` - Common mistakes and how to avoid them
+  - **Workflows:**
+    - `create-read-only-agent.md` - Guide for reviewers, analyzers, auditors
+    - `create-code-writer-agent.md` - Guide for implementers, fixers, generators
+    - `create-research-agent.md` - Guide for documentation and web researchers
+    - `audit-existing-agent.md` - Checklist for improving existing agents
+  - **Templates:**
+    - `code-reviewer.md` - Ready-to-use code review agent
+    - `debugger.md` - Bug diagnosis and fixing agent
+    - `researcher.md` - Documentation research agent
+    - `domain-expert.md` - Customizable domain expert template
+  - **Examples:**
+    - `real-world-agents.md` - Battle-tested agent configurations
+
+### Research Sources
+- [Official Claude Code Docs](https://code.claude.com/docs/en/sub-agents)
+- [Anthropic Engineering: Multi-Agent Research](https://www.anthropic.com/engineering/multi-agent-research-system)
+- [Claude Agent SDK Blog](https://claude.com/blog/building-agents-with-the-claude-agent-sdk)
+- [VoltAgent Subagent Collection](https://github.com/VoltAgent/awesome-claude-code-subagents)
+- Industry best practices for agentic AI 2025-2026
+
 ## [0.3.2] - 2026-01-30
 
 ### Changed
