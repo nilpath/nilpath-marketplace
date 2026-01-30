@@ -4,42 +4,52 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.2.0
+0.3.0
 
 ## Components
 
-### Skills (2)
+### Skills (4)
 
 | Skill | Description |
 |-------|-------------|
 | **create-agent-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
-| **managing-git** | Comprehensive git workflow management including commits, stacked PRs, and conflict resolution |
+| **git-commits** | Git commit best practices and message formatting guidelines |
+| **git-stacked-prs** | Stacked (dependent) pull request workflow and management |
+| **git-advanced** | Advanced git operations, analysis tools, recovery, and command reference |
 
-### managing-git Skill Structure
+### Skill Details
 
-- **Main file**: SKILL.md
-- **Workflows**: 3 workflow files
-  - create-stacked-prs.md
-  - update-stack-after-merge.md
-  - recover-from-rebase.md
-- **References**: 4 reference files
-  - commit-guidelines.md
-  - stacked-prs.md
-  - advanced-operations.md
-  - common-commands.md
-- **Templates**: 2 template files
-  - commit-message.txt
-  - pr-description.md
+**create-agent-skills**
+- Expert guidance for authoring Claude Code Skills
+- References: 10+ reference files covering best practices
+- Workflows: Multiple workflow files for skill creation
+- Templates: Skill templates for quick starts
 
-### create-agent-skills Skill Structure
+**git-commits** (241 lines)
+- Commit best practices and conventional commits format
+- References: commit-guidelines.md
+- Templates: commit-message.txt
 
-- **Main file**: SKILL.md
-- **References**: 10+ reference files covering skill authoring best practices
-- **Workflows**: Multiple workflow files for skill creation and management
-- **Templates**: Skill templates for quick starts
+**git-stacked-prs** (311 lines)
+- Stacked PR creation, management, and troubleshooting
+- References: stacked-prs.md
+- Workflows: create-stacked-prs.md, update-stack-after-merge.md, recover-from-rebase.md
+- Templates: pr-description.md
+
+**git-advanced** (350 lines)
+- Interactive rebase, cherry-pick, reflog, stash, reset, clean, bisect
+- History analysis: blame, search, bisect
+- Recovery: lost commits, deleted branches, undo reset
+- References: advanced-operations.md, common-commands.md
 
 ## Credits
 
 Inspired by:
 - [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin)
 - [Anthropic Agent Skills Documentation](https://code.claude.com/docs/en/skills)
+
+### Source Skills
+
+| Skill | Source |
+|-------|--------|
+| create-agent-skills | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |

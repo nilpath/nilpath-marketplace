@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-30
+
+### Added
+- **git-commits** - Commit best practices and message formatting guidelines (241 lines)
+- **git-stacked-prs** - Stacked PR workflow and management (311 lines)
+- **git-advanced** - Advanced operations, analysis tools, and command reference (350 lines)
+
+### Removed
+- **managing-git** skill (replaced by three focused skills above)
+
+### Changed
+- Split comprehensive managing-git skill into three focused skills for better usability and maintainability
+- Each new skill follows progressive disclosure pattern with SKILL.md < 500 lines
+- Improved skill discoverability with specific, targeted descriptions and trigger keywords
+
 ## [0.2.0] - 2026-01-29
 
 ### Added
