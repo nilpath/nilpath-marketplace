@@ -4,7 +4,7 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.4.0
+0.5.0
 
 ## Components
 
@@ -12,23 +12,26 @@ A collection of Agents and Skills for coding with Claude.
 
 | Agent | Description |
 |-------|-------------|
-| **code-reviewer** | Expert code reviewer for quality, security, and best practices across multiple languages |
+| **code-reviewer** | Expert code reviewer for quality, security, and best practices. Can add line comments to GitHub PRs. |
 
 ### Agent Details
 
 **code-reviewer**
 - Comprehensive review checklist: code quality, error handling, security, performance, testing, architecture, documentation
 - Structured output with file:line references for all issues
+- **GitHub PR integration**: Creates pending reviews with line-specific comments
 - Proactive invocation after code changes
-- Tools: Read, Glob, Grep (strictly read-only)
+- Tools: Read, Glob, Grep, Bash (restricted to gh/git via skill)
+- Skills: gh-pr-review
 - Model: sonnet
 
-### Skills (5)
+### Skills (6)
 
 | Skill | Description |
 |-------|-------------|
 | **creating-agents** | Expert guidance for designing and implementing Claude Code subagents |
 | **create-agent-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
+| **gh-pr-review** | GitHub PR review operations: create pending reviews with line comments, submit reviews |
 | **git-commits** | Git commit best practices and message formatting guidelines |
 | **git-stacked-prs** | Stacked (dependent) pull request workflow and management |
 | **git-advanced** | Advanced git operations, analysis tools, recovery, and command reference |
@@ -48,6 +51,15 @@ A collection of Agents and Skills for coding with Claude.
 - References: 10+ reference files covering best practices
 - Workflows: Multiple workflow files for skill creation
 - Templates: Skill templates for quick starts
+
+**gh-pr-review**
+- GitHub PR review operations via gh CLI
+- **Scripts**: 3 automation scripts
+  - `pr-info.sh` - Get PR context (number, repo, diff files)
+  - `create-review.sh` - Create pending review with line comments
+  - `submit-review.sh` - Submit pending review (approve/reject/comment)
+- References: api-reference.md with GitHub API details
+- Creates PENDING reviews so user can edit before submitting
 
 **git-commits** (241 lines)
 - Commit best practices and conventional commits format
