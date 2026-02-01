@@ -52,6 +52,11 @@ REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null) || {
     error_json "Could not determine repository" "REPO_ERROR"
 }
 
+# Validate repository format
+if ! [[ "$REPO" =~ ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$ ]]; then
+    error_json "Invalid repository format: $REPO" "INVALID_REPO"
+fi
+
 # Get files in the PR diff to validate comment paths
 DIFF_FILES=$(gh pr diff "$PR_NUMBER" --name-only 2>/dev/null) || {
     error_json "Could not get PR diff for #$PR_NUMBER" "DIFF_ERROR"
