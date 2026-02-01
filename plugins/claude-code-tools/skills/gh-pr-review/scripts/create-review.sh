@@ -66,6 +66,17 @@ VALID_COMMENTS=$(echo "$COMMENTS" | jq -c --arg diff_files "$DIFF_FILES" '
 VALID_COUNT=$(echo "$VALID_COMMENTS" | jq 'length')
 SKIPPED_COUNT=$((COMMENT_COUNT - VALID_COUNT))
 
+# Log skipped paths to stderr
+if [ "$SKIPPED_COUNT" -gt 0 ]; then
+    SKIPPED_PATHS=$(echo "$COMMENTS" | jq -r --argjson valid "$VALID_COMMENTS" '
+        [.[].path] - [$valid[].path] | unique | .[]
+    ')
+    echo "Warning: Skipped $SKIPPED_COUNT comment(s) for files not in PR diff:" >&2
+    echo "$SKIPPED_PATHS" | while read -r path; do
+        echo "  - $path" >&2
+    done
+fi
+
 if [ "$VALID_COUNT" -eq 0 ]; then
     error_json "None of the comment paths are in the PR diff" "NO_VALID_COMMENTS"
 fi

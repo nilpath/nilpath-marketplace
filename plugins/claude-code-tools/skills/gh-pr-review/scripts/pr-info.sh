@@ -54,7 +54,7 @@ PR_DATA=$(gh pr view "$PR_NUMBER" --json number,url,headRepository 2>/dev/null) 
 REPO=$(echo "$PR_DATA" | jq -r '.headRepository.owner.login + "/" + .headRepository.name')
 
 # If headRepository is null, try to get from current repo
-if [ "$REPO" = "null/null" ] || [ "$REPO" = "/" ]; then
+if [[ "$REPO" =~ ^(null/null|/)$ ]] || [ -z "$REPO" ]; then
     REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null) || {
         error_json "Could not determine repository" "REPO_ERROR"
     }
