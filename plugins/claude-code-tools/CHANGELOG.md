@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-02-01
+
+### Added
+
+- **gh-pr-review skill** - GitHub PR review operations via gh CLI
+  - `pr-info.sh` - Get PR context (number, repo, diff files)
+  - `create-review.sh` - Create pending review with line comments
+  - `submit-review.sh` - Submit pending review (approve/reject/comment)
+  - `references/api-reference.md` - GitHub API documentation
+
+### Changed
+
+- **code-reviewer agent** - Enhanced with GitHub PR line comments capability
+  - Added Bash tool access (restricted to gh/git commands via skill)
+  - Loads gh-pr-review skill for PR operations
+  - Creates PENDING reviews so user can edit before submitting
+  - Only adds Critical Issues and Warnings as PR comments (not Suggestions)
+  - Always outputs markdown summary alongside PR comments
+
 ## [0.4.1] - 2026-01-30
 
 ### Changed
