@@ -4,7 +4,7 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.5.0
+0.5.1
 
 ## Components
 
@@ -25,12 +25,13 @@ A collection of Agents and Skills for coding with Claude.
 - Skills: gh-pr-review
 - Model: sonnet
 
-### Skills (6)
+### Skills (7)
 
 | Skill | Description |
 |-------|-------------|
 | **creating-agents** | Expert guidance for designing and implementing Claude Code subagents |
 | **create-agent-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
+| **creating-mermaid-diagrams** | Create, edit, and validate Mermaid diagrams (flowcharts, sequence, class, ER, etc.) |
 | **gh-pr-review** | GitHub PR review operations: create pending reviews with line comments, submit reviews |
 | **git-commits** | Git commit best practices and message formatting guidelines |
 | **git-stacked-prs** | Stacked (dependent) pull request workflow and management |
@@ -51,6 +52,16 @@ A collection of Agents and Skills for coding with Claude.
 - References: 10+ reference files covering best practices
 - Workflows: Multiple workflow files for skill creation
 - Templates: Skill templates for quick starts
+
+**creating-mermaid-diagrams**
+- Create, edit, and validate all Mermaid diagram types
+- **References**: 12 quick reference files (~50 lines each)
+  - Flowchart, Sequence, Class, State, ER, Gantt, Pie, Mindmap, Timeline, Git Graph
+  - Styling/themes, common patterns
+- **Templates**: 5 starter templates (flowchart, sequence, class, architecture, ER)
+- **Workflows**: create-diagram.md, edit-diagram.md, validate-diagram.md
+- **Scripts**: `validate-mermaid.sh` - Syntax validation via mermaid-cli
+- Progressive disclosure: Links to official Mermaid docs for advanced features
 
 **gh-pr-review**
 - GitHub PR review operations via gh CLI

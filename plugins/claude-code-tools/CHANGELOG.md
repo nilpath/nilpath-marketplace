@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-02-01
+
+### Added
+
+- **creating-mermaid-diagrams skill** - Create, edit, and validate Mermaid diagrams
+  - Support for all diagram types: flowchart, sequence, class, state, ER, Gantt, pie, mindmap, timeline, git graph
+  - **References**: 12 quick reference files (~50 lines each) with progressive disclosure to official docs
+  - **Templates**: 5 starter templates (flowchart, sequence-diagram, class-diagram, architecture-diagram, er-diagram)
+  - **Workflows**: create-diagram.md, edit-diagram.md, validate-diagram.md
+  - **Scripts**: `validate-mermaid.sh` - Syntax validation via `npx @mermaid-js/mermaid-cli`
+  - Styling and theming reference
+  - Common patterns and anti-patterns guide
+
 ## [0.5.0] - 2026-02-01
 
 ### Added
