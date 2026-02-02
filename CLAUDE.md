@@ -72,19 +72,13 @@ Skills use kebab-case directories with standard subdirectories:
 
 ### Add a Skill
 
-Run `/create-skill` for guided creation, or:
-
-1. Create `plugins/claude-code-tools/skills/<name>/SKILL.md`
-2. Add `references/`, `templates/`, `workflows/` as needed
-3. Update 4 files (see [Version Sync](#version-sync))
+1. Run `/create-skill` for guided creation.
+2. Update 4 files (see [Version Sync](#version-sync))
 
 ### Add an Agent
 
-Run `/create-agent` for guided creation, or:
-
-1. Create `plugins/claude-code-tools/agents/<category>/<name>.md`
-2. Choose category: `review/`, `research/`, or `implementation/`
-3. Update 4 files (see [Version Sync](#version-sync))
+1. Run `/create-agent` for guided creation.
+2. Update 4 files (see [Version Sync](#version-sync))
 
 ### Add a Command
 
