@@ -146,9 +146,15 @@ while true; do
           + (if $reviewsCursor != "" then {reviewsCursor: $reviewsCursor} else {} end)
           + (if $threadsCursor != "" then {threadsCursor: $threadsCursor} else {} end)')
 
+    # Build complete GraphQL request payload
+    PAYLOAD=$(jq -n \
+        --arg query "$QUERY" \
+        --argjson variables "$VARIABLES" \
+        '{query: $query, variables: $variables}')
+
     # Execute GraphQL query
-    RESPONSE=$(gh api graphql -f query="$QUERY" --input - <<< "$VARIABLES" 2>/dev/null) || {
-        error_json "GitHub API error" "API_ERROR"
+    RESPONSE=$(gh api graphql --input - <<< "$PAYLOAD" 2>&1) || {
+        error_json "GitHub API error: $RESPONSE" "API_ERROR"
     }
 
     # Check for GraphQL errors
@@ -159,11 +165,16 @@ while true; do
 
     PR_RESPONSE=$(echo "$RESPONSE" | jq '.data.repository.pullRequest')
 
+    # Check if PR response is null (PR not found or not accessible)
+    if [ "$PR_RESPONSE" = "null" ]; then
+        error_json "PR #$PR_NUMBER not found or not accessible" "PR_NOT_FOUND"
+    fi
+
     # Aggregate comments
     NEW_COMMENTS=$(echo "$PR_RESPONSE" | jq '[.comments.nodes[] | {
         id: .id,
         body: .body,
-        author: .author.login,
+        author: (.author.login // "unknown"),
         createdAt: .createdAt,
         updatedAt: .updatedAt
     }]')
@@ -174,7 +185,7 @@ while true; do
         id: .id,
         state: .state,
         body: .body,
-        author: .author.login,
+        author: (.author.login // "unknown"),
         submittedAt: .submittedAt
     }]')
     ALL_REVIEWS=$(echo "$ALL_REVIEWS $NEW_REVIEWS" | jq -s 'add')
@@ -188,11 +199,11 @@ while true; do
         line: .line,
         startLine: .startLine,
         diffSide: .diffSide,
-        resolvedBy: .resolvedBy.login,
+        resolvedBy: (.resolvedBy.login // null),
         comments: [.comments.nodes[] | {
             id: .id,
             body: .body,
-            author: .author.login,
+            author: (.author.login // "unknown"),
             createdAt: .createdAt,
             updatedAt: .updatedAt
         }]
