@@ -4,7 +4,7 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.5.1
+0.5.2
 
 ## Components
 
@@ -25,7 +25,7 @@ A collection of Agents and Skills for coding with Claude.
 - Skills: gh-pr-review
 - Model: sonnet
 
-### Skills (7)
+### Skills (8)
 
 | Skill | Description |
 |-------|-------------|
@@ -33,6 +33,7 @@ A collection of Agents and Skills for coding with Claude.
 | **create-agent-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
 | **creating-mermaid-diagrams** | Create, edit, and validate Mermaid diagrams (flowcharts, sequence, class, ER, etc.) |
 | **gh-pr-review** | GitHub PR review operations: create pending reviews with line comments, submit reviews |
+| **gh-address-comments** | Address review/issue comments on the open GitHub PR for the current branch |
 | **git-commits** | Git commit best practices and message formatting guidelines |
 | **git-stacked-prs** | Stacked (dependent) pull request workflow and management |
 | **git-advanced** | Advanced git operations, analysis tools, recovery, and command reference |
@@ -72,6 +73,13 @@ A collection of Agents and Skills for coding with Claude.
 - References: api-reference.md with GitHub API details
 - Creates PENDING reviews so user can edit before submitting
 
+**gh-address-comments**
+- Address review/issue comments on open PR for current branch
+- Complements gh-pr-review (creating reviews) with responding to reviews
+- **Scripts**: `fetch-comments.sh` - Fetch all PR comments via GitHub GraphQL API
+- Workflow: Fetch comments → Summarize actionable items → Apply fixes
+- Fetches: conversation comments, reviews, inline review threads (with resolved/outdated state)
+
 **git-commits** (241 lines)
 - Commit best practices and conventional commits format
 - References: commit-guidelines.md
@@ -105,6 +113,7 @@ Inspired by:
 | Skill | Source |
 |-------|--------|
 | create-agent-skills | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |
+| gh-address-comments | [openai/skills](https://github.com/openai/skills/tree/main/skills/.curated/gh-address-comments) |
 
 ### Sourced Commands
 
