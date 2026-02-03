@@ -5,7 +5,7 @@
 #
 # Adapted from: https://github.com/openai/skills/tree/main/skills/.curated/gh-address-comments
 
-set -e
+set -euo pipefail
 
 error_json() {
     echo "{\"error\":true,\"message\":\"$1\",\"code\":\"$2\"}"

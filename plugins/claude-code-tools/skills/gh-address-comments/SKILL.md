@@ -72,7 +72,7 @@ Fetches all PR comments using GitHub GraphQL API.
 **Usage:**
 
 ```bash
-./fetch-comments.sh [PR_NUMBER]
+${SKILL_DIR}/scripts/fetch-comments.sh [PR_NUMBER]
 ```
 
 **Output:**
