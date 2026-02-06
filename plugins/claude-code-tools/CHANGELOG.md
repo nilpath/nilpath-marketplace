@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **gh-pr-review skill** - GitHub Enterprise support
   - Scripts now dynamically fetch PR URL via `gh pr view` instead of hardcoding `github.com`
   - Updated `create-review.sh` and `submit-review.sh` to work with any GitHub instance
-  - Fallback to github.com URL construction if PR lookup fails
+  - Fallback to github.com URL construction if PR URL fetch fails
 
 ## [0.5.2] - 2026-02-03
 

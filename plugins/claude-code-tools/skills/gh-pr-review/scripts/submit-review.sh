@@ -81,7 +81,8 @@ REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null) || {
 
 # Get PR base URL (works for GitHub Enterprise)
 PR_URL=$(gh pr view "$PR_NUMBER" --json url -q '.url' 2>/dev/null) || {
-    # Fallback to constructing URL (may be incorrect for GHE)
+    # Fallback: construct URL (may be incorrect for GitHub Enterprise)
+    echo "Warning: Could not fetch PR URL, constructing github.com URL as fallback" >&2
     PR_URL="https://github.com/$REPO/pull/$PR_NUMBER"
 }
 
