@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2026-02-06
+
+### Fixed
+
+- **gh-pr-review skill** - Complete GitHub Enterprise repository path fix
+  - `pr-info.sh` now uses `nameWithOwner` as primary source for repo path
+  - Falls back to `owner.login + "/" + name` only if `nameWithOwner` is unavailable
+  - Improved regex validation catches malformed paths like `/reponame` or `null/reponame`
+  - Fixes 404 errors when creating PR review comments on GitHub Enterprise
+
 ## [0.5.3] - 2026-02-06
 
 ### Fixed
