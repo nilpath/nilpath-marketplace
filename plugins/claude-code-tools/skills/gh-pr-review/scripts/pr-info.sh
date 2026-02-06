@@ -50,11 +50,19 @@ PR_DATA=$(gh pr view "$PR_NUMBER" --json number,url,headRepository 2>/dev/null) 
     error_json "PR #$PR_NUMBER not found" "PR_NOT_FOUND"
 }
 
-# Get repo in owner/repo format
-REPO=$(echo "$PR_DATA" | jq -r '.headRepository.owner.login + "/" + .headRepository.name')
+# Get repo in owner/repo format - prefer nameWithOwner for GitHub Enterprise compatibility
+REPO=$(echo "$PR_DATA" | jq -r '
+  if .headRepository.nameWithOwner != null and .headRepository.nameWithOwner != "" then
+    .headRepository.nameWithOwner
+  elif .headRepository.owner.login != null then
+    .headRepository.owner.login + "/" + .headRepository.name
+  else
+    null
+  end
+')
 
-# If headRepository is null, try to get from current repo
-if [ -z "$REPO" ] || [ "$REPO" = "null/null" ] || [ "$REPO" = "/" ]; then
+# Validate repo format and fallback if needed
+if [ -z "$REPO" ] || [ "$REPO" = "null" ] || ! [[ "$REPO" =~ ^[^/]+/.+$ ]]; then
     REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null) || {
         error_json "Could not determine repository" "REPO_ERROR"
     }
