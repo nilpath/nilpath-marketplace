@@ -52,6 +52,12 @@ REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null) || {
     error_json "Could not determine repository" "REPO_ERROR"
 }
 
+# Get PR base URL (works for GitHub Enterprise)
+PR_URL=$(gh pr view "$PR_NUMBER" --json url -q '.url' 2>/dev/null) || {
+    # Fallback to constructing URL (may be incorrect for GHE)
+    PR_URL="https://github.com/$REPO/pull/$PR_NUMBER"
+}
+
 # Validate repository format
 if ! [[ "$REPO" =~ ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$ ]]; then
     error_json "Invalid repository format: $REPO" "INVALID_REPO"
@@ -111,7 +117,7 @@ fi
 # Build output
 jq -n \
     --argjson review_id "$REVIEW_ID" \
-    --arg url "https://github.com/$REPO/pull/$PR_NUMBER#pullrequestreview-$REVIEW_ID" \
+    --arg url "$PR_URL#pullrequestreview-$REVIEW_ID" \
     --argjson comment_count "$VALID_COUNT" \
     --argjson skipped_count "$SKIPPED_COUNT" \
     '{

@@ -79,6 +79,12 @@ REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null) || {
     error_json "Could not determine repository" "REPO_ERROR"
 }
 
+# Get PR base URL (works for GitHub Enterprise)
+PR_URL=$(gh pr view "$PR_NUMBER" --json url -q '.url' 2>/dev/null) || {
+    # Fallback to constructing URL (may be incorrect for GHE)
+    PR_URL="https://github.com/$REPO/pull/$PR_NUMBER"
+}
+
 # Build API request body
 if [ -n "$BODY" ]; then
     API_BODY=$(jq -n --arg event "$EVENT" --arg body "$BODY" '{event: $event, body: $body}')
@@ -103,7 +109,7 @@ fi
 
 # Build output
 jq -n \
-    --arg url "https://github.com/$REPO/pull/$PR_NUMBER#pullrequestreview-$REVIEW_ID" \
+    --arg url "$PR_URL#pullrequestreview-$REVIEW_ID" \
     --arg event "$EVENT" \
     --arg submitted_at "$SUBMITTED_AT" \
     '{
