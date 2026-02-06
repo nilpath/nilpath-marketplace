@@ -14,6 +14,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated `create-review.sh` and `submit-review.sh` to work with any GitHub instance
   - Fallback to github.com URL construction if PR URL fetch fails
 
+- **gh-pr-review skill** - Line positioning for PR review comments
+  - Added `side` field defaulting to `RIGHT` for comments on additions/modifications
+  - Added support for multi-line comments via `start_line` and `start_side`
+  - Updated documentation with positioning rules and examples
+
+### Added
+
+- **gh-address-comments skill** - Reply to review threads
+  - New script: `reply-to-thread.sh` - Reply to PR review threads via GraphQL
+  - Updated workflow with Step 5 for acknowledging addressed comments
+  - Enables closing the feedback loop after fixing issues
+
 ## [0.5.2] - 2026-02-03
 
 ### Added

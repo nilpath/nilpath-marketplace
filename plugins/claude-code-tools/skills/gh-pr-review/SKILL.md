@@ -62,11 +62,31 @@ echo '$JSON' | ${SKILL_DIR}/scripts/create-review.sh
     {
       "path": "src/app.ts",
       "line": 42,
-      "body": "**Critical:** Missing null check\n\n**Why:** Can cause runtime error\n\n**Fix:** Add `if (value != null)`"
+      "body": "**Critical:** Missing null check"
+    },
+    {
+      "path": "src/utils.ts",
+      "start_line": 15,
+      "line": 20,
+      "body": "**Suggestion:** Extract this block to a helper function"
     }
   ]
 }
 ```
+
+**Comment Fields:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `path` | Yes | Relative file path in the repository |
+| `line` | Yes | Line number (end line for multi-line comments) |
+| `body` | Yes | Comment text (markdown supported) |
+| `side` | No | `RIGHT` (additions/context, default) or `LEFT` (deletions) |
+| `start_line` | No | First line for multi-line comments (must be < `line`) |
+| `start_side` | No | Side for start_line (defaults to match `side`) |
+
+**Single-line comment:** Use `path`, `line`, `body`
+**Multi-line comment:** Add `start_line` (and optionally `start_side`)
 
 **Output:**
 ```json

@@ -46,12 +46,31 @@ POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/events
 |-------|----------|-------------|
 | `path` | Yes | Relative file path in the repository |
 | `body` | Yes | The comment text (markdown supported) |
-| `line` | Yes* | Line number in the file (for single-line comment) |
-| `start_line` | No | First line for multi-line comments |
-| `side` | No | `LEFT` (deletions) or `RIGHT` (additions/context) |
-| `start_side` | No | Side for start_line in multi-line comments |
+| `line` | Yes* | Line number in the NEW file (end line for multi-line) |
+| `side` | Recommended | `RIGHT` (additions/context) or `LEFT` (deletions). **Default: RIGHT** |
+| `start_line` | No | First line for multi-line comments (must be < `line`) |
+| `start_side` | No | Side for start_line (defaults to match `side`) |
 
 *Either `line` or `position` is required. We use `line` for simplicity.
+
+### Line Positioning Rules
+
+1. **Single-line on new/modified code**: `{path, line, body}` - side defaults to RIGHT
+2. **Single-line on deleted code**: `{path, line, side: "LEFT", body}`
+3. **Multi-line range**: `{path, start_line, line, body}` - covers start_line to line
+4. **Multi-line across sides**: `{path, start_line, start_side: "LEFT", line, side: "RIGHT", body}`
+
+### Example: Multi-line Comment
+
+```json
+{
+  "path": "src/app.ts",
+  "start_line": 15,
+  "line": 20,
+  "side": "RIGHT",
+  "body": "Consider extracting this logic into a separate function"
+}
+```
 
 ## Review Events
 

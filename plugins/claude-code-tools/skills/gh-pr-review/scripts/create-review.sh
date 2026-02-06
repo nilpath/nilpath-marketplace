@@ -2,6 +2,9 @@
 # create-review.sh - Create a pending PR review with line comments
 # Usage: echo '$JSON' | ./create-review.sh
 # Input: {"pr_number":123,"summary":"...","comments":[{"path":"file.ts","line":42,"body":"..."}]}
+#        Comments support: path, line, body (required), side, start_line, start_side (optional)
+#        - side: "RIGHT" (additions, default) or "LEFT" (deletions)
+#        - start_line/start_side: For multi-line comments (start_line < line)
 # Output: {"review_id":N,"url":"...","comment_count":N,"status":"PENDING"}
 
 set -e
@@ -69,10 +72,18 @@ DIFF_FILES=$(gh pr diff "$PR_NUMBER" --name-only 2>/dev/null) || {
     error_json "Could not get PR diff for #$PR_NUMBER" "DIFF_ERROR"
 }
 
-# Filter comments to only include files in the diff
+# Filter comments to only include files in the diff, add defaults for positioning
 VALID_COMMENTS=$(echo "$COMMENTS" | jq -c --arg diff_files "$DIFF_FILES" '
     ($diff_files | split("\n") | map(select(length > 0))) as $files |
-    map(select(.path as $p | $files | any(. == $p)))
+    map(select(.path as $p | $files | any(. == $p))) |
+    map(
+        # Default side to RIGHT (additions/modifications) if not specified
+        (if .side then . else . + {side: "RIGHT"} end) |
+        # If start_line exists, add start_side defaulting to match side
+        (if .start_line then
+            (if .start_side then . else . + {start_side: .side} end)
+        else . end)
+    )
 ')
 
 VALID_COUNT=$(echo "$VALID_COMMENTS" | jq 'length')

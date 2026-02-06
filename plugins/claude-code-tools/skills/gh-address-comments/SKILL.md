@@ -16,6 +16,9 @@ ${SKILL_DIR}/scripts/fetch-comments.sh
 
 # Fetch comments for specific PR
 ${SKILL_DIR}/scripts/fetch-comments.sh 123
+
+# Reply to a review thread after fixing
+${SKILL_DIR}/scripts/reply-to-thread.sh "PRRT_threadId" "Fixed in this commit"
 ```
 
 ## Workflow
@@ -62,6 +65,21 @@ For each selected comment:
 1. Read the relevant file
 2. Apply the requested fix
 3. Mark as addressed in summary
+
+### Step 5: Reply to Addressed Comments
+
+After applying fixes, reply to the review threads to acknowledge:
+
+```bash
+# For each addressed thread (use the thread id from fetch-comments.sh)
+${SKILL_DIR}/scripts/reply-to-thread.sh "$THREAD_ID" "Fixed in this commit"
+```
+
+**Suggested reply formats:**
+
+- `"Fixed in commit abc123"` - Reference the fix commit
+- `"Addressed by [description of change]"` - Describe the fix
+- `"Will address in follow-up PR"` - For deferred items
 
 ## Script Documentation
 
@@ -124,6 +142,42 @@ ${SKILL_DIR}/scripts/fetch-comments.sh [PR_NUMBER]
 }
 ```
 
+### reply-to-thread.sh
+
+Reply to a PR review thread after addressing feedback.
+
+**Usage:**
+
+```bash
+${SKILL_DIR}/scripts/reply-to-thread.sh <thread_id> <body>
+```
+
+**Arguments:**
+
+| Argument | Description |
+|----------|-------------|
+| `thread_id` | The review thread ID from `fetch-comments.sh` (e.g., `PRRT_kwDO...`) |
+| `body` | The reply message text |
+
+**Output:**
+
+```json
+{
+  "id": "PRRC_...",
+  "body": "Fixed in commit abc123",
+  "url": "https://github.com/owner/repo/pull/123#discussion_r12345",
+  "author": "your-username",
+  "createdAt": "2024-01-15T10:30:00Z"
+}
+```
+
+**Example:**
+
+```bash
+# After fixing an issue, reply to acknowledge
+${SKILL_DIR}/scripts/reply-to-thread.sh "PRRT_kwDOExample123" "Fixed by adding null check"
+```
+
 ## Error Handling
 
 The script returns JSON errors:
@@ -155,6 +209,8 @@ The script returns JSON errors:
 - For inline comments, show the file path and line number
 - Apply fixes one at a time, verifying each works
 - If a comment is unclear, ask for clarification before fixing
+- After fixing a comment, reply to the thread to acknowledge the fix
+- Use descriptive replies that explain how the issue was resolved
 
 ## Requirements
 

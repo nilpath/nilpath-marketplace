@@ -4,7 +4,7 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.5.2
+0.5.3
 
 ## Components
 
@@ -32,8 +32,8 @@ A collection of Agents and Skills for coding with Claude.
 | **creating-agents** | Expert guidance for designing and implementing Claude Code subagents |
 | **create-agent-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
 | **creating-mermaid-diagrams** | Create, edit, and validate Mermaid diagrams (flowcharts, sequence, class, ER, etc.) |
-| **gh-pr-review** | GitHub PR review operations: create pending reviews with line comments, submit reviews |
-| **gh-address-comments** | Address review/issue comments on the open GitHub PR for the current branch |
+| **gh-pr-review** | GitHub PR review operations: create pending reviews with line comments (single and multi-line), submit reviews |
+| **gh-address-comments** | Address review/issue comments on the open GitHub PR for the current branch, reply to threads after fixing |
 | **git-commits** | Git commit best practices and message formatting guidelines |
 | **git-stacked-prs** | Stacked (dependent) pull request workflow and management |
 | **git-advanced** | Advanced git operations, analysis tools, recovery, and command reference |
@@ -68,16 +68,19 @@ A collection of Agents and Skills for coding with Claude.
 - GitHub PR review operations via gh CLI
 - **Scripts**: 3 automation scripts
   - `pr-info.sh` - Get PR context (number, repo, diff files)
-  - `create-review.sh` - Create pending review with line comments
+  - `create-review.sh` - Create pending review with line comments (single-line and multi-line support)
   - `submit-review.sh` - Submit pending review (approve/reject/comment)
-- References: api-reference.md with GitHub API details
+- References: api-reference.md with GitHub API details and line positioning rules
 - Creates PENDING reviews so user can edit before submitting
+- Supports `side` field (RIGHT/LEFT) and `start_line` for multi-line comments
 
 **gh-address-comments**
 - Address review/issue comments on open PR for current branch
 - Complements gh-pr-review (creating reviews) with responding to reviews
-- **Scripts**: `fetch-comments.sh` - Fetch all PR comments via GitHub GraphQL API
-- Workflow: Fetch comments → Summarize actionable items → Apply fixes
+- **Scripts**:
+  - `fetch-comments.sh` - Fetch all PR comments via GitHub GraphQL API
+  - `reply-to-thread.sh` - Reply to review threads after addressing feedback
+- Workflow: Fetch comments → Summarize actionable items → Apply fixes → Reply to threads
 - Fetches: conversation comments, reviews, inline review threads (with resolved/outdated state)
 
 **git-commits** (241 lines)
