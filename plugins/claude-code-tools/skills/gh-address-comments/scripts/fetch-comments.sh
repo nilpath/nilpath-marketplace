@@ -32,7 +32,7 @@ if ! git rev-parse --is-inside-work-tree &> /dev/null; then
     error_json "Not in a git repository" "NOT_GIT_REPO"
 fi
 
-PR_NUMBER="$1"
+PR_NUMBER="${1:-}"
 
 # If no PR number provided, try to detect from current branch
 if [ -z "$PR_NUMBER" ]; then

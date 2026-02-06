@@ -2,6 +2,9 @@
 # create-review.sh - Create a pending PR review with line comments
 # Usage: echo '$JSON' | ./create-review.sh
 # Input: {"pr_number":123,"summary":"...","comments":[{"path":"file.ts","line":42,"body":"..."}]}
+#        Comments support: path, line, body (required), side, start_line, start_side (optional)
+#        - side: "RIGHT" (additions, default) or "LEFT" (deletions)
+#        - start_line/start_side: For multi-line comments (start_line < line)
 # Output: {"review_id":N,"url":"...","comment_count":N,"status":"PENDING"}
 
 set -e
@@ -52,6 +55,13 @@ REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null) || {
     error_json "Could not determine repository" "REPO_ERROR"
 }
 
+# Get PR base URL (works for GitHub Enterprise)
+PR_URL=$(gh pr view "$PR_NUMBER" --json url -q '.url' 2>/dev/null) || {
+    # Fallback: construct URL (may be incorrect for GitHub Enterprise)
+    echo "Warning: Could not fetch PR URL, constructing github.com URL as fallback" >&2
+    PR_URL="https://github.com/$REPO/pull/$PR_NUMBER"
+}
+
 # Validate repository format
 if ! [[ "$REPO" =~ ^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$ ]]; then
     error_json "Invalid repository format: $REPO" "INVALID_REPO"
@@ -62,10 +72,18 @@ DIFF_FILES=$(gh pr diff "$PR_NUMBER" --name-only 2>/dev/null) || {
     error_json "Could not get PR diff for #$PR_NUMBER" "DIFF_ERROR"
 }
 
-# Filter comments to only include files in the diff
+# Filter comments to only include files in the diff, add defaults for positioning
 VALID_COMMENTS=$(echo "$COMMENTS" | jq -c --arg diff_files "$DIFF_FILES" '
     ($diff_files | split("\n") | map(select(length > 0))) as $files |
-    map(select(.path as $p | $files | any(. == $p)))
+    map(select(.path as $p | $files | any(. == $p))) |
+    map(
+        # Default side to RIGHT (additions/modifications) if not specified
+        (if .side then . else . + {side: "RIGHT"} end) |
+        # If start_line exists, add start_side defaulting to match side
+        (if .start_line then
+            (if .start_side then . else . + {start_side: .side} end)
+        else . end)
+    )
 ')
 
 VALID_COUNT=$(echo "$VALID_COMMENTS" | jq 'length')
@@ -111,7 +129,7 @@ fi
 # Build output
 jq -n \
     --argjson review_id "$REVIEW_ID" \
-    --arg url "https://github.com/$REPO/pull/$PR_NUMBER#pullrequestreview-$REVIEW_ID" \
+    --arg url "$PR_URL#pullrequestreview-$REVIEW_ID" \
     --argjson comment_count "$VALID_COUNT" \
     --argjson skipped_count "$SKIPPED_COUNT" \
     '{
