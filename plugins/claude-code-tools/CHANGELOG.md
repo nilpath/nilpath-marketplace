@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.6] - 2026-03-04
+
+### Fixed
+
+- **gh-address-comments skill** - GitHub Enterprise API hostname fix
+  - `fetch-comments.sh` now detects hostname from git remote and passes `--hostname` to `gh api graphql`
+  - Fixes GraphQL queries defaulting to github.com on GitHub Enterprise repos
+
+- **gh-pr-review skill** - GitHub Enterprise API hostname fix
+  - Added hostname detection from git remote to `create-review.sh` and `submit-review.sh`
+  - `gh api` REST calls now use `--hostname` to target the correct GitHub instance
+  - Fixes 404 errors when creating/submitting reviews on GitHub Enterprise
+
 ## [0.5.5] - 2026-03-04
 
 ### Fixed
