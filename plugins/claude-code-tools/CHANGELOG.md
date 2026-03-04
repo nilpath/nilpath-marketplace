@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.5] - 2026-03-04
+
+### Fixed
+
+- **gh-address-comments skill** - GitHub Enterprise repository path fix
+  - `fetch-comments.sh` now uses `nameWithOwner` as primary source for repo owner/name
+  - Falls back to `owner.login` + `name` only if `nameWithOwner` is unavailable
+  - Fallback to `gh repo view --json nameWithOwner` also uses the same pattern
+  - Fixes GraphQL query failures when fetching PR comments on GitHub Enterprise
+
 ## [0.5.4] - 2026-02-06
 
 ### Fixed

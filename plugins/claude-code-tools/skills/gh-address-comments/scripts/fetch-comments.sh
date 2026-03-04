@@ -48,19 +48,28 @@ PR_DATA=$(gh pr view "$PR_NUMBER" --json number,url,title,state,headRepository 2
     error_json "PR #$PR_NUMBER not found" "PR_NOT_FOUND"
 }
 
-OWNER=$(echo "$PR_DATA" | jq -r '.headRepository.owner.login // empty')
-REPO=$(echo "$PR_DATA" | jq -r '.headRepository.name // empty')
+# Prefer nameWithOwner for GitHub Enterprise compatibility
+NAME_WITH_OWNER=$(echo "$PR_DATA" | jq -r '.headRepository.nameWithOwner // empty')
+
+if [ -n "$NAME_WITH_OWNER" ] && [[ "$NAME_WITH_OWNER" =~ ^[^/]+/.+$ ]]; then
+    OWNER="${NAME_WITH_OWNER%%/*}"
+    REPO="${NAME_WITH_OWNER#*/}"
+else
+    OWNER=$(echo "$PR_DATA" | jq -r '.headRepository.owner.login // empty')
+    REPO=$(echo "$PR_DATA" | jq -r '.headRepository.name // empty')
+fi
+
 TITLE=$(echo "$PR_DATA" | jq -r '.title')
 STATE=$(echo "$PR_DATA" | jq -r '.state')
 URL=$(echo "$PR_DATA" | jq -r '.url')
 
 # Fallback for owner/repo if headRepository is null
 if [ -z "$OWNER" ] || [ -z "$REPO" ]; then
-    REPO_INFO=$(gh repo view --json owner,name 2>/dev/null) || {
+    REPO_NWO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null) || {
         error_json "Could not determine repository" "REPO_ERROR"
     }
-    OWNER=$(echo "$REPO_INFO" | jq -r '.owner.login')
-    REPO=$(echo "$REPO_INFO" | jq -r '.name')
+    OWNER="${REPO_NWO%%/*}"
+    REPO="${REPO_NWO#*/}"
 fi
 
 # GraphQL query for fetching PR comments
