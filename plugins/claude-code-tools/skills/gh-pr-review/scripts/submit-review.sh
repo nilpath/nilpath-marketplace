@@ -46,6 +46,16 @@ if ! command -v jq &> /dev/null; then
     error_json "jq not installed" "JQ_NOT_INSTALLED"
 fi
 
+# Detect GitHub hostname from git remote for API calls (gh api defaults to github.com)
+REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+if [[ "$REMOTE_URL" =~ ^https?://([^/]+) ]]; then
+    GH_HOST="${BASH_REMATCH[1]}"
+elif [[ "$REMOTE_URL" =~ ^git@([^:]+): ]]; then
+    GH_HOST="${BASH_REMATCH[1]}"
+else
+    GH_HOST="github.com"
+fi
+
 # Parse arguments
 PR_NUMBER="$1"
 REVIEW_ID="$2"
@@ -95,6 +105,7 @@ fi
 
 # Submit the review via GitHub API
 RESPONSE=$(echo "$API_BODY" | gh api "repos/$REPO/pulls/$PR_NUMBER/reviews/$REVIEW_ID/events" \
+    --hostname "$GH_HOST" \
     --method POST \
     --input - \
     2>&1) || {

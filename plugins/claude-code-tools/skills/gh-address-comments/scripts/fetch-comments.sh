@@ -32,6 +32,16 @@ if ! git rev-parse --is-inside-work-tree &> /dev/null; then
     error_json "Not in a git repository" "NOT_GIT_REPO"
 fi
 
+# Detect GitHub hostname from git remote for API calls (gh api defaults to github.com)
+REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+if [[ "$REMOTE_URL" =~ ^https?://([^/]+) ]]; then
+    GH_HOST="${BASH_REMATCH[1]}"
+elif [[ "$REMOTE_URL" =~ ^git@([^:]+): ]]; then
+    GH_HOST="${BASH_REMATCH[1]}"
+else
+    GH_HOST="github.com"
+fi
+
 PR_NUMBER="${1:-}"
 
 # If no PR number provided, try to detect from current branch
@@ -161,8 +171,8 @@ while true; do
         --argjson variables "$VARIABLES" \
         '{query: $query, variables: $variables}')
 
-    # Execute GraphQL query
-    RESPONSE=$(gh api graphql --input - <<< "$PAYLOAD" 2>&1) || {
+    # Execute GraphQL query (--hostname ensures correct API endpoint for GitHub Enterprise)
+    RESPONSE=$(gh api graphql --hostname "$GH_HOST" --input - <<< "$PAYLOAD" 2>&1) || {
         error_json "GitHub API error: $RESPONSE" "API_ERROR"
     }
 
@@ -226,19 +236,19 @@ while true; do
 
     # Update cursors if there are more pages
     if [ "$COMMENTS_HAS_NEXT" = "true" ]; then
-        COMMENTS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.comments.pageInfo.endCursor')
+        COMMENTS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.comments.pageInfo.endCursor // empty')
     else
         COMMENTS_CURSOR=""
     fi
 
     if [ "$REVIEWS_HAS_NEXT" = "true" ]; then
-        REVIEWS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.reviews.pageInfo.endCursor')
+        REVIEWS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.reviews.pageInfo.endCursor // empty')
     else
         REVIEWS_CURSOR=""
     fi
 
     if [ "$THREADS_HAS_NEXT" = "true" ]; then
-        THREADS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.reviewThreads.pageInfo.endCursor')
+        THREADS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.reviewThreads.pageInfo.endCursor // empty')
     else
         THREADS_CURSOR=""
     fi
