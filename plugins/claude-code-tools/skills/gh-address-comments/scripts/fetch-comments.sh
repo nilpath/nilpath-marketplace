@@ -236,19 +236,19 @@ while true; do
 
     # Update cursors if there are more pages
     if [ "$COMMENTS_HAS_NEXT" = "true" ]; then
-        COMMENTS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.comments.pageInfo.endCursor')
+        COMMENTS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.comments.pageInfo.endCursor // empty')
     else
         COMMENTS_CURSOR=""
     fi
 
     if [ "$REVIEWS_HAS_NEXT" = "true" ]; then
-        REVIEWS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.reviews.pageInfo.endCursor')
+        REVIEWS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.reviews.pageInfo.endCursor // empty')
     else
         REVIEWS_CURSOR=""
     fi
 
     if [ "$THREADS_HAS_NEXT" = "true" ]; then
-        THREADS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.reviewThreads.pageInfo.endCursor')
+        THREADS_CURSOR=$(echo "$PR_RESPONSE" | jq -r '.reviewThreads.pageInfo.endCursor // empty')
     else
         THREADS_CURSOR=""
     fi
