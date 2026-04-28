@@ -5,10 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.7] - 2026-04-28
+## [Unreleased]
+
+## [0.5.7] - 2026-04-29
+
+### Added
+
+- **spec-reviewer agent** - New read-only agent (`model: haiku`) that reviews design specifications for completeness, internal consistency, and scope adherence. Used by the `researching` skill after writing `design.md`.
+- **docs-library-researcher agent** - Researches external documentation, libraries, and frameworks. Checks project dependencies, looks up official docs via context7, notes best practices and limitations.
+- **api-integration-researcher agent** - Researches external APIs, authentication, data formats, rate limits, and existing integration patterns in the codebase.
+- **architecture-researcher agent** - Analyzes project architecture, design patterns, and structural impact; identifies reference implementations for significant architectural decisions.
+- **researching skill** - Research-first workflow that guides from problem exploration through design spec to implementation handoff. Includes mermaid process flow, agent orchestration guidance, design spec template, and spec self-review step.
+- **engineering-principles skill** - Referenced by the `researching` skill for structural and design trade-off decisions.
 
 ### Changed
 
+- **README** - Added all 5 agents to the agents table and details section (previously only `code-reviewer` was listed).
 - **creating-skills skill** - Renamed from `create-agent-skills` to `creating-skills` for naming consistency
 - **creating-skills skill** - Updated for new Claude Code skills spec
   - Added `## Commands → Skills Merge` section: commands and skills are now equivalent, no separate command file needed
