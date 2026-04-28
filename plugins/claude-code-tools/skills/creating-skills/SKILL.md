@@ -1,5 +1,5 @@
 ---
-name: creating-agent-skills
+name: creating-skills
 description: Expert guidance for creating, writing, and refining Claude Code Skills. Use when working with SKILL.md files, authoring new skills, improving existing skills, or understanding skill structure and best practices.
 ---
 
@@ -63,14 +63,27 @@ description: Helps with documents
 
 ## Skill Structure
 
-### Required Frontmatter
+### Frontmatter Fields
 
-| Field | Required | Max Length | Description |
-|-------|----------|------------|-------------|
-| `name` | Yes | 64 chars | Lowercase letters, numbers, hyphens only |
-| `description` | Yes | 1024 chars | What it does AND when to use it |
-| `allowed-tools` | No | - | Tools Claude can use without asking |
-| `model` | No | - | Specific model to use |
+Our convention treats `name` and `description` as **required** for discoverability, even though the official spec marks them as optional.
+
+| Field | Convention | Description |
+|-------|------------|-------------|
+| `name` | Required | Lowercase letters, numbers, hyphens only (max 64 chars). Becomes the `/slash-command`. Defaults to directory name if omitted. |
+| `description` | Required | What it does AND when to use it (third person). Combined with `when_to_use`, truncated at 1,536 chars in the listing. |
+| `when_to_use` | No | Extra trigger phrases appended to `description` in the skill listing. |
+| `argument-hint` | No | Hint shown during autocomplete, e.g. `[issue-number]` or `[filename] [format]`. |
+| `arguments` | No | Named positional args for `$name` substitution. Space-separated string or YAML list. |
+| `disable-model-invocation` | No | `true` prevents Claude from auto-loading. Use for side-effect workflows (`/commit`, `/deploy`). |
+| `user-invocable` | No | `false` hides from the `/` menu. Use for background knowledge. |
+| `allowed-tools` | No | Tools Claude can use without prompting, e.g. `Bash(git add *) Bash(git commit *)`. |
+| `model` | No | Override model for this skill's turn. |
+| `effort` | No | Override effort level: `low`, `medium`, `high`, `xhigh`, `max`. |
+| `context` | No | `fork` runs the skill in an isolated subagent. |
+| `agent` | No | Subagent type when `context: fork`. Built-ins: `Explore`, `Plan`, `general-purpose`. |
+| `paths` | No | Glob patterns limiting when the skill auto-activates. |
+| `hooks` | No | Hooks scoped to this skill's lifecycle. |
+| `shell` | No | Shell for `` !`command` `` injection blocks: `bash` (default) or `powershell`. |
 
 ### Naming Conventions
 
@@ -105,6 +118,12 @@ Additional capabilities (link to reference files)...
 ## Guidelines
 Rules and constraints...
 ```
+
+## Commands → Skills Merge
+
+Commands and skills are now equivalent — both create a `/slash-command`. A file at `.claude/commands/deploy.md` and a skill at `.claude/skills/deploy/SKILL.md` both produce `/deploy` and work the same way. Existing `.claude/commands/` files keep working. Skills are preferred because they support supporting files, invocation control frontmatter, and automatic discovery.
+
+The skill `name` field IS the slash command. No separate command file is needed.
 
 ## What Would You Like To Do?
 
@@ -199,15 +218,17 @@ python scripts/analyze.py input.pdf > fields.json
 
 Check against this rubric:
 
-- [ ] Valid YAML frontmatter (name + description)
-- [ ] Description includes trigger keywords
+- [ ] Valid YAML frontmatter (`name` + `description` present — our required convention)
+- [ ] Description includes trigger keywords (third person, specific)
 - [ ] Uses standard markdown headings (not XML tags)
+- [ ] `disable-model-invocation: true` set for side-effect workflows (deploy, commit, send)
 - [ ] SKILL.md under 500 lines
 - [ ] References one level deep
 - [ ] Examples are concrete, not abstract
 - [ ] Consistent terminology
 - [ ] No time-sensitive information
 - [ ] Scripts handle errors explicitly
+- [ ] No separate `.claude/commands/` file created (skill name is the slash command)
 
 ## Common Patterns
 
@@ -280,7 +301,8 @@ Guide through decision points:
 
 For detailed guidance, see:
 
-- [official-spec.md](references/official-spec.md) - Anthropic's official skill specification
+- [official-spec.md](references/official-spec.md) - Full frontmatter reference, string substitutions, shell injection, forked context
+- [invocation-and-arguments.md](references/invocation-and-arguments.md) - Invocation control, arguments, shell injection, `context: fork`
 - [best-practices.md](references/best-practices.md) - Skill authoring best practices
 
 ## Success Criteria

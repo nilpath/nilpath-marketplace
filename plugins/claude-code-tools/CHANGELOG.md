@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **creating-skills skill** - Renamed from `create-agent-skills` to `creating-skills` for naming consistency
+- **creating-skills skill** - Updated for new Claude Code skills spec
+  - Added `## Commands → Skills Merge` section: commands and skills are now equivalent, no separate command file needed
+  - Expanded frontmatter reference to cover all 14 fields: `when_to_use`, `argument-hint`, `arguments`, `disable-model-invocation`, `user-invocable`, `context`, `agent`, `effort`, `paths`, `hooks`, `shell`
+  - Added new reference `invocation-and-arguments.md`: invocation control matrix, argument substitutions (`$ARGUMENTS`, `$N`, named args), shell injection (`` !`cmd` ``), forked subagent context (`context: fork`)
+  - Full rewrite of `references/official-spec.md`: complete frontmatter table, string substitution table, shell injection, forked context, live change detection
+  - Rewrote `references/skill-structure.md`: removed XML promotion, replaced with markdown heading guidance and updated validation checklist
+  - Rewrote `references/core-principles.md`: replaced XML structure principle with markdown heading principle
+  - Rewrote `references/common-patterns.md`: removed XML examples, added shell injection, invocation control, and arguments patterns
+  - Updated `references/recommended-structure.md`: replaced XML templates with markdown heading templates
+  - Updated `templates/simple-skill.md` and `templates/router-skill.md`: replaced XML body with markdown headings
+  - Updated `workflows/create-new-skill.md`: removed `.claude/commands/` creation step, added invocation mode selection step, updated validation checklist
+  - Updated `workflows/audit-skill.md`: replaced XML checklist criteria with correct markdown heading criteria, removed reference to non-existent `use-xml-tags.md`
 
 ## [0.5.6] - 2026-03-04
 

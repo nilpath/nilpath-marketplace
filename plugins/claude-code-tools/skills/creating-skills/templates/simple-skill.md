@@ -1,33 +1,40 @@
 ---
-name: {{SKILL_NAME}}
-description: {{What it does}} Use when {{trigger conditions}}.
+name: skill-name
+description: What it does and when to use it. Use when [trigger condition].
 ---
 
-<objective>
-{{Clear statement of what this skill accomplishes}}
-</objective>
+# Skill Name
 
-<quick_start>
-{{Immediate actionable guidance - what Claude should do first}}
-</quick_start>
+## Quick Start
 
-<process>
-## Step 1: {{First action}}
+[Immediate actionable example — working code or the first thing Claude should do]
 
-{{Instructions for step 1}}
+## Instructions
 
-## Step 2: {{Second action}}
+[Core guidance Claude follows. Be direct and specific.]
 
-{{Instructions for step 2}}
+1. Step one
+2. Step two
+3. Step three
 
-## Step 3: {{Third action}}
+## Examples
 
-{{Instructions for step 3}}
-</process>
+**Example 1:**
+Input: [description of input]
+Output:
+```
+[expected result]
+```
 
-<success_criteria>
-{{Skill name}} is complete when:
-- [ ] {{First success criterion}}
-- [ ] {{Second success criterion}}
-- [ ] {{Third success criterion}}
-</success_criteria>
+**Example 2:**
+Input: [description of input]
+Output:
+```
+[expected result]
+```
+
+## Guidelines
+
+- [Constraint or rule]
+- [Constraint or rule]
+- [What to do if something goes wrong]

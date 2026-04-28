@@ -1,73 +1,58 @@
 ---
-name: {{SKILL_NAME}}
-description: {{What it does}} Use when {{trigger conditions}}.
+name: skill-name
+description: What it does and when to use it. Use when [trigger conditions].
 ---
 
-<essential_principles>
-## {{Core Concept}}
+# Skill Name
 
-{{Principles that ALWAYS apply, regardless of which workflow runs}}
+## Essential Principles
 
-### 1. {{First principle}}
-{{Explanation}}
+[Principles that ALWAYS apply, regardless of which workflow runs. Put them here so they load automatically.]
 
-### 2. {{Second principle}}
-{{Explanation}}
+### 1. First Principle
+Explanation.
 
-### 3. {{Third principle}}
-{{Explanation}}
-</essential_principles>
+### 2. Second Principle
+Explanation.
 
-<intake>
-**Ask the user:**
+### 3. Third Principle
+Explanation.
 
-What would you like to do?
-1. {{First option}}
-2. {{Second option}}
-3. {{Third option}}
+## What Would You Like To Do?
+
+1. [First option]
+2. [Second option]
+3. [Third option]
+4. Something else
 
 **Wait for response before proceeding.**
-</intake>
 
-<routing>
+## Routing
+
 | Response | Workflow |
 |----------|----------|
-| 1, "{{keywords}}" | `workflows/{{first-workflow}}.md` |
-| 2, "{{keywords}}" | `workflows/{{second-workflow}}.md` |
-| 3, "{{keywords}}" | `workflows/{{third-workflow}}.md` |
+| 1, "keywords" | `workflows/first-workflow.md` |
+| 2, "keywords" | `workflows/second-workflow.md` |
+| 3, "keywords" | `workflows/third-workflow.md` |
+| 4, other | Clarify, then select |
 
-**After reading the workflow, follow it exactly.**
-</routing>
+After reading the workflow, follow it exactly.
 
-<quick_reference>
-## {{Skill Name}} Quick Reference
+## Quick Reference
 
-{{Brief reference information always useful to have visible}}
-</quick_reference>
+[Brief reference information that is always useful to have visible — shared across all workflows]
 
-<reference_index>
-## Domain Knowledge
+## Reference Index
 
-All in `references/`:
-- {{reference-1.md}} - {{purpose}}
-- {{reference-2.md}} - {{purpose}}
-</reference_index>
+All domain knowledge in `references/`:
 
-<workflows_index>
-## Workflows
+- [reference-1.md](references/reference-1.md) — purpose
+- [reference-2.md](references/reference-2.md) — purpose
 
-All in `workflows/`:
+## Workflows Index
 
 | Workflow | Purpose |
 |----------|---------|
-| {{first-workflow}}.md | {{purpose}} |
-| {{second-workflow}}.md | {{purpose}} |
-| {{third-workflow}}.md | {{purpose}} |
-</workflows_index>
-
-<success_criteria>
-A well-executed {{skill name}}:
-- {{First criterion}}
-- {{Second criterion}}
-- {{Third criterion}}
-</success_criteria>
+| first-workflow.md | What it does |
+| second-workflow.md | What it does |
+| third-workflow.md | What it does |
