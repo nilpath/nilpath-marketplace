@@ -30,7 +30,7 @@ A collection of Agents and Skills for coding with Claude.
 | Skill | Description |
 |-------|-------------|
 | **creating-agents** | Expert guidance for designing and implementing Claude Code subagents |
-| **create-agent-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
+| **creating-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
 | **creating-mermaid-diagrams** | Create, edit, and validate Mermaid diagrams (flowcharts, sequence, class, ER, etc.) |
 | **gh-pr-review** | GitHub PR review operations: create pending reviews with line comments (single and multi-line), submit reviews |
 | **gh-address-comments** | Address review/issue comments on the open GitHub PR for the current branch, reply to threads after fixing |
@@ -48,7 +48,7 @@ A collection of Agents and Skills for coding with Claude.
 - Templates: code-reviewer.md, debugger.md, researcher.md, domain-expert.md
 - Examples: real-world-agents.md with battle-tested configurations
 
-**create-agent-skills**
+**creating-skills**
 - Expert guidance for authoring Claude Code Skills
 - References: 10+ reference files covering best practices
 - Workflows: Multiple workflow files for skill creation
@@ -115,7 +115,7 @@ Inspired by:
 
 | Skill | Source |
 |-------|--------|
-| create-agent-skills | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |
+| creating-skills | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |
 | gh-address-comments | [openai/skills](https://github.com/openai/skills/tree/main/skills/.curated/gh-address-comments) |
 
 ### Sourced Commands
