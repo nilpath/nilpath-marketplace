@@ -1,15 +1,15 @@
 # Workflow: Create a New Skill
 
-<required_reading>
-**Read these reference files NOW:**
+## Required Reading
+
+Read these reference files before starting:
 1. references/recommended-structure.md
 2. references/skill-structure.md
 3. references/core-principles.md
-4. references/use-xml-tags.md
-</required_reading>
 
-<process>
-## Step 1: Adaptive Requirements Gathering
+## Process
+
+### Step 1: Adaptive Requirements Gathering
 
 **If user provided context** (e.g., "build a skill for X"):
 → Analyze what's stated, what can be inferred, what's unclear
@@ -18,7 +18,7 @@
 **If user just invoked skill without context:**
 → Ask what they want to build
 
-### Using AskUserQuestion
+#### Using AskUserQuestion
 
 Ask 2-4 domain-specific questions based on actual gaps. Each question should:
 - Have specific options with descriptions
@@ -29,8 +29,9 @@ Example questions:
 - "What specific operations should this skill handle?" (with options based on domain)
 - "Should this also handle [related thing] or stay focused on [core thing]?"
 - "What should the user see when successful?"
+- "Should Claude invoke this automatically, or should you trigger it manually?" (→ determines `disable-model-invocation`)
 
-### Decision Gate
+#### Decision Gate
 
 After initial questions, ask:
 "Ready to proceed with building, or would you like me to ask more questions?"
@@ -40,7 +41,7 @@ Options:
 2. **Ask more questions** - There are more details to clarify
 3. **Let me add details** - I want to provide additional context
 
-## Step 2: Research Trigger (If External API)
+### Step 2: Research Trigger (If External API)
 
 **When external service detected**, ask using AskUserQuestion:
 "This involves [service name] API. Would you like me to research current endpoints and patterns before building?"
@@ -55,20 +56,31 @@ If research requested:
 - Focus on 2024-2026 sources
 - Store findings for use in content generation
 
-## Step 3: Decide Structure
+### Step 3: Choose Invocation Mode
+
+Ask whether Claude should be able to invoke this skill automatically:
+
+**Claude-invoked (default):** Claude loads the skill when relevant. Use for reference content, guidelines, domain knowledge.
+
+**Manual-only** (`disable-model-invocation: true`): Only you trigger it with `/skill-name`. Use for side-effect workflows (deploy, commit, send messages, destructive operations).
+
+**Background-only** (`user-invocable: false`): Claude applies it automatically but it's hidden from the `/` menu. Use for always-on conventions and style guides.
+
+### Step 4: Decide Structure
 
 **Simple skill (single workflow, <200 lines):**
-→ Single SKILL.md file with all content
+→ Single `SKILL.md` file with all content
 
 **Complex skill (multiple workflows OR domain knowledge):**
 → Router pattern:
+
 ```
 skill-name/
 ├── SKILL.md (router + principles)
-├── workflows/ (procedures - FOLLOW)
-├── references/ (knowledge - READ)
-├── templates/ (output structures - COPY + FILL)
-└── scripts/ (reusable code - EXECUTE)
+├── workflows/ (procedures — follow these)
+├── references/ (knowledge — read when needed)
+├── templates/ (output structures — copy and fill)
+└── scripts/ (reusable code — execute)
 ```
 
 Factors favoring router pattern:
@@ -77,17 +89,17 @@ Factors favoring router pattern:
 - Essential principles that must not be skipped
 - Skill likely to grow over time
 
-**Consider templates/ when:**
+**Consider `templates/` when:**
 - Skill produces consistent output structures (plans, specs, reports)
 - Structure matters more than creative generation
 
-**Consider scripts/ when:**
+**Consider `scripts/` when:**
 - Same code runs across invocations (deploy, setup, API calls)
 - Operations are error-prone when rewritten each time
 
 See references/recommended-structure.md for templates.
 
-## Step 4: Create Directory
+### Step 5: Create Directory
 
 ```bash
 mkdir -p ~/.claude/skills/{skill-name}
@@ -95,97 +107,97 @@ mkdir -p ~/.claude/skills/{skill-name}
 mkdir -p ~/.claude/skills/{skill-name}/workflows
 mkdir -p ~/.claude/skills/{skill-name}/references
 # If needed:
-mkdir -p ~/.claude/skills/{skill-name}/templates  # for output structures
-mkdir -p ~/.claude/skills/{skill-name}/scripts    # for reusable code
+mkdir -p ~/.claude/skills/{skill-name}/templates
+mkdir -p ~/.claude/skills/{skill-name}/scripts
 ```
 
-## Step 5: Write SKILL.md
+### Step 6: Write SKILL.md
+
+Use the template from [templates/simple-skill.md](../templates/simple-skill.md) or [templates/router-skill.md](../templates/router-skill.md).
 
 **Simple skill:** Write complete skill file with:
-- YAML frontmatter (name, description)
-- `<objective>`
-- `<quick_start>`
-- Content sections with pure XML
-- `<success_criteria>`
+- YAML frontmatter (`name`, `description`, and any invocation control fields)
+- `## Quick Start` with immediate actionable example
+- `## Instructions` with core guidance
+- `## Examples` with input/output pairs
+- `## Guidelines` with rules and constraints
 
 **Complex skill:** Write router with:
 - YAML frontmatter
-- `<essential_principles>` (inline, unavoidable)
-- `<intake>` (question to ask user)
-- `<routing>` (maps answers to workflows)
-- `<reference_index>` and `<workflows_index>`
+- `## Essential Principles` (inline, always loaded)
+- `## What Would You Like To Do?` (intake question)
+- `## Routing` table (maps answers to workflows)
+- `## Reference Index` and `## Workflows Index`
 
-## Step 6: Write Workflows (if complex)
+**Body format:** Standard markdown headings only. No XML tags.
 
-For each workflow:
-```xml
-<required_reading>
-Which references to load for this workflow
-</required_reading>
+### Step 7: Write Workflows (if complex)
 
-<process>
-Step-by-step procedure
-</process>
+For each workflow file:
 
-<success_criteria>
-How to know this workflow is done
-</success_criteria>
+```markdown
+# Workflow: Name
+
+## Required Reading
+
+Read these reference files before starting:
+1. references/relevant-file.md
+
+## Process
+
+### Step 1: Name
+What to do.
+
+### Step 2: Name
+What to do.
+
+## Success Criteria
+
+This workflow is complete when:
+- [ ] Criterion 1
+- [ ] Criterion 2
 ```
 
-## Step 7: Write References (if needed)
+### Step 8: Write References (if needed)
 
 Domain knowledge that:
 - Multiple workflows might need
 - Doesn't change based on workflow
 - Contains patterns, examples, technical details
 
-## Step 8: Validate Structure
+### Step 9: Validate Structure
 
 Check:
 - [ ] YAML frontmatter valid
-- [ ] Name matches directory (lowercase-with-hyphens)
-- [ ] Description says what it does AND when to use it (third person)
-- [ ] No markdown headings (#) in body - use XML tags
-- [ ] Required tags present: objective, quick_start, success_criteria
+- [ ] `name` matches directory (lowercase-with-hyphens)
+- [ ] `description` says what it does AND when to use it (third person)
+- [ ] Body uses markdown headings — no XML tags
+- [ ] `disable-model-invocation: true` set if skill has side effects
 - [ ] All referenced files exist
-- [ ] SKILL.md under 500 lines
-- [ ] XML tags properly closed
+- [ ] `SKILL.md` under 500 lines
+- [ ] No separate `.claude/commands/` file created (the skill name IS the slash command)
 
-## Step 9: Create Slash Command
-
-```bash
-cat > ~/.claude/commands/{skill-name}.md << 'EOF'
----
-description: {Brief description}
-argument-hint: [{argument hint}]
-allowed-tools: Skill({skill-name})
----
-
-Invoke the {skill-name} skill for: $ARGUMENTS
-EOF
-```
-
-## Step 10: Test
+### Step 10: Test
 
 Invoke the skill and observe:
+- Does it load when expected (or stay hidden as intended)?
 - Does it ask the right intake question?
 - Does it load the right workflow?
 - Does the workflow load the right references?
 - Does output match expectations?
 
 Iterate based on real usage, not assumptions.
-</process>
 
-<success_criteria>
+## Success Criteria
+
 Skill is complete when:
 - [ ] Requirements gathered with appropriate questions
+- [ ] Invocation mode chosen (`disable-model-invocation`, `user-invocable`, or default)
 - [ ] API research done if external service involved
 - [ ] Directory structure correct
-- [ ] SKILL.md has valid frontmatter
+- [ ] `SKILL.md` has valid frontmatter
 - [ ] Essential principles inline (if complex skill)
-- [ ] Intake question routes to correct workflow
-- [ ] All workflows have required_reading + process + success_criteria
+- [ ] Intake question routes to correct workflow (if router)
+- [ ] All workflows have Required Reading + Process + Success Criteria
 - [ ] References contain reusable domain knowledge
-- [ ] Slash command exists and works
 - [ ] Tested with real invocation
-</success_criteria>

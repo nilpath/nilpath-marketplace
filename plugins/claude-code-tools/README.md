@@ -8,11 +8,15 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Components
 
-### Agents (1)
+### Agents (5)
 
 | Agent | Description |
-|-------|-------------|
+| ----- | ----------- |
 | **code-reviewer** | Expert code reviewer for quality, security, and best practices. Can add line comments to GitHub PRs. |
+| **spec-reviewer** | Reviews design specifications for completeness, internal consistency, and scope adherence. |
+| **docs-library-researcher** | Researches external documentation, libraries, and frameworks. Looks up official docs and best practices. |
+| **api-integration-researcher** | Researches external APIs, authentication, data formats, rate limits, and existing integration patterns. |
+| **architecture-researcher** | Analyzes project architecture, design patterns, and structural impact for significant architectural decisions. |
 
 ### Agent Details
 
@@ -25,12 +29,38 @@ A collection of Agents and Skills for coding with Claude.
 - Skills: gh-pr-review
 - Model: sonnet
 
-### Skills (8)
+**spec-reviewer**
+- Checks design specs for incomplete work, internal consistency, and scope adherence
+- Returns structured report with "Ready / Needs revisions" verdict
+- Used by the `researching` skill after writing `design.md`
+- Tools: Read, Glob, Grep
+- Model: haiku
+
+**docs-library-researcher**
+- Checks project dependencies, looks up official docs via context7, notes best practices and limitations
+- Used by the `researching` skill for library and framework investigation
+- Tools: Read, Glob, Grep, WebFetch, WebSearch, context7
+- Model: sonnet
+
+**api-integration-researcher**
+- Investigates API auth, data formats, rate limits, and existing integration code in the codebase
+- Used by the `researching` skill when features involve external APIs
+- Tools: Read, Glob, Grep, WebFetch, WebSearch
+- Model: sonnet
+
+**architecture-researcher**
+- Analyzes project structure, design patterns, and architectural impact; identifies reference implementations
+- Used by the `researching` skill for features with significant structural decisions
+- Tools: Read, Glob, Grep
+- Model: sonnet
+
+### Skills (9)
 
 | Skill | Description |
 |-------|-------------|
+| **researching** | Research-first workflow: explore the problem space, propose approaches, and produce a design spec before any implementation |
 | **creating-agents** | Expert guidance for designing and implementing Claude Code subagents |
-| **create-agent-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
+| **creating-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
 | **creating-mermaid-diagrams** | Create, edit, and validate Mermaid diagrams (flowcharts, sequence, class, ER, etc.) |
 | **gh-pr-review** | GitHub PR review operations: create pending reviews with line comments (single and multi-line), submit reviews |
 | **gh-address-comments** | Address review/issue comments on the open GitHub PR for the current branch, reply to threads after fixing |
@@ -48,7 +78,7 @@ A collection of Agents and Skills for coding with Claude.
 - Templates: code-reviewer.md, debugger.md, researcher.md, domain-expert.md
 - Examples: real-world-agents.md with battle-tested configurations
 
-**create-agent-skills**
+**creating-skills**
 - Expert guidance for authoring Claude Code Skills
 - References: 10+ reference files covering best practices
 - Workflows: Multiple workflow files for skill creation
@@ -115,7 +145,7 @@ Inspired by:
 
 | Skill | Source |
 |-------|--------|
-| create-agent-skills | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |
+| creating-skills | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |
 | gh-address-comments | [openai/skills](https://github.com/openai/skills/tree/main/skills/.curated/gh-address-comments) |
 
 ### Sourced Commands
