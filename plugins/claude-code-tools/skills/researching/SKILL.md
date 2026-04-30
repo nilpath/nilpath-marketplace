@@ -2,7 +2,7 @@
 name: researching
 description: You MUST use this skill before doing any creative work, including creating features, writing code, adding functionality, or modifying any behavior. This skill is for researching and gathering information about the task at hand. It involves asking questions, seeking clarification, and collecting relevant data to ensure a thorough understanding of the problem before proceeding with any creative work.
 argument-hint: "[topic-or-slug]" (e.g. "oauth", "refactor auth")
-allowed-tools: AskUserQuestion, Read, Glob, Write, Edit, Bash, Grep, Agent, Skill, TodoWrite
+allowed-tools: AskUserQuestion, Read, Glob, Write, Edit, Bash, Grep, Agent, , Skill(engineering-principles), Skill(git-commits), TodoWrite
 ---
 
 # Researching Ideas into Design Specifications
@@ -24,7 +24,8 @@ You **MUST** use `TodoWrite` to create a task for each item in the checklist bel
 6. **Write Design Spec**: Write a design specification for the chosen approach to `docs/features/<NNN>-<feature-slug>/design.md` using [templates/design-spec.md](templates/design-spec.md).
 7. **Spec self-review**: Delegate to the `spec-reviewer` agent with the path to the written `design.md`. Edit the spec based on its findings until it is ready for the user.
 8. **User reviews written spec**: Use `AskUserQuestion` to present the design spec to the user and ask for feedback. Edit as needed until the user approves the design spec.
-9. **Transition to implementation**: Once the design spec is approved, invoke the planning skill to create an implementation plan.
+9. **Commit design spec**: Commit `docs/features/<NNN>-<feature-slug>/design.md` to git using the `git-commits` skill.
+10. **Transition to implementation**: Once the design spec is committed, invoke the planning skill to create an implementation plan.
 
 ## Process Flow
 
@@ -45,8 +46,9 @@ flowchart TD
     K --> L[User reviews design.md]
     L --> M{Approved?}
     M -- Revisions needed --> K
-    M -- Approved --> N[Invoke planning skill]
-    N --> Z([Done])
+    M -- Approved --> N[Commit design.md]
+    N --> O[Invoke planning skill]
+    O --> Z([Done])
 ```
 
 ## The Process in Detail
@@ -133,7 +135,8 @@ Wait for user feedback. If the user requests changes, edit the spec accordingly 
 
 ### Handoff
 
-- Once the design spec is approved, invoke the planning skill to create an implementation plan.
+- Once the design spec is approved, commit `docs/features/<NNN>-<feature-slug>/design.md` to git using the `git-commits` skill.
+- Then invoke the planning skill to create an implementation plan.
 - Do **NOT** invoke any other skill, planning is the next step.
 
 ## Guidelines

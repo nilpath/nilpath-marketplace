@@ -4,11 +4,11 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.5.3
+0.5.8
 
 ## Components
 
-### Agents (5)
+### Agents (7)
 
 | Agent | Description |
 | ----- | ----------- |
@@ -17,6 +17,8 @@ A collection of Agents and Skills for coding with Claude.
 | **docs-library-researcher** | Researches external documentation, libraries, and frameworks. Looks up official docs and best practices. |
 | **api-integration-researcher** | Researches external APIs, authentication, data formats, rate limits, and existing integration patterns. |
 | **architecture-researcher** | Analyzes project architecture, design patterns, and structural impact for significant architectural decisions. |
+| **task-decomposer** | Reads an approved design spec and produces a draft ordered list of TDD implementation tasks. Used by the `planning` skill. |
+| **plan-reviewer** | Reviews plan.md for completeness, spec alignment, task sizing, decomposition quality, and TDD format. Used by the `planning` skill. |
 
 ### Agent Details
 
@@ -54,11 +56,27 @@ A collection of Agents and Skills for coding with Claude.
 - Tools: Read, Glob, Grep
 - Model: sonnet
 
-### Skills (9)
+**task-decomposer**
+- Extracts components from a design spec, orders them leaves-first, and formats each as a TDD task block
+- Applies `engineering-principles` skill to verify single responsibility and testability
+- Flags ambiguous components with `[AMBIGUOUS: ...]` for the planning skill to resolve
+- Tools: Read, Glob, Grep, Skill(engineering-principles)
+- Model: sonnet
+
+**plan-reviewer**
+- Reviews plan.md for completeness, alignment with spec, task sizing, decomposition quality, ordering, and TDD format
+- Returns a structured report by category + Ready/Needs revisions verdict
+- Focuses on real blockers; ignores wording and style preferences
+- Tools: Read, Glob, Grep
+- Model: haiku
+
+### Skills (11)
 
 | Skill | Description |
 |-------|-------------|
 | **researching** | Research-first workflow: explore the problem space, propose approaches, and produce a design spec before any implementation |
+| **planning** | Translates an approved design spec into a sequenced list of TDD implementation tasks (2–5 min each), each following a red → green → commit cycle |
+| **engineering-principles** | Core software engineering and design principles (SOLID, DRY, KISS, YAGNI). Reference when making design decisions or reviewing code |
 | **creating-agents** | Expert guidance for designing and implementing Claude Code subagents |
 | **creating-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
 | **creating-mermaid-diagrams** | Create, edit, and validate Mermaid diagrams (flowcharts, sequence, class, ER, etc.) |
