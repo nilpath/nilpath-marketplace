@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.8] - 2026-04-30
+
+### Added
+
+- **planning skill** - Translates an approved design specification into a sequenced list of TDD implementation tasks. Includes a `TodoWrite`-driven checklist, Mermaid process flow, decomposition guidelines, task format reference, and a `plan.md` template. Spawns `task-decomposer` to draft the task list and `plan-reviewer` to self-review before user presentation.
+- **task-decomposer agent** - New agent in `agents/planning/`. Reads a design spec and produces a draft ordered task list following TDD conventions. Applies `engineering-principles` skill to verify task boundaries. Used by the `planning` skill.
+- **plan-reviewer agent** - New review agent in `agents/review/`. Reviews `plan.md` files for completeness, spec alignment, task sizing, decomposition quality, ordering, and TDD format. Returns a structured report with a Ready/Needs revisions verdict. Used by the `planning` skill before user presentation.
+
 ## [0.5.7] - 2026-04-29
 
 ### Added
