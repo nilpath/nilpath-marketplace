@@ -66,7 +66,7 @@ Existing `.claude/commands/` files keep working. If a skill and command share th
 | `agent` | No | Subagent type when `context: fork`. Built-ins: `Explore`, `Plan`, `general-purpose`. Or any custom agent. |
 | `paths` | No | Glob patterns limiting when the skill auto-activates. Comma-separated string or YAML list. |
 | `hooks` | No | Hooks scoped to this skill's lifecycle. |
-| `shell` | No | Shell for `` !`command` `` injection blocks: `bash` (default) or `powershell`. |
+| `shell` | No | Shell for `` ! `command` `` injection blocks: `bash` (default) or `powershell`. |
 
 ## Invocation Control
 
@@ -167,7 +167,7 @@ allowed-tools: Bash(gh *)
 Summarize this pull request for a reviewer who has not seen it before.
 ```
 
-When this skill runs, each `` !`command` `` executes immediately and its output replaces the placeholder before Claude sees anything.
+When this skill runs, each `` ! `command` `` executes immediately and its output replaces the placeholder before Claude sees anything.
 
 To disable shell injection: set `"disableSkillShellExecution": true` in settings.
 
