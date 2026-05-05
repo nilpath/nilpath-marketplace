@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.0] - 2026-05-05
 
+### Fixed
+
+- **YAML frontmatter** — Fixed invalid YAML in `argument-hint` fields for `planning`, `executing-plan`, `researching`, and `engineering-principles` skills. Values containing both double-quoted substrings and trailing prose were not valid YAML; wrapped in single quotes to fix.
+
 ### Added
 
 - **executing-plan skill** — Executes an approved `plan.md` from the `planning` skill. Critically reviews the plan for blockers before starting, initializes `TodoWrite` tasks, delegates each task to the appropriate subagent, auto-runs `code-reviewer` after every implementation task, and spawns `code-debugger` on failures.

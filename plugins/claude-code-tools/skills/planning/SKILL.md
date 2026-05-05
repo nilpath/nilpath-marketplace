@@ -1,7 +1,7 @@
 ---
 name: planning
 description: Translates an approved design specification into a sequenced list of TDD implementation tasks, each representing 2–5 minutes of work. Use after the researching skill produces an approved design.md, before writing any implementation code.
-argument-hint: "[feature-path]" (e.g. "docs/features/001-oauth")
+argument-hint: '"[feature-path]" (e.g. "docs/features/001-oauth")'
 allowed-tools: AskUserQuestion, Read, Glob, Grep, Write, Edit, Bash, Agent, Skill(git-commits), Skill(engineering-principles), TodoWrite
 ---
 

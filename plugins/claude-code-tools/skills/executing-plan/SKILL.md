@@ -1,7 +1,7 @@
 ---
 name: executing-plan
 description: Executes an approved implementation plan produced by the planning skill. Critically reviews the plan for blockers, raises concerns with the user, tracks tasks via TodoWrite, and delegates each task to the right subagent. Automatically runs code-reviewer after every implementation task. Use after /planning produces an approved plan.md.
-argument-hint: "[feature-path]" (e.g. "docs/features/001-oauth")
+argument-hint: '"[feature-path]" (e.g. "docs/features/001-oauth")'
 allowed-tools: AskUserQuestion, Read, Glob, Grep, Agent, TodoWrite, Skill(git-commits)
 ---
 
