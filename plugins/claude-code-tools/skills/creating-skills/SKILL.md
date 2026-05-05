@@ -83,7 +83,7 @@ Our convention treats `name` and `description` as **required** for discoverabili
 | `agent` | No | Subagent type when `context: fork`. Built-ins: `Explore`, `Plan`, `general-purpose`. |
 | `paths` | No | Glob patterns limiting when the skill auto-activates. |
 | `hooks` | No | Hooks scoped to this skill's lifecycle. |
-| `shell` | No | Shell for `` !`command` `` injection blocks: `bash` (default) or `powershell`. |
+| `shell` | No | Shell for `` ! `command` `` injection blocks: `bash` (default) or `powershell`. |
 
 ### Naming Conventions
 

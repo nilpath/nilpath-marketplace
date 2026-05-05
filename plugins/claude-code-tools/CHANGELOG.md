@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.9] - 2026-05-05
+
+### Fixed
+
+- **creating-skills skill** - Escaped shell injection syntax (`` ! `command` ``) in documentation examples inside `SKILL.md`, `references/official-spec.md`, and `references/invocation-and-arguments.md`. The bare `` !`command` `` pattern (no space) was being parsed as an actual shell injection at skill load time, causing a permission error on invocation.
+
 ## [0.5.8] - 2026-04-30
 
 ### Added

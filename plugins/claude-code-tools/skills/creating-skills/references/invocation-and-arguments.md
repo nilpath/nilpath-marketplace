@@ -177,7 +177,7 @@ Summarize this pull request for a reviewer who hasn't seen it yet.
 Include: what changed, why, and what to watch for in review.
 ```
 
-Each `` !`command` `` executes at load time, before Claude sees any content. The skill becomes fully rendered with actual data before it runs.
+Each `` ! `command` `` executes at load time, before Claude sees any content. The skill becomes fully rendered with actual data before it runs.
 
 ### Preventing accidental execution in documentation
 
