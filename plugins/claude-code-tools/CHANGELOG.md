@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-05
+
+### Added
+
+- **executing-plan skill** — Executes an approved `plan.md` from the `planning` skill. Critically reviews the plan for blockers before starting, initializes `TodoWrite` tasks, delegates each task to the appropriate subagent, auto-runs `code-reviewer` after every implementation task, and spawns `code-debugger` on failures.
+- **coding-task-agent** (`agents/implementation/`) — Implements a single general coding task following TDD: write failing test → implement → confirm green → commit.
+- **python-task-agent** (`agents/implementation/`) — Python-specific TDD agent with auto-detection of test runner (`uv`, `poetry`, `pytest`), virtualenv activation, and fixture awareness via `conftest.py`.
+- **code-debugger** (`agents/implementation/`) — Diagnoses failing tests and runtime errors, applies a minimal fix, re-runs tests to confirm resolution, and reports root cause.
+- **technical-writer** (`agents/implementation/`) — Updates README files, changelogs, and inline documentation to accurately reflect implemented code changes.
+
 ## [0.5.10] - 2026-05-05
 
 ### Changed

@@ -4,11 +4,11 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.5.8
+0.6.0
 
 ## Components
 
-### Agents (7)
+### Agents (11)
 
 | Agent | Description |
 | ----- | ----------- |
@@ -19,6 +19,10 @@ A collection of Agents and Skills for coding with Claude.
 | **architecture-researcher** | Analyzes project architecture, design patterns, and structural impact for significant architectural decisions. |
 | **task-decomposer** | Reads an approved design spec and produces a draft ordered list of TDD implementation tasks. Used by the `planning` skill. |
 | **plan-reviewer** | Reviews plan.md for completeness, spec alignment, task sizing, decomposition quality, and TDD format. Used by the `planning` skill. |
+| **coding-task-agent** | Implements a single coding task from a TDD plan following the red→green→commit cycle. Used by the `executing-plan` skill. |
+| **python-task-agent** | Implements a single Python coding task with auto-detection of test runner, virtualenv, and package manager. Used by the `executing-plan` skill. |
+| **code-debugger** | Diagnoses failing tests and runtime errors, applies a minimal fix, and confirms resolution. Used by the `executing-plan` skill. |
+| **technical-writer** | Updates README files, changelogs, and inline documentation to reflect implemented changes. Used by the `executing-plan` skill. |
 
 ### Agent Details
 
@@ -70,12 +74,38 @@ A collection of Agents and Skills for coding with Claude.
 - Tools: Read, Glob, Grep
 - Model: haiku
 
-### Skills (11)
+**coding-task-agent**
+- Follows TDD: write failing test → implement → confirm green → commit
+- Applies `engineering-principles` to verify single responsibility before implementing
+- Reports pass/fail + commit SHA back to the orchestrating skill
+- Tools: Read, Write, Edit, Bash, Glob, Grep, Skill(engineering-principles), Skill(git-commits)
+- Model: haiku
+
+**python-task-agent**
+- Python-specific TDD agent with environment auto-detection (uv/poetry/pytest, virtualenv, conftest.py)
+- Same red→green→commit cycle as coding-task-agent
+- Tools: Read, Write, Edit, Bash, Glob, Grep, Skill(engineering-principles), Skill(git-commits)
+- Model: haiku
+
+**code-debugger**
+- Identifies root cause from stack traces, applies minimal fix, re-runs tests to confirm resolution
+- Reports root cause + fix summary; stops after one fix attempt if still failing
+- Tools: Read, Write, Edit, Bash, Glob, Grep
+- Model: sonnet
+
+**technical-writer**
+- Reads implemented source files to understand actual behavior before writing docs
+- Updates only changed sections, matching existing project documentation style
+- Tools: Read, Write, Edit, Glob, Grep
+- Model: haiku
+
+### Skills (12)
 
 | Skill | Description |
 |-------|-------------|
 | **researching** | Research-first workflow: explore the problem space, propose approaches, and produce a design spec before any implementation |
 | **planning** | Translates an approved design spec into a sequenced list of TDD implementation tasks (2–5 min each), each following a red → green → commit cycle |
+| **executing-plan** | Executes an approved plan.md: reviews for blockers, tracks tasks via TodoWrite, delegates to subagents, and auto-reviews after each task |
 | **engineering-principles** | Core software engineering and design principles (SOLID, DRY, KISS, YAGNI). Reference when making design decisions or reviewing code |
 | **creating-agents** | Expert guidance for designing and implementing Claude Code subagents |
 | **creating-skills** | Expert guidance for creating, writing, and refining Claude Code Skills |
