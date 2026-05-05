@@ -157,6 +157,7 @@ A collection of Agents and Skills for coding with Claude.
 
 Inspired by:
 - [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin)
+- [cipherstash/cipherpowers](https://github.com/cipherstash/cipherpowers)
 - [Anthropic Agent Skills Documentation](https://code.claude.com/docs/en/skills)
 
 ### Sourced Skills
@@ -165,9 +166,3 @@ Inspired by:
 |-------|--------|
 | creating-skills | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |
 | gh-address-comments | [openai/skills](https://github.com/openai/skills/tree/main/skills/.curated/gh-address-comments) |
-
-### Sourced Commands
-
-| Command | Source |
-|---------|--------|
-| create-agent-skill | [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) |

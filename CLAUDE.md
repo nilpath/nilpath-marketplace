@@ -1,6 +1,6 @@
 # nilpath-marketplace
 
-Claude Code plugin marketplace with **1 agent**, **7 skills**, and **2 commands**.
+Claude Code plugin marketplace with **7 agents** and **11 skills**.
 
 ## Structure
 
@@ -26,10 +26,6 @@ flowchart TD
             S4[...]
         end
 
-        subgraph COMMANDS[commands/]
-            C1[create-agent.md]
-            C2[create-skill.md]
-        end
     end
 
     MARKETPLACE --> PLUGIN
@@ -63,10 +59,9 @@ Skills use kebab-case directories with standard subdirectories:
 
 | Concept | Description | Details |
 |---------|-------------|---------|
-| **Plugin** | Distribution unit containing agents, skills, commands | [plugin.json spec](ai_docs/release-workflow.md) |
+| **Plugin** | Distribution unit containing agents and skills | [plugin.json spec](ai_docs/release-workflow.md) |
 | **Skill** | Expert knowledge base with references and templates | [Skill Architecture](ai_docs/skill-architecture.md) |
 | **Agent** | Specialized subagent for focused tasks | [Agent Architecture](ai_docs/agent-architecture.md) |
-| **Command** | Slash command entry point for skills | `commands/*.md` |
 
 ## Common Tasks
 
@@ -79,14 +74,6 @@ Skills use kebab-case directories with standard subdirectories:
 
 1. Run `/create-agent` for guided creation.
 2. Update 4 files (see [Version Sync](#version-sync))
-
-### Add a Command
-
-Commands are entry points that invoke skills:
-
-1. Create `plugins/claude-code-tools/commands/<name>.md`
-2. Reference the target skill in the command file
-3. Update 4 files (see [Version Sync](#version-sync))
 
 ### Release Changes
 
@@ -106,7 +93,7 @@ See [Release Workflow](ai_docs/release-workflow.md) for the complete process.
 ### Version Rules
 
 - **MAJOR** (1.0.0 → 2.0.0): Breaking changes
-- **MINOR** (1.0.0 → 1.1.0): New agent, skill, or command
+- **MINOR** (1.0.0 → 1.1.0): New agent or skill
 - **PATCH** (1.0.0 → 1.0.1): Bug fixes, doc updates
 
 ## Deep Dives
@@ -134,8 +121,3 @@ See [Release Workflow](ai_docs/release-workflow.md) for the complete process.
 | git-commits | Commit best practices |
 | git-stacked-prs | Stacked PR workflow |
 | git-advanced | Advanced git operations |
-
-### Commands (2)
-
-- `/create-agent` - Invoke creating-agents skill
-- `/create-skill` - Invoke create-agent-skills skill

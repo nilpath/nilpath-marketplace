@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.10] - 2026-05-05
+
+### Changed
+
+- **creating-skills** and **creating-agents** skills now expose `argument-hint` in their frontmatter, replacing the separate `commands/create-skill.md` and `commands/create-agent.md` files. Slash commands are now `/creating-skills` and `/creating-agents`.
+
+### Removed
+
+- `commands/create-skill.md` — redundant now that skills support `argument-hint` natively
+- `commands/create-agent.md` — redundant now that skills support `argument-hint` natively
+
 ## [0.5.9] - 2026-05-05
 
 ### Fixed

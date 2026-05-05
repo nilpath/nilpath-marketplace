@@ -1,6 +1,7 @@
 ---
 name: creating-agents
 description: Expert guidance for creating Claude Code subagents and multi-agent workflows. Use when designing new subagents, configuring agent tools/permissions, implementing orchestration patterns, or troubleshooting agent delegation.
+argument-hint: "[agent description or requirements]"
 ---
 
 # Creating Claude Code Agents
