@@ -1,122 +1,98 @@
 ---
 name: executing-plan
-description: Executes an approved implementation plan produced by the planning skill. Critically reviews the plan for blockers, raises concerns with the user, tracks tasks via TodoWrite, and delegates each task to the right subagent. Automatically runs code-reviewer after every implementation task. Use after /planning produces an approved plan.md.
+description: Executes an approved implementation plan produced by the planning skill. Creates a git worktree, critically reviews the plan for blockers, tracks tasks via TodoWrite, and delegates each task to the right subagent one at a time. Runs code-reviewer after every task and a final holistic review before creating a PR. Use after /planning produces an approved plan.md.
 argument-hint: '"[feature-path]" (e.g. "docs/features/001-oauth")'
-allowed-tools: AskUserQuestion, Read, Glob, Grep, Agent, TodoWrite, Skill(git-commits)
+allowed-tools: AskUserQuestion, Read, Glob, Grep, Agent, TodoWrite, Skill(git-commits), Skill(using-git-worktrees), Bash(gh pr create *)
 ---
 
 # Executing Plan
 
-Execute an approved `plan.md` produced by the `planning` skill. Each task is delegated to the appropriate subagent, committed individually, and reviewed automatically before moving on.
+Execute an approved `plan.md` produced by the `planning` skill. A dedicated git worktree is created upfront, tasks are implemented one at a time with a code-reviewer pass after each commit, and a final holistic review runs before the PR is created.
 
 Do **NOT** write implementation code directly — all code work is delegated to subagents.
 
 ## Quick Start
 
 1. Have an approved `docs/features/<NNN>-<slug>/plan.md` ready
-2. Invoke this skill: `/executing-plan docs/features/<NNN>-<slug>`
-3. The skill reviews the plan, raises any concerns, then executes task by task
-
-## Checklist
-
-Use `TodoWrite` to create a todo for each item below and complete them in order.
-
-1. **Locate plan**: Find `docs/features/<NNN>-<slug>/plan.md` — derive the feature path from the argument or context.
-2. **Read plan**: Read the full plan including every task block.
-3. **Critical review**: Scan the plan for blockers (see Review Checklist below).
-4. **Raise concerns**: If blockers exist, present them via `AskUserQuestion` and get resolution before continuing. If none, proceed immediately.
-5. **Initialize todos**: Extract every `### Task NNN:` block; create one `TodoWrite` entry per task.
-6. **Execute tasks**: Work through tasks in order — delegate, wait for commit, review, then mark done.
-7. **Final summary**: Report completed tasks, any debug cycles triggered, and unresolved concerns.
-
-## Review Checklist
-
-Before executing, scan for these blockers and surface them to the user:
-
-- `[AMBIGUOUS: ...]` markers left by the task-decomposer agent
-- Placeholder `<test-command>` or `path/to/` not yet filled in
-- Files or modules referenced in tasks that do not exist in the codebase yet
-- Tasks with more than 10 steps (likely too large — ask whether to split)
-- Missing tech stack details (e.g., test runner unspecified, language version unknown)
-
-Present all blockers in a single `AskUserQuestion` call — one question per distinct blocker type. Do not start execution until all blockers are resolved.
-
-## Executing Each Task
-
-For each task in the plan, follow this sequence:
-
-1. **Determine agent** — read the task and reason about which agent best fits the work (see Agent Selection below)
-2. **Spawn agent** — pass the full task block verbatim plus the absolute path to the feature directory
-3. **Wait for commit** — the implementation agent commits as its final step; wait for the result
-4. **Spawn code-reviewer** — always, after every implementation task, pass the list of modified files
-5. **Handle failures** — if the agent reports test failures or errors, spawn `code-debugger` with the error output and file list before marking the task complete
-6. **Mark complete** — update the `TodoWrite` entry to `completed`
-
-## Agent Selection
-
-For each task, read the task title, description, steps, and file list — then reason about which agent is the best fit for the work being done. Ask yourself: what is this task fundamentally about?
-
-Available agents and what they are for:
-
-- **`python-task-agent`** — writing or modifying Python source code, following TDD steps in a Python codebase
-- **`coding-task-agent`** — writing or modifying source code in any other language, following TDD steps
-- **`technical-writer`** — updating documentation, READMEs, changelogs, or inline doc comments; no executable code involved
-- **`code-debugger`** — diagnosing and fixing a broken or failing implementation; the task exists because something isn't working
-
-Do not reduce this to file extension matching. A task that updates a `.md` file as part of a code change may still be better suited for `coding-task-agent` if it involves technical decisions. A task that writes a Python script but is primarily about generating documentation output may suit `technical-writer`. Use your judgment.
-
-After **every** implementation task (python, coding, or debugger) always also spawn `code-reviewer` on the modified files. Tasks handled by `technical-writer` do not need a code-reviewer pass.
+2. Invoke: `/executing-plan docs/features/<NNN>-<slug>`
 
 ## Process Flow
 
 ```mermaid
 flowchart TD
-    A([Start]) --> B[Read plan.md]
-    B --> C[Critical review]
+    A([Start]) --> W[Create git worktree\nSkill using-git-worktrees]
+    W --> B[Read plan.md]
+    B --> C[Critical review\nscan for blockers]
     C --> D{Blockers?}
-    D -- Yes --> E[AskUserQuestion]
+    D -- Yes --> E[Raise via AskUserQuestion\none question per blocker type]
     E --> F{Resolved?}
     F -- No --> G([Abort])
-    F -- Yes --> H[Initialize TodoWrite tasks]
+    F -- Yes --> H[Initialize TodoWrite\none entry per task]
     D -- No --> H
-    H --> I[Pick next task]
-    I --> J[Determine agent]
-    J --> K[Spawn implementation agent]
-    K --> L[Agent commits]
-    L --> M[Spawn code-reviewer]
-    M --> N{Test failures?}
-    N -- Yes --> O[Spawn code-debugger]
-    O --> P[Mark task complete]
-    N -- No --> P
-    P --> Q{More tasks?}
-    Q -- Yes --> I
-    Q -- No --> R[Final summary]
-    R --> Z([Done])
+    H --> TASK
+
+    subgraph TASK[Execute Task]
+        direction TD
+        T1[Determine agent] --> T2[Spawn implementation agent\nfull task block + feature path]
+        T2 --> T3[Wait for commit]
+        T3 --> T4[Spawn code-reviewer\nmodified files + task context]
+        T4 --> T5{Issues found?}
+        T5 -- Yes --> T6[Respawn implementation agent\nwith review feedback]
+        T6 --> T7[Mark task complete]
+        T5 -- No --> T7
+    end
+
+    TASK --> Q{More tasks?}
+    Q -- Yes --> TASK
+    Q -- No --> R[Final code-reviewer\nentire feature directory]
+    R --> S[Skill git-commits + gh pr create]
+    S --> CL{Clean up worktree?}
+    CL -- Yes --> RM[Skill using-git-worktrees\nremove worktree]
+    CL -- No --> Z
+    RM --> Z([Done])
 ```
 
-## Spawning Agents
+**Critical review — scan for these blockers before starting:**
 
-When spawning implementation agents, provide:
+- `[AMBIGUOUS: ...]` markers left by the task-decomposer
+- Placeholder `<test-command>` or `path/to/` not yet filled in
+- Files or modules referenced that do not exist yet
+- Tasks with more than 10 steps (ask whether to split)
+- Missing tech stack details (test runner unspecified, language version unknown)
 
-1. The **full task block** from the plan (verbatim — steps, file paths, test skeleton, commit message hint)
-2. The **absolute path to the feature directory** (e.g., `docs/features/001-oauth`) so the agent can locate design context if needed
-3. Any **blocker resolutions** from step 4 that are relevant to the task (e.g., resolved test command)
+Present all blockers in a single `AskUserQuestion` — one question per blocker type.
 
-When spawning `code-reviewer`, provide:
+## Agent Selection
 
-1. The **list of files modified** by the preceding implementation agent
-2. Brief context: "Review files changed in Task NNN: [title]"
+Read the task title, description, steps, and file list — then reason about what the task is fundamentally about:
 
-When spawning `code-debugger`, provide:
+| Agent | Use when |
+|-------|----------|
+| `python-task-agent` | Writing or modifying Python source code |
+| `coding-task-agent` | Writing or modifying source code in any other language |
+| `technical-writer` | Documentation, READMEs, changelogs only — no executable code |
+| `code-debugger` | Diagnosing and fixing a broken or failing implementation |
 
-1. The **full error output or test failure log**
-2. The **list of files involved**
-3. Brief context: which task failed and what the implementation agent reported
+Do not reduce this to file extension matching. A `.md` update involving technical decisions belongs to `coding-task-agent`. A Python script generating documentation output may suit `technical-writer`.
 
-## Guidelines
+`technical-writer` tasks skip the code-reviewer step.
 
-- Never write implementation code yourself — delegate all code work
-- Ask one `AskUserQuestion` per blocker type, not per individual task
+## Remember
+
+- **ALWAYS implement one task at a time** — never bundle multiple tasks into a single agent call
+- **ALWAYS follow the Execute Task subflow for every task** — do not skip the code-reviewer step
+- Never write implementation code yourself — delegate all code work to subagents
+- When spawning implementation agents: pass the **full task block verbatim** + absolute path to the feature directory + any blocker resolutions
+- When spawning code-reviewer: pass the **list of modified files** + brief context ("Review Task NNN: [title]")
+- If an agent returns without a commit (nothing changed), report it to the user and move on — do not block
 - If the plan has no `### Task NNN:` blocks, stop and inform the user the plan is empty or malformed
-- If an agent returns without a commit (e.g., nothing changed), log it and move on — do not block
 - Keep the user informed with brief status updates between tasks ("Executing Task 003: implement parse_token…")
+
+## When to Stop and Ask for Help
+
+Stop and use `AskUserQuestion` if:
+
+- You hit a blocker (missing dependency, tests fail, instruction unclear)
+- The plan has critical gaps preventing you from starting
+- You don't understand an instruction
+- Verification fails repeatedly

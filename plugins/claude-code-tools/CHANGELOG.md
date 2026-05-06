@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-05-06
+
+### Added
+
+- **using-git-worktrees skill** — Manages git worktrees for feature development: create worktrees for isolated feature branches, list active worktrees, and remove them after merging. Reusable from other skills.
+
+### Changed
+
+- **executing-plan skill** — Rewritten for clearer structure and better compliance:
+  - Simplified to four sections: Quick Start, Process Flow, Agent Selection, Remember
+  - Process Flow uses a mermaid subgraph to visually isolate the per-task loop
+  - Added worktree creation at the start via `using-git-worktrees` skill
+  - Added review comment resolution step: respawn implementation agent with code-reviewer feedback before marking a task done
+  - Added final holistic code-reviewer pass after all tasks complete
+  - Added PR creation step using `gh pr create` after final review
+  - Added worktree cleanup prompt after PR creation
+  - Added "When to Stop and Ask for Help" section with four stop conditions
+  - Explicit rule: ALWAYS implement one task at a time — never bundle tasks
+  - Explicit rule: NEVER skip the code-reviewer step
+
 ## [0.6.0] - 2026-05-05
 
 ### Fixed
