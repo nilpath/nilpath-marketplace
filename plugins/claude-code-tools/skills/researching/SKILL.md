@@ -1,7 +1,7 @@
 ---
 name: researching
 description: You MUST use this skill before doing any creative work, including creating features, writing code, adding functionality, or modifying any behavior. This skill is for researching and gathering information about the task at hand. It involves asking questions, seeking clarification, and collecting relevant data to ensure a thorough understanding of the problem before proceeding with any creative work.
-argument-hint: "[topic-or-slug]" (e.g. "oauth", "refactor auth")
+argument-hint: '"[topic-or-slug]" (e.g. "oauth", "refactor auth")'
 allowed-tools: AskUserQuestion, Read, Glob, Write, Edit, Bash, Grep, Agent, , Skill(engineering-principles), Skill(git-commits), TodoWrite
 ---
 

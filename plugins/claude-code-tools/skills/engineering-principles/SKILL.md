@@ -1,7 +1,7 @@
 ---
 name: engineering-principles
 description: Core software engineering and design principles for writing production-quality code. Use as a reference when making design decisions, reviewing code, or when principled guidance is needed on modularity, abstraction, encapsulation, SOLID, DRY, KISS, YAGNI, and other foundational practices.
-argument-hint: <context> (e.g., "reviewing a refactor", "designing a new module", "choosing between approaches")
+argument-hint: '<context> (e.g., "reviewing a refactor", "designing a new module", "choosing between approaches")'
 ---
 
 # Engineering Principles
