@@ -79,6 +79,7 @@ Do not reduce this to file extension matching. A `.md` update involving technica
 
 ## Remember
 
+- **ALWAYS invoke `Skill(using-git-worktrees)` as the very first action — before reading plan.md, before any other step. The current git branch is irrelevant. Never reason your way out of this step.**
 - **ALWAYS implement one task at a time** — never bundle multiple tasks into a single agent call
 - **ALWAYS follow the Execute Task subflow for every task** — do not skip the code-reviewer step
 - Never write implementation code yourself — delegate all code work to subagents
