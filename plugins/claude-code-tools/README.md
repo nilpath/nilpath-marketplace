@@ -4,7 +4,7 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.6.1
+0.6.2
 
 ## Components
 
@@ -27,12 +27,14 @@ A collection of Agents and Skills for coding with Claude.
 ### Agent Details
 
 **code-reviewer**
-- Comprehensive review checklist: code quality, error handling, security, performance, testing, architecture, documentation
-- Structured output with file:line references for all issues
-- **GitHub PR integration**: Creates pending reviews with line-specific comments
+
+- Engineering-principles based audit: SOLID, DRY, KISS, YAGNI, Law of Demeter, and more
+- Comprehensive review checklist: code quality, error handling, security, performance, testing, architecture, dead code
+- Structured output with `VERDICT: PASS / FAIL` and file:line references for all issues
+- Uses `Agent(Explore)` for dead code and caller analysis
 - Proactive invocation after code changes
-- Tools: Read, Glob, Grep, Bash (restricted to gh/git via skill)
-- Skills: gh-pr-review
+- Tools: Read, Glob, Grep, Bash, Agent(Explore)
+- Skills: engineering-principles
 - Model: sonnet
 
 **spec-reviewer**
@@ -99,7 +101,7 @@ A collection of Agents and Skills for coding with Claude.
 - Tools: Read, Write, Edit, Glob, Grep
 - Model: haiku
 
-### Skills (13)
+### Skills (14)
 
 | Skill | Description |
 |-------|-------------|
@@ -116,6 +118,7 @@ A collection of Agents and Skills for coding with Claude.
 | **git-commits** | Git commit best practices and message formatting guidelines |
 | **git-stacked-prs** | Stacked (dependent) pull request workflow and management |
 | **git-advanced** | Advanced git operations, analysis tools, recovery, and command reference |
+| **performing-code-review** | Orchestrate code review for local branch or PR — delegates to code-reviewer, then optionally posts as PR line comments or a single comment |
 
 ### Skill Details
 

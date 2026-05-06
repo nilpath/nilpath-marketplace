@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-05-06
+
+### Added
+
+- **performing-code-review skill** — Orchestration skill that detects context (local branch or PR), delegates to `code-reviewer` agent, displays the report, then optionally posts to the PR as line comments (via `gh-pr-review`) or a single comment
+
+### Changed
+
+- **code-reviewer agent** — Replaced with engineering-principles based auditor (previously `code-review-agent`): uses `Agent(Explore)` instead of `codebase-explorer`/`browser-agent`, removed Visual Verification section, now applies SOLID/DRY/KISS/YAGNI/Law of Demeter and includes Dead Code detection
+
 ## [0.6.1] - 2026-05-06
 
 ### Added
