@@ -1,5 +1,7 @@
 # The executing-plan skill must be invoked, delegate to an implementation agent,
 # and then run code-reviewer after the task.
+# Note: using-git-worktrees is called at startup but requires a git repo; the test
+# environment has none, so that step is skipped per the context CLAUDE.md.
 
 required_invocations:
   - type: Skill
