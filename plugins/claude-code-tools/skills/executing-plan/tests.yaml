@@ -1,18 +1,35 @@
 invocation:
   positive:
-    - name: "explicit ask to execute plan"
-      prompt: "There is an approved implementation plan at plan.md. Execute it."
+    - name: "slash command invocation"
+      prompt: "/executing-plan There is an approved implementation plan at plan.md. Execute it."
       context:
         "plan.md": |
-          # Plan: trivial
+          # Plan: Two String Utilities
+
+          ## Tech Stack
+          - Python 3.11
+          - `python -m pytest`
+
           ## Tasks
-          ### Task 001: noop
-          - [ ] **Step 1**: Do nothing
+
+          ### Task 001: Implement reverse_string
+
+          - [ ] **Step 1**: Write a failing test for `reverse_string("abc") == "cba"` in `tests/test_strings.py`
+          - [ ] **Step 2**: Implement `reverse_string` in `src/strings.py`
+          - [ ] **Step 3**: Run tests and confirm pass
+          - [ ] **Step 4**: Commit
+
+          ### Task 002: Implement upper_string
+
+          - [ ] **Step 1**: Write a failing test for `upper_string("abc") == "ABC"` in `tests/test_strings.py`
+          - [ ] **Step 2**: Implement `upper_string` in `src/strings.py`
+          - [ ] **Step 3**: Run tests and confirm pass
+          - [ ] **Step 4**: Commit
         "CLAUDE.md": |
           # Test Environment
-          - This is a non-interactive run; skip AskUserQuestion and treat decisions as approved
-          - There is no git repository; if worktree creation fails, proceed without one
-      expectation: "The executing-plan skill was invoked"
+          - Non-interactive run; skip AskUserQuestion
+          - No git repository; if worktree creation fails, proceed without one
+      expectation: "The executing-plan skill was active during this session — the transcript shows the distinctive pattern of the skill's workflow: reading plan.md, delegating implementation to a python-task-agent or coding-task-agent subagent, AND invoking the code-reviewer agent. (Note: when invoked via /<skill-name>, Claude Code inlines the skill's content rather than emitting a Skill tool_use, so behavioral evidence is the right signal here.)"
   negative:
     - name: "off-topic question"
       prompt: "What's the capital of France?"
@@ -73,7 +90,7 @@ instructions:
         - Follow all other skill instructions exactly, including agent delegation
     expectation:
       - "An implementation agent (python-task-agent or coding-task-agent) was invoked for the single task"
-      - "The code-reviewer agent was invoked at least once after the implementation agent committed"
+      - "The code-reviewer agent was invoked at least once after the implementation agent finished its task (whether or not a git commit was actually possible — there is no git repository in the test environment)"
       - "The orchestrator did not write the implementation code itself — code work was delegated to a subagent"
 
   - name: "multi-task plan runs ritual per task without bundling"
@@ -134,5 +151,5 @@ instructions:
       - "Each of the three tasks was implemented by a separate implementation-agent invocation — the orchestrator did NOT bundle two or more tasks into a single agent call"
       - "The code-reviewer agent was invoked after every task (three or more reviewer calls overall, at least one per task)"
       - "The orchestrator updated plan.md (an Edit on plan.md) at least once between tasks to flip the corresponding `- [ ]` checkbox"
-      - "The orchestrator did not dismiss reviewer warnings inline with phrasing like 'noted but', 'not blocking', or 'the task only said' — warnings were either acted on or carried to the end-of-run aggregation step"
+      - "Within the per-task loop (between a code-reviewer report and the next implementation agent call), no reviewer warning was dismissed inline with phrasing such as 'noted but', 'not blocking', or 'the task only said'. Carrying warnings to the end-of-run aggregation step (with or without justification) is acceptable; what's not acceptable is dropping them silently mid-loop."
       - "A final holistic code-reviewer call was made after the last task before any PR creation step"

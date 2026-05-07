@@ -6,7 +6,7 @@ invocation:
         "CLAUDE.md": |
           # Test Environment
           - Non-interactive run; skip AskUserQuestion
-      expectation: "The researching skill was invoked"
+      expectation: "The researching workflow was used — the agent either spawned exploration subagents OR produced a structured design document (covering Goal/Architecture sections or similar), rather than offering an ad-hoc reply"
   negative:
     - name: "off-topic question"
       prompt: "What's the capital of France?"

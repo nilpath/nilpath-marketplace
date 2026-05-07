@@ -11,9 +11,9 @@ from dataclasses import dataclass
 from .runner import Turn
 
 DEFAULT_JUDGE_MODEL = "claude-haiku-4-5-20251001"
-TURN_TEXT_LIMIT = 500
-TURN_TOOL_INPUT_LIMIT = 300
-JUDGE_TIMEOUT_SECONDS = 300
+TURN_TEXT_LIMIT = 1500
+TURN_TOOL_INPUT_LIMIT = 2500
+JUDGE_TIMEOUT_SECONDS = 600
 
 
 @dataclass

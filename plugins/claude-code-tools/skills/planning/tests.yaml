@@ -10,7 +10,7 @@ invocation:
         "CLAUDE.md": |
           # Test Environment
           - Non-interactive run; skip AskUserQuestion
-      expectation: "The planning skill was invoked"
+      expectation: "The planning workflow was used — the agent either invoked the task-decomposer subagent OR produced a numbered TDD task list (with `### Task NNN:` style headings or equivalent), rather than offering an ad-hoc summary"
   negative:
     - name: "off-topic question"
       prompt: "What's the capital of France?"

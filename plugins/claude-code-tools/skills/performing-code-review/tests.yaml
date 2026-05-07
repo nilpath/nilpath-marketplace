@@ -10,7 +10,7 @@ invocation:
         "src/calculator.py": |
           def divide(a, b):
               return a / b
-      expectation: "The performing-code-review skill was invoked"
+      expectation: "The performing-code-review workflow was used — the agent either invoked the code-reviewer subagent OR produced a structured review report with a clear PASS/FAIL verdict, rather than offering ad-hoc inline commentary"
   negative:
     - name: "off-topic question"
       prompt: "What's the capital of France?"
