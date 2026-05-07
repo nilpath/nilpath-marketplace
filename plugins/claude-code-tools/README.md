@@ -4,7 +4,7 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.6.2
+0.6.3
 
 ## Components
 
@@ -107,7 +107,7 @@ A collection of Agents and Skills for coding with Claude.
 |-------|-------------|
 | **researching** | Research-first workflow: explore the problem space, propose approaches, and produce a design spec before any implementation |
 | **planning** | Translates an approved design spec into a sequenced list of TDD implementation tasks (2–5 min each), each following a red → green → commit cycle |
-| **executing-plan** | Executes an approved plan.md: creates a worktree, reviews for blockers, delegates one task at a time to subagents, code-reviews after each commit, and creates a PR at the end |
+| **executing-plan** | Executes an approved plan.md: creates a worktree, reviews for blockers, delegates one task at a time to subagents, code-reviews after each commit, flips plan.md checkboxes as work proceeds, surfaces aggregated review warnings to the user at the end, and creates a PR |
 | **using-git-worktrees** | Manages git worktrees for feature development — create, list, and remove worktrees for isolated branches |
 | **engineering-principles** | Core software engineering and design principles (SOLID, DRY, KISS, YAGNI). Reference when making design decisions or reviewing code |
 | **creating-agents** | Expert guidance for designing and implementing Claude Code subagents |

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-05-07
+
+### Changed
+
+- **executing-plan skill** — Hardened against drift observed during long task lists:
+  - Per-task checklist promoted from "Remember" prose to mandatory in-flow assertions (single task only, code-reviewer always, plan.md flipped, TodoWrite marked)
+  - Orchestrator now flips `- [ ]` to `- [x] → <commit-sha>` in `plan.md` after each task — survives auto-compaction and gives the user live progress
+  - Warnings/Suggestions from per-task reviews are no longer dismissed in line; reports accumulate on disk and a final user-in-the-loop triage step (via `AskUserQuestion`) surfaces them after the holistic review
+  - Added Compaction Recovery section: on `compact_boundary`, re-read SKILL.md and plan.md before continuing
+  - Bundling explicitly forbidden under any "they look similar" reasoning
+- **code-reviewer agent** — Added Compact mode for use by `executing-plan`: when given a feature path + task identifier, the reviewer writes its full report to `<feature>/reviews/task-NNN.md` and returns only verdict + counts. Inline mode (the default for `/performing-code-review`) is unchanged
+
+### Added
+
+- **Behavioural fixture `executing-plan-skill-multitask`** — Asserts that a 3-task plan executes as three distinct impl→review pairs in sequence, with at least one Edit (the plan.md flip) and a final holistic code-reviewer call. Regression test for the anti-bundling and don't-skip-review rules
+
 ## [0.6.2] - 2026-05-06
 
 ### Added
