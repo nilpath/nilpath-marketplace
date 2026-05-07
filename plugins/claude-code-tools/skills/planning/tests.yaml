@@ -1,0 +1,58 @@
+invocation:
+  positive:
+    - name: "natural language ask to plan from a design"
+      prompt: "I have an approved design at design.md. Can you turn it into a TDD implementation plan?"
+      context:
+        "design.md": |
+          # Design: Hello World Utility
+          ## Goal
+          Add a `hello_world()` function returning `"Hello, World!"`.
+        "CLAUDE.md": |
+          # Test Environment
+          - Non-interactive run; skip AskUserQuestion
+      expectation: "The planning skill was invoked"
+  negative:
+    - name: "off-topic question"
+      prompt: "What's the capital of France?"
+      expectation: "The planning skill was NOT invoked"
+
+instructions:
+  - name: "decomposes design into reviewed task list"
+    prompt: |
+      /planning
+
+      There is a design spec at design.md. Create an implementation plan from it.
+
+      Note: This is a non-interactive run. Treat all user approval steps as already approved and proceed to completion without calling AskUserQuestion.
+    context:
+      "design.md": |
+        # Design: Hello World Utility
+
+        ## Goal
+
+        Add a `hello_world()` function to `src/utils.py` that returns the string `"Hello, World!"`.
+
+        ## Architecture
+
+        Single function in `src/utils.py`. No external dependencies.
+
+        ## Component Breakdown
+
+        ### `hello_world` function
+
+        - **Responsibility:** Return the string `"Hello, World!"`
+        - **Location:** `src/utils.py`
+        - **Dependencies:** None
+
+        ## Implementation Notes
+
+        - Pure function, no side effects
+        - Must be covered by a unit test in `tests/test_utils.py`
+      "CLAUDE.md": |
+        # Test Environment
+        - Non-interactive run; skip AskUserQuestion, treat decisions as approved
+        - Follow all other skill instructions exactly, including agent delegation
+    expectation:
+      - "The task-decomposer agent was invoked to break the design into tasks"
+      - "The plan-reviewer agent was invoked to review the produced task list"
+      - "The skill produced a plan containing one or more `### Task NNN:` headed task blocks"

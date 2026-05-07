@@ -1,42 +1,90 @@
-"""Behavioral tests: invoke Claude CLI and assert skill/agent invocation sequences."""
+"""Per-skill behavioural tests with LLM-as-judge.
+
+For every skill under plugins/claude-code-tools/skills/ that ships a tests.yaml,
+this module emits two kinds of parametrized tests:
+
+- test_skill_invocation: positive/negative prompts checking the skill is (or isn't)
+  invoked according to its frontmatter description.
+- test_skill_instructions_followed: prompts that exercise the skill's body, judged
+  against a multi-item rubric.
+
+Each case is rendered to its own pytest id of the form `<skill>:<case-name>`.
+"""
+
+from __future__ import annotations
 
 from pathlib import Path
-import yaml
+
 import pytest
+import yaml
+
+from behavioral.assertions import assert_judge_verdicts
+from behavioral.judge import run_judge
 from behavioral.runner import run_skill_test
-from behavioral.assertions import assert_required_invocations, assert_expected_sequence
 
-FIXTURES_DIR = Path(__file__).parent / "fixtures" / "behavioral"
 PLUGIN_DIR = Path(__file__).parent.parent / "plugins" / "claude-code-tools"
+SKILLS_DIR = PLUGIN_DIR / "skills"
 
 
-def _collect_fixtures() -> list[Path]:
-    if not FIXTURES_DIR.exists():
-        return []
-    return sorted(p for p in FIXTURES_DIR.iterdir() if p.is_dir())
+def _load_skill_tests(skill_dir: Path) -> dict | None:
+    tests_file = skill_dir / "tests.yaml"
+    if not tests_file.exists():
+        return None
+    return yaml.safe_load(tests_file.read_text()) or {}
+
+
+def _collect_invocation_cases() -> list[pytest.param]:
+    cases = []
+    for skill_dir in sorted(SKILLS_DIR.iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        data = _load_skill_tests(skill_dir)
+        if not data:
+            continue
+        invocation = data.get("invocation") or {}
+        for kind in ("positive", "negative"):
+            for case in invocation.get(kind) or []:
+                case_id = f"{skill_dir.name}:{kind}:{case['name']}"
+                cases.append(pytest.param(skill_dir.name, case, id=case_id))
+    return cases
+
+
+def _collect_instructions_cases() -> list[pytest.param]:
+    cases = []
+    for skill_dir in sorted(SKILLS_DIR.iterdir()):
+        if not skill_dir.is_dir():
+            continue
+        data = _load_skill_tests(skill_dir)
+        if not data:
+            continue
+        for case in data.get("instructions") or []:
+            case_id = f"{skill_dir.name}:{case['name']}"
+            cases.append(pytest.param(skill_dir.name, case, id=case_id))
+    return cases
 
 
 @pytest.mark.behavioral
-@pytest.mark.parametrize("fixture_dir", _collect_fixtures(), ids=lambda p: p.name)
-def test_behavioral(fixture_dir: Path):
-    prompt_file = fixture_dir / "prompt.md"
-    expectations_file = fixture_dir / "expectations.yaml"
-    context_dir = fixture_dir / "context"
-
-    assert prompt_file.exists(), f"Missing prompt.md in {fixture_dir.name}"
-    assert expectations_file.exists(), f"Missing expectations.yaml in {fixture_dir.name}"
-
-    prompt = prompt_file.read_text().strip()
-    expectations = yaml.safe_load(expectations_file.read_text())
-
-    calls = run_skill_test(
-        prompt=prompt,
-        context_dir=context_dir if context_dir.exists() else None,
+@pytest.mark.parametrize("skill_name, case", _collect_invocation_cases())
+def test_skill_invocation(skill_name: str, case: dict):
+    transcript = run_skill_test(
+        prompt=case["prompt"],
+        inline_context=case.get("context"),
         plugin_dir=PLUGIN_DIR,
     )
+    verdicts = run_judge(transcript, [case["expectation"]])
+    assert_judge_verdicts(verdicts)
 
-    if required := expectations.get("required_invocations"):
-        assert_required_invocations(calls, required)
 
-    if sequence := expectations.get("expected_sequence"):
-        assert_expected_sequence(calls, sequence)
+@pytest.mark.behavioral
+@pytest.mark.parametrize("skill_name, case", _collect_instructions_cases())
+def test_skill_instructions_followed(skill_name: str, case: dict):
+    transcript = run_skill_test(
+        prompt=case["prompt"],
+        inline_context=case.get("context"),
+        plugin_dir=PLUGIN_DIR,
+    )
+    rubric = case["expectation"]
+    if isinstance(rubric, str):
+        rubric = [rubric]
+    verdicts = run_judge(transcript, rubric)
+    assert_judge_verdicts(verdicts)

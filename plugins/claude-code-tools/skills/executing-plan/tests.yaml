@@ -1,0 +1,138 @@
+invocation:
+  positive:
+    - name: "explicit ask to execute plan"
+      prompt: "There is an approved implementation plan at plan.md. Execute it."
+      context:
+        "plan.md": |
+          # Plan: trivial
+          ## Tasks
+          ### Task 001: noop
+          - [ ] **Step 1**: Do nothing
+        "CLAUDE.md": |
+          # Test Environment
+          - This is a non-interactive run; skip AskUserQuestion and treat decisions as approved
+          - There is no git repository; if worktree creation fails, proceed without one
+      expectation: "The executing-plan skill was invoked"
+  negative:
+    - name: "off-topic question"
+      prompt: "What's the capital of France?"
+      expectation: "The executing-plan skill was NOT invoked"
+
+instructions:
+  - name: "single-task plan runs the per-task ritual"
+    prompt: |
+      /executing-plan
+
+      There is an approved implementation plan at plan.md. Execute it.
+
+      Note: This is a non-interactive run. Treat all user approval steps as already approved and proceed to completion without calling AskUserQuestion.
+    context:
+      "plan.md": |
+        # Plan: Hello World Utility
+
+        ## Goal
+
+        Add a `hello_world()` function to `src/utils.py` that returns the string `"Hello, World!"`.
+
+        ## Tech Stack
+
+        - **Language**: Python 3.11
+        - **Test runner**: `python -m pytest`
+
+        ## Tasks
+
+        ### Task 001: Implement hello_world function
+
+        **Files**:
+
+        - Create: `src/utils.py`
+        - Test: `tests/test_utils.py`
+
+        - [ ] **Step 1**: Write failing test in `tests/test_utils.py`
+
+          ```python
+          def test_hello_world():
+              from src.utils import hello_world
+              assert hello_world() == "Hello, World!"
+          ```
+
+        - [ ] **Step 2**: Run `python -m pytest tests/test_utils.py` — confirm it fails
+        - [ ] **Step 3**: Write minimal implementation in `src/utils.py`
+
+          ```python
+          def hello_world() -> str:
+              return "Hello, World!"
+          ```
+
+        - [ ] **Step 4**: Run `python -m pytest tests/test_utils.py` — confirm it passes
+        - [ ] **Step 5**: Commit using the `git-commits` skill
+      "CLAUDE.md": |
+        # Test Environment
+        - Non-interactive run; skip AskUserQuestion, treat all decisions as approved
+        - If creating a git worktree fails because there is no git repository, proceed without one
+        - Follow all other skill instructions exactly, including agent delegation
+    expectation:
+      - "An implementation agent (python-task-agent or coding-task-agent) was invoked for the single task"
+      - "The code-reviewer agent was invoked at least once after the implementation agent committed"
+      - "The orchestrator did not write the implementation code itself — code work was delegated to a subagent"
+
+  - name: "multi-task plan runs ritual per task without bundling"
+    prompt: |
+      /executing-plan
+
+      There is an approved implementation plan at plan.md with three tasks. Execute it.
+
+      Note: This is a non-interactive run. Treat all user approval steps as already approved and proceed to completion without calling AskUserQuestion.
+    context:
+      "plan.md": |
+        # Plan: Three String Utilities
+
+        ## Goal
+
+        Add three small string-utility functions to `src/strings.py`. The three tasks deliberately follow the same pattern to test that the executing-plan skill does **not** bundle them.
+
+        ## Tech Stack
+
+        - **Language**: Python 3.11
+        - **Test runner**: `python -m pytest`
+
+        ## Tasks
+
+        ### Task 001: Implement reverse_string
+
+        - Create: `src/strings.py`
+        - Test: `tests/test_strings.py`
+
+        - [ ] **Step 1**: Write failing test for `reverse_string("abc") == "cba"`
+        - [ ] **Step 2**: Implement `reverse_string`
+        - [ ] **Step 3**: Run tests — confirm pass
+        - [ ] **Step 4**: Commit
+
+        ### Task 002: Implement upper_string
+
+        - Modify: `src/strings.py`
+
+        - [ ] **Step 1**: Write failing test for `upper_string("abc") == "ABC"`
+        - [ ] **Step 2**: Implement `upper_string`
+        - [ ] **Step 3**: Run tests — confirm pass
+        - [ ] **Step 4**: Commit
+
+        ### Task 003: Implement strip_string
+
+        - Modify: `src/strings.py`
+
+        - [ ] **Step 1**: Write failing test for `strip_string("  abc  ") == "abc"`
+        - [ ] **Step 2**: Implement `strip_string`
+        - [ ] **Step 3**: Run tests — confirm pass
+        - [ ] **Step 4**: Commit
+      "CLAUDE.md": |
+        # Test Environment
+        - Non-interactive run; skip AskUserQuestion, treat all decisions as approved
+        - If creating a git worktree fails because there is no git repository, proceed without one
+        - Follow all other skill instructions exactly, including agent delegation
+    expectation:
+      - "Each of the three tasks was implemented by a separate implementation-agent invocation — the orchestrator did NOT bundle two or more tasks into a single agent call"
+      - "The code-reviewer agent was invoked after every task (three or more reviewer calls overall, at least one per task)"
+      - "The orchestrator updated plan.md (an Edit on plan.md) at least once between tasks to flip the corresponding `- [ ]` checkbox"
+      - "The orchestrator did not dismiss reviewer warnings inline with phrasing like 'noted but', 'not blocking', or 'the task only said' — warnings were either acted on or carried to the end-of-run aggregation step"
+      - "A final holistic code-reviewer call was made after the last task before any PR creation step"
