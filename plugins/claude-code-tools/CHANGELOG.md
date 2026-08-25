@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-25
+
+### Added
+
+- **writing-documentation skill** — Orchestrator skill for technical writing. Three modes: Write (new docs), Update (existing docs), Audit (quality review only). Spawns `doc-writer` agents per file and always runs `doc-auditor` after every write run. Includes `--audit` argument flag and a progressive disclosure reference file for doc-type conventions (README, API ref, changelog, guide, docstring, config, CLI).
+- **doc-writer agent** (implementation category) — Worker agent for writing or updating a single documentation file. Reads source files to verify accuracy before writing. Follows RISEN framework: audience calibration, active voice, present tense for procedures, syntactically-correct code examples. Returns structured report; stops with `blocked` status if source files are missing or contradictory. Used by both `writing-documentation` and `executing-plan`.
+- **doc-auditor agent** (review category) — Read-only auditor for documentation quality. Evaluates across 9 dimensions: accuracy/faithfulness, completeness, clarity, coherence, consistency, code quality, hallucination detection, relevance, and structure. Categorises findings as Error / Warning / Suggestion; every finding includes a concrete fix suggestion. Uses `permissionMode: plan` and `disallowedTools: Write, Edit` for harness-enforced read-only behaviour.
+
+### Changed
+
+- **executing-plan skill** — Agent dispatch table updated: `technical-writer` → `doc-writer`. Skip-code-reviewer rule and all prose references updated accordingly.
+- **performing-code-review skill** — Step 2 now explicitly forbids using the `/code-review` shortcut and requires spawning `Agent(code-reviewer)` directly. Added no-git-repository edge case to the Edge Cases table.
+
+### Removed
+
+- **technical-writer agent** — Superseded by `doc-writer`, which is a strict superset (same model, same tools, richer instructions). All callers updated.
+
 ## [0.6.3] - 2026-05-07
 
 ### Changed

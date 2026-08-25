@@ -1,0 +1,10 @@
+# Audit-only mode: doc-auditor must be spawned; doc-writer must NOT be spawned.
+# (The framework can only assert presence, not absence — we assert doc-auditor appears.)
+
+required_invocations:
+  - type: Agent
+    subagent_type: "claude-code-tools:review:doc-auditor"
+
+expected_sequence:
+  - type: Agent
+    subagent_type: "claude-code-tools:review:doc-auditor"

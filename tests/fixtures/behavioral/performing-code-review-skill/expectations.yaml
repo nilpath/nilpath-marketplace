@@ -1,13 +1,11 @@
-# The performing-code-review skill must be invoked and delegate to the code-reviewer agent.
+# The performing-code-review skill must delegate to the code-reviewer agent.
+# Note: The initial skill invocation via /slash-command does not produce a
+# Skill tool call in the stream — only sub-skill calls within the skill do.
 
 required_invocations:
-  - type: Skill
-    name: performing-code-review
   - type: Agent
     subagent_type: "claude-code-tools:review:code-reviewer"
 
 expected_sequence:
-  - type: Skill
-    name: performing-code-review
   - type: Agent
     subagent_type: "claude-code-tools:review:code-reviewer"

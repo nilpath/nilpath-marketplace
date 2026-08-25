@@ -1,16 +1,14 @@
-# The planning skill must be invoked, then delegate to task-decomposer and plan-reviewer.
+# The planning skill must delegate to task-decomposer and plan-reviewer.
+# Note: The initial skill invocation via /slash-command does not produce a
+# Skill tool call in the stream — only sub-skill calls within the skill do.
 
 required_invocations:
-  - type: Skill
-    name: planning
   - type: Agent
     subagent_type: "claude-code-tools:planning:task-decomposer"
   - type: Agent
     subagent_type: "claude-code-tools:review:plan-reviewer"
 
 expected_sequence:
-  - type: Skill
-    name: planning
   - type: Agent
     subagent_type: "claude-code-tools:planning:task-decomposer"
   - type: Agent

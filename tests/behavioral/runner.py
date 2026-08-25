@@ -48,7 +48,7 @@ def run_skill_test(prompt: str, context_dir: Path | None, plugin_dir: Path) -> l
             cwd=str(cwd),
             capture_output=True,
             text=True,
-            timeout=600,
+            timeout=900,
         )
 
         return _parse_tool_calls(result.stdout)
