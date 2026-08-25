@@ -1,0 +1,5 @@
+# The doc-auditor agent must be invoked with the correct subagent_type.
+
+required_invocations:
+  - type: Agent
+    subagent_type: "claude-code-tools:review:doc-auditor"
