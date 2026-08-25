@@ -1,0 +1,44 @@
+invocation:
+  positive:
+    - name: "natural language ask for a review"
+      prompt: "Can you review the recent code changes on this branch?"
+      context:
+        "CLAUDE.md": |
+          # Test Environment
+          - Non-interactive run; skip AskUserQuestion
+          - There is no git repository; treat any failure as a local branch review and proceed
+        "src/calculator.py": |
+          def divide(a, b):
+              return a / b
+      expectation: "The performing-code-review workflow was used — the agent either invoked the code-reviewer subagent OR produced a structured review report with a clear PASS/FAIL verdict, rather than offering ad-hoc inline commentary"
+  negative:
+    - name: "off-topic question"
+      prompt: "What's the capital of France?"
+      expectation: "The performing-code-review skill was NOT invoked"
+
+instructions:
+  - name: "delegates to code-reviewer agent"
+    prompt: |
+      /performing-code-review
+
+      Note: This is a non-interactive run. There is no git repository and no open PR — treat this as a local branch review. Proceed to completion without calling AskUserQuestion.
+    context:
+      "CLAUDE.md": |
+        # Test Environment
+        - Non-interactive run; skip AskUserQuestion
+        - There is no git repository; treat any PR-detection failure as a local branch review and proceed
+        - Follow all other skill instructions exactly, including spawning the code-reviewer agent
+      "src/calculator.py": |
+        def divide(a, b):
+            return a / b
+
+
+        def process_items(items):
+            results = []
+            for i in range(len(items)):
+                results.append(items[i] * 2)
+            return results
+    expectation:
+      - "The code-reviewer agent was invoked"
+      - "The skill displayed the reviewer's verdict (PASS or FAIL) to the user"
+      - "The skill did not attempt to edit any source code itself — review is read-only"

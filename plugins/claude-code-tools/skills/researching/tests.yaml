@@ -1,0 +1,31 @@
+invocation:
+  positive:
+    - name: "natural language ask to research a topic"
+      prompt: "I want to research how to add a `greet` command to a Python CLI tool before writing any code."
+      context:
+        "CLAUDE.md": |
+          # Test Environment
+          - Non-interactive run; skip AskUserQuestion
+      expectation: "The researching workflow was used — the agent either spawned exploration subagents OR produced a structured design document (covering Goal/Architecture sections or similar), rather than offering an ad-hoc reply"
+  negative:
+    - name: "off-topic question"
+      prompt: "What's the capital of France?"
+      expectation: "The researching skill was NOT invoked"
+
+instructions:
+  - name: "produces a reviewed design spec"
+    prompt: |
+      /researching
+
+      Topic: Add a simple greeting feature to a Python CLI tool. A `greet` command that accepts a name and prints "Hello, {name}!".
+
+      Note: This is a non-interactive run. Treat all user approval steps as already approved and proceed to completion without calling AskUserQuestion.
+    context:
+      "CLAUDE.md": |
+        # Test Environment
+        - Non-interactive run; skip AskUserQuestion, treat decisions as approved
+        - Follow all other skill instructions exactly, including agent delegation
+    expectation:
+      - "The spec-reviewer agent was invoked to review the produced design"
+      - "The skill produced a design.md (or similarly named design spec) covering Goal and Architecture sections"
+      - "The skill did not write implementation code — research output is a spec, not source"

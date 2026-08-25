@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-05-07
+
+### Changed
+
+- **Behavioural tests** — Replaced structural tool-call matcher with an LLM-as-judge layer. Each skill that wants test coverage now ships a colocated `tests.yaml` listing prompt + rubric pairs. Two generic parametrized test functions walk all `tests.yaml` files: `test_skill_invocation` (positive + negative cases checking description-driven invocation) and `test_skill_instructions_followed` (multi-item rubric checking the skill body is followed). The judge runs as `claude -p ... --model "$JUDGE_MODEL"` against the recorded transcript and returns structured PASS/FAIL JSON; default model is Haiku 4.5
+- **`tests/behavioral/runner.py`** — Captures the full assistant transcript (text + tool_use turns) instead of tool calls only; accepts `inline_context: dict[filename, content]` to plant fixture files
+- **`tests/behavioral/assertions.py`** — Replaced structural `assert_required_invocations` / `assert_expected_sequence` with a single `assert_judge_verdicts`
+- **5 existing skill fixtures migrated** into colocated `tests.yaml` files: `executing-plan` (single-task + multi-task anti-drift cases), `performing-code-review`, `planning`, `researching`. Old fixture directories under `tests/fixtures/behavioral/<skill-name>/` deleted. `code-reviewer-agent` fixture left in place pending a follow-up that extends the same pattern to agents
+
+### Added
+
+- **`tests/behavioral/judge.py`** — New module invoking the Claude CLI with a numbered rubric + transcript and parsing structured JSON verdicts
+- **`make test-behavioral-lmstudio`** — Same test suite against a local LM Studio backend via overridable env vars (`LMSTUDIO_BASE_URL`, `LMSTUDIO_AUTH_TOKEN`, `LMSTUDIO_AGENT_MODEL`, `LMSTUDIO_JUDGE_MODEL`). User runs LM Studio + any required Anthropic-compatible proxy manually; the runner code is unchanged
+
 ## [0.6.3] - 2026-05-07
 
 ### Changed
