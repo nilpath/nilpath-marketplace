@@ -1,16 +1,12 @@
-# The executing-plan skill must be invoked, delegate to an implementation agent,
+# The executing-plan skill must delegate to an implementation agent,
 # and then run code-reviewer after the task.
-# Note: using-git-worktrees is called at startup but requires a git repo; the test
-# environment has none, so that step is skipped per the context CLAUDE.md.
+# Note: The initial skill invocation via /slash-command does not produce a
+# Skill tool call in the stream — only sub-skill calls within the skill do.
 
 required_invocations:
-  - type: Skill
-    name: executing-plan
   - type: Agent
     subagent_type: "claude-code-tools:review:code-reviewer"
 
 expected_sequence:
-  - type: Skill
-    name: executing-plan
   - type: Agent
     subagent_type: "claude-code-tools:review:code-reviewer"

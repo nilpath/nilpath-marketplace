@@ -1,13 +1,13 @@
-# The researching skill must be invoked and eventually spawn spec-reviewer.
+# The researching skill must eventually spawn spec-reviewer.
+# Note: The initial skill invocation via /slash-command does not produce a
+# Skill tool call in the stream — only sub-skill calls within the skill do.
+# Note: The researching skill spawns multiple parallel research agents before
+# spec-reviewer, so it runs longer than most fixtures — see runner.py timeout.
 
 required_invocations:
-  - type: Skill
-    name: researching
   - type: Agent
     subagent_type: "claude-code-tools:review:spec-reviewer"
 
 expected_sequence:
-  - type: Skill
-    name: researching
   - type: Agent
     subagent_type: "claude-code-tools:review:spec-reviewer"
