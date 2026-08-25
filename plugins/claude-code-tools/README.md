@@ -4,7 +4,7 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.7.1
+0.7.0
 
 ## Components
 
