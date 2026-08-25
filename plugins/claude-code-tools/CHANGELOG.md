@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-08-25
+
+### Changed
+
+- **performing-code-review skill** — Step 2 now explicitly says "do not use the `/code-review` skill or any other shortcut — always use `Agent(code-reviewer)` directly." Added no-git-repository edge case to the Edge Cases table.
+
 ## [0.7.0] - 2026-08-25
 
 ### Added

@@ -58,7 +58,7 @@ If the script is not accessible, fall back to local branch review and note this 
 
 ### Step 2: Delegate Review
 
-Spawn `Agent(code-reviewer)` to perform the full review.
+Spawn `Agent(code-reviewer)` to perform the full review. **Do not use the `/code-review` skill or any other shortcut — always use `Agent(code-reviewer)` directly.**
 
 - **Local:** `"Review the current branch changes using git diff."`
 - **PR:** `"Review PR #<number>. Use git diff to identify the changed files and focus the review on those."`
@@ -126,6 +126,7 @@ Nothing to do — report was already displayed.
 | Situation | Behavior |
 |-----------|----------|
 | PR number passed but not found | Report error; fall back to local branch review |
+| No git repository at all | Treat as local review; instruct `code-reviewer` to use Read/Glob instead of git diff |
 | No local changes | Warn: "No changes found. Reviewing HEAD." Proceed. |
 | `code-reviewer` returns no report | Report failure; do not attempt to post |
 | `gh-pr-review` auth error | Tell user to run `gh auth login` |
