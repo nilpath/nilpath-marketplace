@@ -70,7 +70,7 @@ Before spawning the implementation agent, assert each item out loud in your stat
 
 After the implementation agent commits:
 
-- [ ] **Code-reviewer ran.** Skip only for `technical-writer` tasks. No exceptions for "this task is small" or "the same pattern was reviewed last time".
+- [ ] **Code-reviewer ran.** Skip only for `doc-writer` tasks. No exceptions for "this task is small" or "the same pattern was reviewed last time".
 - [ ] **Verdict acted on.** `VERDICT: FAIL` → respawn implementation agent with Critical findings. `VERDICT: PASS` → continue. Warnings/Suggestions are NOT dismissed — they remain in `<feature>/reviews/task-NNN.md` for the end-of-run aggregation step.
 - [ ] **plan.md updated.** Flip `- [ ]` to `- [x] → <commit-sha>` for the completed task using `Edit`. This makes progress survive auto-compaction.
 - [ ] **TodoWrite marked complete.**
@@ -103,12 +103,12 @@ Read the task title, description, steps, and file list — then reason about wha
 |-------|----------|
 | `python-task-agent` | Writing or modifying Python source code |
 | `coding-task-agent` | Writing or modifying source code in any other language |
-| `technical-writer` | Documentation, READMEs, changelogs only — no executable code |
+| `doc-writer` | Documentation, READMEs, changelogs only — no executable code |
 | `code-debugger` | Diagnosing and fixing a broken or failing implementation |
 
-Do not reduce this to file extension matching. A `.md` update involving technical decisions belongs to `coding-task-agent`. A Python script generating documentation output may suit `technical-writer`.
+Do not reduce this to file extension matching. A `.md` update involving technical decisions belongs to `coding-task-agent`. A Python script generating documentation output may suit `doc-writer`.
 
-`technical-writer` tasks skip the code-reviewer step and the `<feature>/reviews/` write.
+`doc-writer` tasks skip the code-reviewer step and the `<feature>/reviews/` write.
 
 ## Spawning the Code Reviewer
 

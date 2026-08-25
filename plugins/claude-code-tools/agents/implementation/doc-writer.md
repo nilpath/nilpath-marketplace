@@ -1,6 +1,6 @@
 ---
 name: doc-writer
-description: Writes or updates a single documentation file based on instructions from an orchestrator. Reads existing content and referenced source files to ensure accuracy before writing. Returns a structured report of what was changed. Use when the writing-documentation skill delegates a single-file documentation task.
+description: Writes or updates a single documentation file. Reads existing content and referenced source files to ensure accuracy before writing. Returns a structured report of what was changed. Use when the writing-documentation skill delegates a documentation task, or when executing-plan identifies a documentation-only task in plan.md.
 tools: Read, Write, Edit, Glob, Grep
 model: haiku
 ---

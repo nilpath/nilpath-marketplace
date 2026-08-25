@@ -8,7 +8,7 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Components
 
-### Agents (13)
+### Agents (12)
 
 | Agent | Description |
 | ----- | ----------- |
@@ -22,8 +22,7 @@ A collection of Agents and Skills for coding with Claude.
 | **coding-task-agent** | Implements a single coding task from a TDD plan following the red→green→commit cycle. Used by the `executing-plan` skill. |
 | **python-task-agent** | Implements a single Python coding task with auto-detection of test runner, virtualenv, and package manager. Used by the `executing-plan` skill. |
 | **code-debugger** | Diagnoses failing tests and runtime errors, applies a minimal fix, and confirms resolution. Used by the `executing-plan` skill. |
-| **technical-writer** | Updates README files, changelogs, and inline documentation to reflect implemented changes. Used by the `executing-plan` skill. |
-| **doc-writer** | Writes or updates a single documentation file with source-verified accuracy. Used by the `writing-documentation` skill. |
+| **doc-writer** | Writes or updates a single documentation file with source-verified accuracy. Used by the `writing-documentation` and `executing-plan` skills. |
 | **doc-auditor** | Audits documentation for accuracy, completeness, clarity, hallucinations, and code quality. Used by the `writing-documentation` skill. |
 
 ### Agent Details
@@ -97,16 +96,11 @@ A collection of Agents and Skills for coding with Claude.
 - Tools: Read, Write, Edit, Bash, Glob, Grep
 - Model: sonnet
 
-**technical-writer**
-- Reads implemented source files to understand actual behavior before writing docs
-- Updates only changed sections, matching existing project documentation style
-- Tools: Read, Write, Edit, Glob, Grep
-- Model: haiku
-
 **doc-writer**
-- Writes or updates a single documentation file delegated by the `writing-documentation` skill
-- Reads source files to verify accuracy before writing; stops with `blocked` status if source is missing
+- Writes or updates a single documentation file; reads source files first to verify accuracy
+- Stops with `blocked` status if source files are missing or contradict the task description
 - Follows RISEN framework: explicit steps, audience calibration, style matching, active voice
+- Used by both `writing-documentation` (orchestrated writes) and `executing-plan` (plan.md doc tasks)
 - Tools: Read, Write, Edit, Glob, Grep
 - Model: haiku
 
