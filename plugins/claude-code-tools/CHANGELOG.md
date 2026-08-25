@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-25
+
+### Added
+
+- **writing-documentation skill** — Orchestrator skill for technical writing. Three modes: Write (new docs), Update (existing docs), Audit (quality review). Spawns `doc-writer` agents per file and always runs `doc-auditor` after every write run. Includes `--audit` argument flag and progressive disclosure reference for doc-type conventions.
+- **doc-writer agent** (implementation category) — Worker agent for writing or updating a single documentation file. Reads source files to verify accuracy before writing. Follows RISEN framework (Role, Instructions, Steps, Expectation, Narrowing): audience calibration, active voice, present tense for procedures, syntactically-correct code examples. Returns structured report; stops with `blocked` status if source files are missing or contradictory.
+- **doc-auditor agent** (review category) — Read-only auditor for documentation quality. Evaluates across 9 dimensions: accuracy/faithfulness, completeness, clarity, coherence, consistency, code quality, hallucination detection, relevance, and structure. Categorises findings as Error / Warning / Suggestion; every finding includes a concrete fix suggestion. Uses `permissionMode: plan` and `disallowedTools: Write, Edit` for harness-enforced read-only behaviour.
+
 ## [0.6.3] - 2026-05-07
 
 ### Changed

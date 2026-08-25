@@ -4,11 +4,11 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.6.3
+0.7.0
 
 ## Components
 
-### Agents (11)
+### Agents (13)
 
 | Agent | Description |
 | ----- | ----------- |
@@ -23,6 +23,8 @@ A collection of Agents and Skills for coding with Claude.
 | **python-task-agent** | Implements a single Python coding task with auto-detection of test runner, virtualenv, and package manager. Used by the `executing-plan` skill. |
 | **code-debugger** | Diagnoses failing tests and runtime errors, applies a minimal fix, and confirms resolution. Used by the `executing-plan` skill. |
 | **technical-writer** | Updates README files, changelogs, and inline documentation to reflect implemented changes. Used by the `executing-plan` skill. |
+| **doc-writer** | Writes or updates a single documentation file with source-verified accuracy. Used by the `writing-documentation` skill. |
+| **doc-auditor** | Audits documentation for accuracy, completeness, clarity, hallucinations, and code quality. Used by the `writing-documentation` skill. |
 
 ### Agent Details
 
@@ -101,7 +103,21 @@ A collection of Agents and Skills for coding with Claude.
 - Tools: Read, Write, Edit, Glob, Grep
 - Model: haiku
 
-### Skills (14)
+**doc-writer**
+- Writes or updates a single documentation file delegated by the `writing-documentation` skill
+- Reads source files to verify accuracy before writing; stops with `blocked` status if source is missing
+- Follows RISEN framework: explicit steps, audience calibration, style matching, active voice
+- Tools: Read, Write, Edit, Glob, Grep
+- Model: haiku
+
+**doc-auditor**
+- Audits documentation across 9 dimensions: accuracy, completeness, clarity, coherence, consistency, code quality, hallucinations, relevance, and structure
+- Every finding includes a concrete fix suggestion (not just a problem description)
+- Read-only; uses `permissionMode: plan` to enforce no-write constraint at harness level
+- Tools: Read, Glob, Grep
+- Model: sonnet
+
+### Skills (15)
 
 | Skill | Description |
 |-------|-------------|
@@ -119,6 +135,7 @@ A collection of Agents and Skills for coding with Claude.
 | **git-stacked-prs** | Stacked (dependent) pull request workflow and management |
 | **git-advanced** | Advanced git operations, analysis tools, recovery, and command reference |
 | **performing-code-review** | Orchestrate code review for local branch or PR — delegates to code-reviewer, then optionally posts as PR line comments or a single comment |
+| **writing-documentation** | Create, update, and audit technical documentation using an orchestrator-worker pattern — spawns doc-writer agents per file and a doc-auditor after every write |
 
 ### Skill Details
 
