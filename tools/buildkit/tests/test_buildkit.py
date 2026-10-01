@@ -118,10 +118,10 @@ class TestFrontmatter:
         out, _ = process_frontmatter(data, "skill", cfg.harnesses["copilot"], cfg, "skill/x")
         assert "tools" not in out and "allowed-tools" not in out
 
-    def test_reasoning_mapped_for_codex_dropped_for_copilot(self, cfg):
+    def test_reasoning_mapped_for_claude_dropped_for_copilot(self, cfg):
         data = {"name": "x", "description": "y", "targets": ["claude"], "reasoning": "max"}
         out, _ = process_frontmatter(data, "agent", cfg.harnesses["claude"], cfg, "agent/x")
-        assert out["reasoningEffort"] == "max"
+        assert out["effort"] == "max"
         out, warnings = process_frontmatter(
             {"name": "x", "description": "y", "reasoning": "high"},
             "agent", cfg.harnesses["copilot"], cfg, "agent/x",

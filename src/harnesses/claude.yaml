@@ -8,11 +8,11 @@ frontmatter:
   skill:
     key_for_tools: allowed-tools
     required: [name, description]
-    allowed: [name, description, argument-hint, allowed-tools, license]
+    allowed: [name, description, argument-hint, allowed-tools, license, effort]
   agent:
     key_for_tools: tools
     required: [name, description]
-    allowed: [name, description, tools, model, permissionMode, disallowedTools, skills, reasoningEffort]
+    allowed: [name, description, tools, model, permissionMode, disallowedTools, skills, effort]
 tools:
   format: comma          # rendered as a comma-joined string
   keep_scopes: true      # shell(git add:*) -> Bash(git add:*)
@@ -32,6 +32,7 @@ tools:
 models:
   map: { small: haiku, medium: sonnet, large: opus, xlarge: fable }
 reasoning:
-  # TODO(verify): exact Claude Code agent frontmatter key/values for reasoning effort
-  key: reasoningEffort
+  # Claude Code `effort` frontmatter (skills and agents): low|medium|high|xhigh|max
+  # https://code.claude.com/docs/en/skills#frontmatter-reference
+  key: effort
   map: { minimal: low, low: low, medium: medium, high: high, max: max }
