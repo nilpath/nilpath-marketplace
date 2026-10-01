@@ -1,0 +1,100 @@
+{
+  "skills": [
+    {
+      "name": "creating-mermaid-diagrams",
+      "description": "Creates, edits, and validates Mermaid diagrams including flowcharts, sequence diagrams, class diagrams, state diagrams, ERDs, Gantt charts, and more. Use when working with Mermaid syntax, creating diagrams from descriptions, visualizing architecture, documenting workflows, or when user mentions mermaid, flowchart, sequence diagram, UML, or visualization.",
+      "files": [
+        "SKILL.md",
+        "references/class-diagram-syntax.md",
+        "references/common-patterns.md",
+        "references/entity-relationship-syntax.md",
+        "references/flowchart-syntax.md",
+        "references/gantt-chart-syntax.md",
+        "references/gitgraph-syntax.md",
+        "references/mindmap-syntax.md",
+        "references/pie-chart-syntax.md",
+        "references/sequence-diagram-syntax.md",
+        "references/state-diagram-syntax.md",
+        "references/styling-and-themes.md",
+        "references/timeline-syntax.md",
+        "scripts/validate-mermaid.sh",
+        "templates/architecture-diagram.md",
+        "templates/class-diagram.md",
+        "templates/er-diagram.md",
+        "templates/flowchart.md",
+        "templates/sequence-diagram.md",
+        "workflows/create-diagram.md",
+        "workflows/edit-diagram.md",
+        "workflows/validate-diagram.md"
+      ]
+    },
+    {
+      "name": "engineering-principles",
+      "description": "Core software engineering and design principles for writing production-quality code. Use as a reference when making design decisions, reviewing code, or when principled guidance is needed on modularity, abstraction, encapsulation, SOLID, DRY, KISS, YAGNI, and other foundational practices.",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "gh-address-comments",
+      "description": "Address review/issue comments on the open GitHub PR for the current branch. Fetches all comments and review threads, summarizes what needs attention, and helps apply fixes. Use when responding to PR feedback, resolving review comments, or when user mentions \"address comments\" or \"fix review feedback\".",
+      "files": [
+        "SKILL.md",
+        "scripts/fetch-comments.sh",
+        "scripts/reply-to-thread.sh"
+      ]
+    },
+    {
+      "name": "gh-pr-review",
+      "description": "GitHub PR review operations via gh CLI. Create pending reviews with line comments, submit reviews (approve/reject/comment). Use when adding PR comments, submitting reviews, or managing GitHub code reviews.",
+      "files": [
+        "SKILL.md",
+        "references/api-reference.md",
+        "scripts/create-review.sh",
+        "scripts/pr-info.sh",
+        "scripts/submit-review.sh"
+      ]
+    },
+    {
+      "name": "git-advanced",
+      "description": "Advanced git operations (rebase, cherry-pick, reflog, stash, reset, clean), analysis tools (bisect, blame, history), and command reference. Use for complex git tasks, recovery operations, or when user mentions rebase, cherry-pick, reflog, stash, reset, bisect, or needs git command reference.",
+      "files": [
+        "SKILL.md",
+        "references/advanced-operations.md",
+        "references/common-commands.md"
+      ]
+    },
+    {
+      "name": "git-commits",
+      "description": "Git commit best practices and message formatting guidelines. Use when creating commits, improving commit messages, learning commit conventions, or when user mentions commit messages, commit formatting, or commit guidelines.",
+      "files": [
+        "SKILL.md",
+        "references/commit-guidelines.md",
+        "templates/commit-message.txt"
+      ]
+    },
+    {
+      "name": "git-stacked-prs",
+      "description": "Stacked (dependent) pull request workflow. Use when creating, managing, or troubleshooting stacked PRs, or when user mentions stacked diffs, dependent PRs, PR stacks, or breaking large features into smaller PRs.",
+      "files": [
+        "SKILL.md",
+        "references/stacked-prs.md",
+        "scripts/stack-backup.sh",
+        "scripts/stack-rebase.sh",
+        "scripts/stack-status.sh",
+        "scripts/update-pr-targets.sh",
+        "templates/pr-description.md",
+        "workflows/create-stacked-prs.md",
+        "workflows/recover-from-rebase.md",
+        "workflows/update-stack-after-merge.md"
+      ]
+    },
+    {
+      "name": "using-git-worktrees",
+      "description": "Manages git worktrees for feature development — creates, lists, switches between, and removes worktrees. Use when setting up an isolated branch for feature work, running parallel development streams, or cleaning up after a feature is merged.",
+      "files": [
+        "SKILL.md"
+      ]
+    }
+  ]
+}

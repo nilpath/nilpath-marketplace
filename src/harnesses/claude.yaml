@@ -1,0 +1,37 @@
+id: claude
+output:
+  skills_dir: plugins/claude-code-tools/skills
+  agents_dir: plugins/claude-code-tools/agents
+paths:
+  skill_root: "${{CLAUDE_PLUGIN_ROOT}}/skills/{skill_name}"
+frontmatter:
+  skill:
+    key_for_tools: allowed-tools
+    required: [name, description]
+    allowed: [name, description, argument-hint, allowed-tools, license]
+  agent:
+    key_for_tools: tools
+    required: [name, description]
+    allowed: [name, description, tools, model, permissionMode, disallowedTools, skills, reasoningEffort]
+tools:
+  format: comma          # rendered as a comma-joined string
+  keep_scopes: true      # shell(git add:*) -> Bash(git add:*)
+  map:
+    shell: Bash
+    file-read: Read
+    file-write: Write
+    file-edit: Edit
+    glob-search: Glob
+    content-search: Grep
+    web-fetch: WebFetch
+    web-search: WebSearch
+    subagent: Agent
+    skill: Skill
+    ask-user: AskUserQuestion
+    todo: TodoWrite
+models:
+  map: { small: haiku, medium: sonnet, large: opus, xlarge: fable }
+reasoning:
+  # TODO(verify): exact Claude Code agent frontmatter key/values for reasoning effort
+  key: reasoningEffort
+  map: { minimal: low, low: low, medium: medium, high: high, max: max }

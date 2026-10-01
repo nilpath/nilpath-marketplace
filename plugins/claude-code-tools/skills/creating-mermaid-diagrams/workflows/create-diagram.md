@@ -84,7 +84,7 @@ flowchart LR
 Run validation:
 
 ```bash
-${SKILL_DIR}/scripts/validate-mermaid.sh your-diagram.md
+${CLAUDE_PLUGIN_ROOT}/skills/creating-mermaid-diagrams/scripts/validate-mermaid.sh your-diagram.md
 ```
 
 Or paste at [mermaid.live](https://mermaid.live)

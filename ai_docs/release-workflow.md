@@ -4,47 +4,43 @@ Complete guide for developing and releasing changes to the plugin.
 
 ## Dev Flow
 
-```mermaid
-flowchart TD
-    A[Create feature branch] --> B[Make changes\nskills / agents / fixes]
-    B --> C[Add or update tests]
-    C --> D[Run static tests\nmake test-static]
-    D --> E{Pass?}
-    E -- No --> B
-    E -- Yes --> F[Update 4 version files]
-    F --> G[Commit]
-    G --> H[Create PR]
-```
-
-## 4-File Sync Requirement
-
-Every change MUST update these files together:
+All skills and agents are authored under `src/` and rendered into the committed
+per-harness output by `nilpath-build` (see `tools/buildkit`). Never edit files
+under `plugins/`, `.claude-plugin/`, `.agents/`, or `.well-known/` directly.
 
 ```mermaid
 flowchart TD
-    CHANGE[Make Changes] --> SYNC{Update 4 Files}
-
-    SYNC --> F1[plugin.json<br/>Version bump]
-    SYNC --> F2[marketplace.json<br/>Version sync]
-    SYNC --> F3[README.md<br/>Component counts]
-    SYNC --> F4[CHANGELOG.md<br/>Document changes]
-
-    F1 --> VERIFY[Verify All Match]
-    F2 --> VERIFY
-    F3 --> VERIFY
-    F4 --> VERIFY
-
-    VERIFY --> COMMIT[Commit]
+    A[Create feature branch] --> B[Edit sources under src/]
+    B --> C[make build\nregenerate harness outputs]
+    C --> D[Add or update tests]
+    D --> E[Run static tests\nmake test-static]
+    E --> F{Pass?}
+    F -- No --> B
+    F -- Yes --> G[Update version files]
+    G --> H[make build again\npropagate version]
+    H --> I[Commit src/ + generated output]
+    I --> J[Create PR]
 ```
 
-## File Locations
+## Version Sync Requirement
+
+The version lives in **one editable place**: `src/plugin.yaml`. `make build`
+propagates it into every generated manifest (Claude `plugin.json` +
+`marketplace.json`, Copilot Agent Plugins `plugin.json`, Codex
+`.codex-plugin/plugin.json` + `.agents/plugins/marketplace.json`).
+
+Every release MUST update these files together:
 
 | File | Path | Updates |
 |------|------|---------|
-| plugin.json | `plugins/claude-code-tools/.claude-plugin/plugin.json` | Version |
-| marketplace.json | `.claude-plugin/marketplace.json` | Plugin version |
-| README.md | `plugins/claude-code-tools/README.md` | Component counts, tables |
+| plugin.yaml | `src/plugin.yaml` | Version bump (single source) |
 | CHANGELOG.md | `plugins/claude-code-tools/CHANGELOG.md` | Change documentation |
+| README.md | `plugins/claude-code-tools/README.md` | Component counts, tables |
+| README.md (root) | `README.md` | Portability matrix |
+| generated manifests | — | via `make build`, never by hand |
+
+`make check` (also part of `make test-static`) fails if the committed output
+drifts from `src/`, so a forgotten rebuild cannot land.
 
 ## Version Bumping Rules
 
@@ -151,12 +147,12 @@ Add extra notes when relevant (e.g., "no git repository — skip worktree creati
 ## Pre-Commit Checklist
 
 ```markdown
-- [ ] Static tests pass: make test-static
+- [ ] Sources edited under src/ only (no hand edits to generated output)
+- [ ] make build run after the last source change
+- [ ] Static tests pass: make test-static (includes drift check)
 - [ ] Behavioral fixture added or updated for changed skills/agents
-- [ ] Version bumped in plugin.json
-- [ ] Version updated in marketplace.json
-- [ ] README.md component counts accurate
-- [ ] README.md tables updated (agents, skills)
+- [ ] Version bumped in src/plugin.yaml (then make build)
+- [ ] README.md component counts accurate (plugin + root README)
 - [ ] CHANGELOG.md entry added with date
 ```
 
@@ -166,13 +162,13 @@ Verify counts match actual files:
 
 ```bash
 # Count agents
-find plugins/claude-code-tools/agents -name "*.md" | wc -l
+find src/agents -name "*.md.j2" | wc -l
 
 # Count skills
-ls -d plugins/claude-code-tools/skills/*/ | wc -l
+ls -d src/skills/*/ | wc -l
 
-# Count commands
-find plugins/claude-code-tools/commands -name "*.md" | wc -l
+# Count portable skills (shipped to Copilot/Codex)
+ls -d plugins/claude-code-tools/skills-portable/*/ | wc -l
 ```
 
 ## CHANGELOG Format

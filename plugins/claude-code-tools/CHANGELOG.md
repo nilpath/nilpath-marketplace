@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-01
+
+### Added
+
+- **Tri-client distribution** — the marketplace now also targets GitHub Copilot (VS Code) and Codex, alongside Claude Code. Eight portable skills ship to all three clients: creating-mermaid-diagrams, engineering-principles, gh-address-comments, gh-pr-review, git-advanced, git-commits, git-stacked-prs, using-git-worktrees.
+- **Single authored source under `src/`** — every skill and agent is now a Jinja template (`SKILL.md.j2` / `<agent>.md.j2`) with a canonical, harness-neutral tool vocabulary (`shell`, `file-read`, `subagent(...)`, …), canonical model tiers (`small`–`xlarge`) and reasoning levels (`minimal`–`max`), mapped per harness via `src/harnesses/*.yaml`.
+- **`tools/buildkit` build CLI** (`nilpath-build`) — renders `src/` into committed per-harness output: `build`, `check` (CI drift gate), `validate`, `import-sources`, `new-skill`.
+- **Copilot layer** — Agent Plugins 1.0 manifest (`plugin.json`) + portable `mcp.json`; portable skill renders under `skills-portable/`.
+- **Codex layer** — `.codex-plugin/plugin.json`, `.codex-mcp.json`, root `.agents/plugins/marketplace.json` registry, and `.well-known/skills/` discovery index.
+
+### Changed
+
+- **gh-pr-review, gh-address-comments, creating-mermaid-diagrams** — script references upgraded from `${SKILL_DIR}` to `${CLAUDE_PLUGIN_ROOT}/skills/<name>` in the Claude render (relative paths in Copilot/Codex renders).
+- **Generated frontmatter normalized** — tool lists render as comma-joined strings; fixed a stray double comma in researching's `allowed-tools`.
+- `plugin.json`, `marketplace.json`, and `.mcp.json` are now build artifacts generated from `src/plugin.yaml`.
+
 ## [0.7.0] - 2026-08-25
 
 ### Added

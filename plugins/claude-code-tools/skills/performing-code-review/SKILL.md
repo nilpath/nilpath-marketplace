@@ -2,7 +2,7 @@
 name: performing-code-review
 description: Orchestrates a full code review for the current branch or a GitHub PR. Detects context, delegates to code-reviewer agent, displays the report, then optionally posts to the PR as line comments or a single comment via gh-pr-review. Use when the user asks for a code review, PR review, or audit.
 argument-hint: '[pr-number]'
-allowed-tools: AskUserQuestion Bash(git diff*) Bash(git remote*) Bash(*/pr-info.sh*) Agent(code-reviewer)
+allowed-tools: AskUserQuestion, Bash(git diff*), Bash(git remote*), Bash(*/pr-info.sh*), Agent(code-reviewer)
 ---
 
 # Performing Code Review

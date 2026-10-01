@@ -1,0 +1,25 @@
+# Canonical tool vocabulary owned by this marketplace.
+# Authored sources use ONLY these names; each harness config maps from them.
+# Entries may be scoped: shell(git add:*), subagent(code-reviewer), skill(git-commits).
+# Harness-prefixed passthrough is allowed for names outside the vocabulary,
+# e.g. "claude:mcp__context7__query-docs" renders verbatim on claude only.
+tools:
+  shell:          { scopable: true }
+  file-read:      {}
+  file-write:     {}
+  file-edit:      {}
+  glob-search:    {}
+  content-search: {}
+  web-fetch:      {}
+  web-search:     {}
+  subagent:       { scopable: true }
+  skill:          { scopable: true }
+  ask-user:       {}
+  todo:           {}
+
+models:
+  # Ordered, extensible scale — append sizes (xsmall, xxlarge, ...) without renaming.
+  tiers: [small, medium, large, xlarge]
+
+reasoning:
+  levels: [minimal, low, medium, high, max]

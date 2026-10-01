@@ -1,28 +1,26 @@
 # Claude Code Tools Context
 
+## GENERATED OUTPUT — do not edit here
+
+Every skill, agent, and manifest in this directory is generated from the repo's
+`src/` tree by `nilpath-build` (see `tools/buildkit`). To change a component:
+
+1. Edit the matching `src/skills/<name>/SKILL.md.j2` or `src/agents/<cat>/<name>.md.j2`
+2. Run `make build` from the repo root
+3. Commit the source and the regenerated output together
+
+`make check` fails CI if this directory drifts from `src/`.
+
 ## Versioning Requirements
 
-IMPORTANT: Every change to this plugin MUST include updates to all four files:
+The version lives in `src/plugin.yaml` only; `make build` propagates it into
+every manifest (Claude, Copilot, and Codex). Every release MUST also update:
 
-1. .claude-plugin/plugin.json - Bump version using semver
-2. ../../.claude-plugin/marketplace.json - Update plugin version in marketplace registry
-3. CHANGELOG.md - Document changes using Keep a Changelog format
-4. README.md - Verify/update component counts and tables
+1. CHANGELOG.md — document changes using Keep a Changelog format
+2. README.md — verify/update component counts and tables (plus the root README's portability matrix)
 
 ### Version Bumping Rules
 
 - MAJOR (1.0.0 → 2.0.0): Breaking changes, major reorganization
 - MINOR (1.0.0 → 1.1.0): New agents, commands, or skills
-- PATCH (1.0.0 → 1.0.1): Bug fixes, doc updates, minor improvements
-
-### Pre-Commit Checklist
-
-Before committing ANY changes:
-
-- [ ] Version bumped in .claude-plugin/plugin.json
-- [ ] Version updated in ../../.claude-plugin/marketplace.json
-- [ ] CHANGELOG.md updated with changes
-- [ ] README.md component counts verified
-- [ ] README.md tables accurate (agents, commands, skills)
-
-**Note:** The marketplace.json file is at the root level (.claude-plugin/marketplace.json) and must be kept in sync with the plugin's version.
+- PATCH (1.0.0 → 1.0.1): Bug fixes, documentation updates

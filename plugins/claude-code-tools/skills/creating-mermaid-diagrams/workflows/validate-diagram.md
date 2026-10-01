@@ -7,7 +7,7 @@ Approaches for validating Mermaid diagram syntax.
 Use the validation script:
 
 ```bash
-${SKILL_DIR}/scripts/validate-mermaid.sh diagram.md
+${CLAUDE_PLUGIN_ROOT}/skills/creating-mermaid-diagrams/scripts/validate-mermaid.sh diagram.md
 ```
 
 **Success output:**

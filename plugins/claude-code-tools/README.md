@@ -4,7 +4,13 @@ A collection of Agents and Skills for coding with Claude.
 
 ## Version
 
-0.7.0
+0.8.0
+
+> **Note:** The skill and agent files in this directory are generated from the
+> repo's `src/` sources by `nilpath-build` — edit `src/`, not these files.
+> Eight portable skills are additionally published for GitHub Copilot
+> (`skills-portable/`, Agent Plugins 1.0 `plugin.json`) and Codex
+> (`.codex-plugin/`, `.well-known/skills/`).
 
 ## Components
 

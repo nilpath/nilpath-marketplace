@@ -3,16 +3,7 @@ name: docs-library-researcher
 description: Researches external documentation, libraries, and frameworks relevant to a topic. Looks up official docs, best practices, and known limitations. Use when investigating which libraries to use, how to use them, or what patterns are recommended.
 model: sonnet
 permissionMode: plan
-tools:
-  - Read
-  - Glob
-  - Grep
-  - WebFetch
-  - WebSearch
-  - mcp__plugin_claude-code-tools_context7__resolve-library-id
-  - mcp__plugin_claude-code-tools_context7__query-docs
-  - mcp__plugin_context7-plugin_context7__resolve-library-id
-  - mcp__plugin_context7-plugin_context7__query-docs
+tools: Read, Glob, Grep, WebFetch, WebSearch, mcp__plugin_claude-code-tools_context7__resolve-library-id, mcp__plugin_claude-code-tools_context7__query-docs, mcp__plugin_context7-plugin_context7__resolve-library-id, mcp__plugin_context7-plugin_context7__query-docs
 ---
 
 # Documentation & Library Researcher

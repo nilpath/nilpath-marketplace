@@ -96,7 +96,7 @@ flowchart LR
 After each significant change:
 
 ```bash
-${SKILL_DIR}/scripts/validate-mermaid.sh diagram.md
+${CLAUDE_PLUGIN_ROOT}/skills/creating-mermaid-diagrams/scripts/validate-mermaid.sh diagram.md
 ```
 
 ## Step 5: Review

@@ -12,13 +12,13 @@ Fetch and address review comments on the open PR for the current branch using th
 
 ```bash
 # Fetch all comments for current branch's PR
-${SKILL_DIR}/scripts/fetch-comments.sh
+${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh
 
 # Fetch comments for specific PR
-${SKILL_DIR}/scripts/fetch-comments.sh 123
+${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh 123
 
 # Reply to a review thread after fixing
-${SKILL_DIR}/scripts/reply-to-thread.sh "PRRT_threadId" "Fixed in this commit"
+${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh "PRRT_threadId" "Fixed in this commit"
 ```
 
 ## Workflow
@@ -28,7 +28,7 @@ ${SKILL_DIR}/scripts/reply-to-thread.sh "PRRT_threadId" "Fixed in this commit"
 Run the fetch script to get all PR comments:
 
 ```bash
-COMMENTS=$(${SKILL_DIR}/scripts/fetch-comments.sh)
+COMMENTS=$(${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh)
 ```
 
 ### Step 2: Summarize and Number
@@ -72,7 +72,7 @@ After applying fixes, reply to the review threads to acknowledge:
 
 ```bash
 # For each addressed thread (use the thread id from fetch-comments.sh)
-${SKILL_DIR}/scripts/reply-to-thread.sh "$THREAD_ID" "Fixed in this commit"
+${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh "$THREAD_ID" "Fixed in this commit"
 ```
 
 **Suggested reply formats:**
@@ -90,7 +90,7 @@ Fetches all PR comments using GitHub GraphQL API.
 **Usage:**
 
 ```bash
-${SKILL_DIR}/scripts/fetch-comments.sh [PR_NUMBER]
+${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh [PR_NUMBER]
 ```
 
 **Output:**
@@ -149,7 +149,7 @@ Reply to a PR review thread after addressing feedback.
 **Usage:**
 
 ```bash
-${SKILL_DIR}/scripts/reply-to-thread.sh <thread_id> <body>
+${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh <thread_id> <body>
 ```
 
 **Arguments:**
@@ -175,7 +175,7 @@ ${SKILL_DIR}/scripts/reply-to-thread.sh <thread_id> <body>
 
 ```bash
 # After fixing an issue, reply to acknowledge
-${SKILL_DIR}/scripts/reply-to-thread.sh "PRRT_kwDOExample123" "Fixed by adding null check"
+${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh "PRRT_kwDOExample123" "Fixed by adding null check"
 ```
 
 ## Error Handling

@@ -1,0 +1,44 @@
+id: copilot
+output:
+  # Portable render shared by the Agent Plugins 1.0 manifest (plugin.json)
+  # and the Codex plugin manifest (.codex-plugin/plugin.json).
+  skills_dir: plugins/claude-code-tools/skills-portable
+  agents_dir: .github/agents
+  agent_suffix: ".agent.md"
+paths:
+  skill_root: "."        # skills resolve relative to their own directory
+frontmatter:
+  skill:
+    key_for_tools: null  # Copilot skills carry no tool declarations
+    required: [name, description]
+    allowed: [name, description, license]
+    drop: [argument-hint]
+  agent:
+    key_for_tools: tools
+    required: [name, description]
+    allowed: [name, description, tools, model, user-invocable, disable-model-invocation, target]
+    drop: [permissionMode, disallowedTools, skills]
+tools:
+  format: list           # rendered as a YAML list
+  keep_scopes: false     # scopes collapse: shell(git:*) -> execute
+  dedupe: true
+  unmappable: [skill, ask-user]
+  map:
+    shell: execute
+    file-read: read
+    file-write: edit
+    file-edit: edit
+    glob-search: search
+    content-search: search
+    web-fetch: web
+    web-search: web
+    subagent: agent
+    todo: todo
+models:
+  map:                   # .agent.md accepts fallback priority lists
+    small:  [claude-haiku-4-5]
+    medium: [claude-sonnet-5]
+    large:  [claude-opus-5-5, claude-sonnet-5]
+    xlarge: [claude-fable-5-1, claude-opus-5-5]
+reasoning:
+  key: null              # no reasoning field in .agent.md as of research; drop + warn

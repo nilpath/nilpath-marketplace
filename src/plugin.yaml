@@ -1,0 +1,26 @@
+# Single source of truth for plugin + marketplace metadata.
+# The build propagates these values into every generated manifest.
+name: claude-code-tools
+version: 0.8.0
+description: A collection Agents and Skills I use for coding with Claude.
+author:
+  name: Christoffer Ahrling
+  url: https://github.com/nilpath
+homepage: https://github.com/nilpath/nilpath-marketplace
+repository: https://github.com/nilpath/nilpath-marketplace
+license: MIT
+keywords: []
+category: Productivity
+
+marketplace:
+  name: nilpath-marketplace
+  owner:
+    name: Christoffer Ahrling
+    url: https://github.com/nilpath
+  description: A marketplace for my claude code extensions
+  version: 0.0.1
+
+mcp:
+  context7:
+    type: http
+    url: https://mcp.context7.com/mcp

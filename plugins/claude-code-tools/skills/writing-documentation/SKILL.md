@@ -1,13 +1,7 @@
 ---
 name: writing-documentation
-description: >
-  Creates, updates, and audits technical documentation using an orchestrator-worker
-  pattern. Spawns doc-writer agents for each file and a doc-auditor after every
-  write run to catch inaccuracies, hallucinations, and gaps. Supports three modes:
-  Write (new docs), Update (existing docs), Audit (quality review only). Use when
-  writing new documentation, updating existing docs, reviewing doc quality, or when
-  the user mentions README, API docs, guides, changelogs, technical writing, or documentation.
-argument-hint: "[file-or-dir] [--audit]"
+description: 'Creates, updates, and audits technical documentation using an orchestrator-worker pattern. Spawns doc-writer agents for each file and a doc-auditor after every write run to catch inaccuracies, hallucinations, and gaps. Supports three modes: Write (new docs), Update (existing docs), Audit (quality review only). Use when writing new documentation, updating existing docs, reviewing doc quality, or when the user mentions README, API docs, guides, changelogs, technical writing, or documentation.'
+argument-hint: '[file-or-dir] [--audit]'
 allowed-tools: AskUserQuestion, Read, Write, Edit, Glob, Grep, Agent, TodoWrite
 ---
 
