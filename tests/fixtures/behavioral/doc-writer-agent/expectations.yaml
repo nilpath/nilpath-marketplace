@@ -2,4 +2,4 @@
 
 required_invocations:
   - type: Agent
-    subagent_type: "claude-code-tools:implementation:doc-writer"
+    subagent_type: "documentation:implementation:doc-writer"

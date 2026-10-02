@@ -1,0 +1,4 @@
+name: documentation
+version: 0.8.0
+description: Technical documentation tooling — orchestrated doc writing and auditing, plus Mermaid diagram creation and validation.
+keywords: [documentation, technical-writing, mermaid, diagrams]

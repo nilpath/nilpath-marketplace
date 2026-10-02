@@ -1,14 +1,14 @@
 from pathlib import Path
 import frontmatter
 import pytest
-from paths import AGENTS_DIR
+from paths import all_agent_files
 
 KNOWN_MODELS = {"haiku", "sonnet", "opus"}
 
 
 def pytest_generate_tests(metafunc):
     if "agent_file" in metafunc.fixturenames:
-        agent_files = sorted(AGENTS_DIR.rglob("*.md"))
+        agent_files = all_agent_files()
         metafunc.parametrize("agent_file", agent_files, ids=[f.stem for f in agent_files])
 
 

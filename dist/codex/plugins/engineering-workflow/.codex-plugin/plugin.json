@@ -1,0 +1,37 @@
+{
+  "name": "engineering-workflow",
+  "version": "0.8.0",
+  "description": "Research → design → plan → implement → review pipeline. Orchestrator skills plus the reviewer, researcher, and implementation agents they delegate to, and core engineering principles.",
+  "skills": "./skills/",
+  "author": {
+    "name": "Christoffer Ahrling",
+    "url": "https://github.com/nilpath"
+  },
+  "keywords": [
+    "workflow",
+    "planning",
+    "tdd",
+    "code-review",
+    "research"
+  ],
+  "interface": {
+    "displayName": "Engineering Workflow",
+    "shortDescription": "Research → design → plan → implement → review pipeline. Orchestrator skills plus the reviewer, resea",
+    "longDescription": "Research → design → plan → implement → review pipeline. Orchestrator skills plus the reviewer, researcher, and implementation agents they delegate to, and core engineering principles.",
+    "category": "Productivity"
+  },
+  "components": {
+    "agents": [
+      "agents/api-integration-researcher.toml",
+      "agents/architecture-researcher.toml",
+      "agents/code-debugger.toml",
+      "agents/code-reviewer.toml",
+      "agents/coding-task-agent.toml",
+      "agents/docs-library-researcher.toml",
+      "agents/plan-reviewer.toml",
+      "agents/python-task-agent.toml",
+      "agents/spec-reviewer.toml",
+      "agents/task-decomposer.toml"
+    ]
+  }
+}

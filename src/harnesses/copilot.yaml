@@ -1,0 +1,50 @@
+id: copilot
+output:
+  dist_root: dist/copilot       # plugins render under <dist_root>/plugins/<plugin>/
+  skills_dir: skills            # plugin-relative; Agent Plugins 1.0 default location
+  # Copilot-specific components live in the plugin's reverse-domain dir
+  # per the Agent Plugins 1.0 spec.
+  agents_dir: com.github.copilot/agents
+  agent_suffix: ".agent.md"
+paths:
+  skill_root: "."        # skills resolve relative to their own directory
+frontmatter:
+  skill:
+    key_for_tools: null  # Copilot skills carry no tool declarations
+    required: [name, description]
+    allowed: [name, description, license]
+    drop: [argument-hint]
+  agent:
+    key_for_tools: tools
+    required: [name, description]
+    allowed: [name, description, tools, model, user-invocable, disable-model-invocation, target]
+    drop: [permissionMode, disallowedTools, skills]
+tools:
+  format: list           # rendered as a YAML list
+  keep_scopes: false     # scopes collapse: shell(git:*) -> execute
+  dedupe: true
+  unmappable: [skill, ask-user]
+  map:
+    shell: execute
+    file-read: read
+    file-write: edit
+    file-edit: edit
+    glob-search: search
+    content-search: search
+    web-fetch: web
+    web-search: web
+    subagent: agent
+    todo: todo
+prose:
+  spawn: 'the `{name}` custom agent (delegate to it via the agent tool)'
+  skill: 'the `{name}` skill (`/{name}`)'
+  todo: 'the todo list'
+  ask_user: 'a direct chat question to the user (wait for their reply before continuing)'
+models:
+  map:                   # .agent.md accepts fallback priority lists
+    small:  [claude-haiku-4-5]
+    medium: [claude-sonnet-5]
+    large:  [claude-opus-5-5, claude-sonnet-5]
+    xlarge: [claude-fable-5-1, claude-opus-5-5]
+reasoning:
+  key: null              # no reasoning field in .agent.md as of research; drop + warn

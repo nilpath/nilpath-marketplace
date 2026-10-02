@@ -6,8 +6,8 @@
 
 required_invocations:
   - type: Agent
-    subagent_type: "claude-code-tools:review:spec-reviewer"
+    subagent_type: "engineering-workflow:review:spec-reviewer"
 
 expected_sequence:
   - type: Agent
-    subagent_type: "claude-code-tools:review:spec-reviewer"
+    subagent_type: "engineering-workflow:review:spec-reviewer"

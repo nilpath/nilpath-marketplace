@@ -2,4 +2,4 @@
 
 required_invocations:
   - type: Agent
-    subagent_type: "claude-code-tools:review:code-reviewer"
+    subagent_type: "engineering-workflow:review:code-reviewer"

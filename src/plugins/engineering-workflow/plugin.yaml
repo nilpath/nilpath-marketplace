@@ -1,0 +1,8 @@
+name: engineering-workflow
+version: 0.8.0
+description: Research → design → plan → implement → review pipeline. Orchestrator skills plus the reviewer, researcher, and implementation agents they delegate to, and core engineering principles.
+keywords: [workflow, planning, tdd, code-review, research]
+mcp:
+  context7:
+    type: http
+    url: https://mcp.context7.com/mcp

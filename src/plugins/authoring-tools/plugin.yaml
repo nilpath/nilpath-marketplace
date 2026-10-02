@@ -1,0 +1,4 @@
+name: authoring-tools
+version: 0.8.0
+description: Guidance for authoring Claude Code extensions — designing and writing skills and subagents.
+keywords: [claude-code, skills, agents, authoring]

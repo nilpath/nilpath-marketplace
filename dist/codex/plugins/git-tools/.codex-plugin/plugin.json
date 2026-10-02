@@ -1,0 +1,23 @@
+{
+  "name": "git-tools",
+  "version": "0.8.0",
+  "description": "Git and GitHub workflow skills — commit conventions, advanced git operations, stacked PRs, worktrees, and gh-based PR review and comment handling.",
+  "skills": "./skills/",
+  "author": {
+    "name": "Christoffer Ahrling",
+    "url": "https://github.com/nilpath"
+  },
+  "keywords": [
+    "git",
+    "github",
+    "commits",
+    "pull-requests",
+    "worktrees"
+  ],
+  "interface": {
+    "displayName": "Git Tools",
+    "shortDescription": "Git and GitHub workflow skills — commit conventions, advanced git operations, stacked PRs, worktrees",
+    "longDescription": "Git and GitHub workflow skills — commit conventions, advanced git operations, stacked PRs, worktrees, and gh-based PR review and comment handling.",
+    "category": "Productivity"
+  }
+}

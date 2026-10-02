@@ -1,0 +1,19 @@
+{
+  "name": "engineering-workflow",
+  "version": "0.8.0",
+  "description": "Research → design → plan → implement → review pipeline. Orchestrator skills plus the reviewer, researcher, and implementation agents they delegate to, and core engineering principles.",
+  "author": {
+    "name": "Christoffer Ahrling",
+    "url": "https://github.com/nilpath"
+  },
+  "homepage": "https://github.com/nilpath/nilpath-marketplace",
+  "repository": "https://github.com/nilpath/nilpath-marketplace",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "planning",
+    "tdd",
+    "code-review",
+    "research"
+  ]
+}

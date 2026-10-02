@@ -7,11 +7,12 @@ These tests cover design invariants not caught by the generic structure tests:
 """
 
 import frontmatter
-from paths import AGENTS_DIR, SKILLS_DIR
+from paths import CLAUDE_PLUGINS_DIR
 
-DOC_AUDITOR = AGENTS_DIR / "review" / "doc-auditor.md"
-DOC_WRITER = AGENTS_DIR / "implementation" / "doc-writer.md"
-WRITING_DOC_SKILL = SKILLS_DIR / "writing-documentation" / "SKILL.md"
+DOC_PLUGIN = CLAUDE_PLUGINS_DIR / "documentation"
+DOC_AUDITOR = DOC_PLUGIN / "agents" / "review" / "doc-auditor.md"
+DOC_WRITER = DOC_PLUGIN / "agents" / "implementation" / "doc-writer.md"
+WRITING_DOC_SKILL = DOC_PLUGIN / "skills" / "writing-documentation" / "SKILL.md"
 
 
 def test_doc_auditor_in_review_category():

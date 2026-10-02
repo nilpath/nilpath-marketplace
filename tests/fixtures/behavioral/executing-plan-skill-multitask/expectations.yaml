@@ -7,27 +7,27 @@
 
 required_invocations:
   - type: Agent
-    subagent_type: "claude-code-tools:implementation:python-task-agent"
+    subagent_type: "engineering-workflow:implementation:python-task-agent"
   - type: Agent
-    subagent_type: "claude-code-tools:review:code-reviewer"
+    subagent_type: "engineering-workflow:review:code-reviewer"
   - type: Edit
 
 expected_sequence:
   # Task 001
   - type: Agent
-    subagent_type: "claude-code-tools:implementation:python-task-agent"
+    subagent_type: "engineering-workflow:implementation:python-task-agent"
   - type: Agent
-    subagent_type: "claude-code-tools:review:code-reviewer"
+    subagent_type: "engineering-workflow:review:code-reviewer"
   # Task 002 — must NOT be bundled with Task 001
   - type: Agent
-    subagent_type: "claude-code-tools:implementation:python-task-agent"
+    subagent_type: "engineering-workflow:implementation:python-task-agent"
   - type: Agent
-    subagent_type: "claude-code-tools:review:code-reviewer"
+    subagent_type: "engineering-workflow:review:code-reviewer"
   # Task 003 — must NOT be bundled with Task 002
   - type: Agent
-    subagent_type: "claude-code-tools:implementation:python-task-agent"
+    subagent_type: "engineering-workflow:implementation:python-task-agent"
   - type: Agent
-    subagent_type: "claude-code-tools:review:code-reviewer"
+    subagent_type: "engineering-workflow:review:code-reviewer"
   # Final holistic review after all tasks
   - type: Agent
-    subagent_type: "claude-code-tools:review:code-reviewer"
+    subagent_type: "engineering-workflow:review:code-reviewer"

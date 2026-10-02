@@ -1,0 +1,43 @@
+id: codex
+output:
+  dist_root: dist/codex         # plugins render under <dist_root>/plugins/<plugin>/
+  skills_dir: skills            # plugin-relative
+  # Codex custom agents are standalone TOML files (name, description,
+  # developer_instructions, model, model_reasoning_effort, sandbox_mode),
+  # referenced from .codex-plugin/plugin.json under components.agents.
+  agents_dir: agents
+  agent_suffix: ".toml"
+  agent_format: toml
+paths:
+  skill_root: "."
+frontmatter:
+  skill:
+    key_for_tools: null
+    required: [name, description]
+    allowed: [name, description]
+    drop: [argument-hint, license]
+  agent:
+    key_for_tools: null            # Codex agents have no tool list (sandbox instead)
+    required: [name, description]
+    allowed: [name, description, model, model_reasoning_effort, sandbox_mode]
+    drop: [skills, disallowedTools]
+    translate:
+      permissionMode:              # plan agents become read-only sandboxed agents
+        key: sandbox_mode
+        map: { plan: read-only }
+tools:
+  map: {}                          # no tool concept — stripped silently
+prose:
+  spawn: 'the `{name}` agent (spawn it as a subagent)'
+  skill: 'the `{name}` skill'
+  todo: 'the plan tool (`update_plan`)'
+  ask_user: 'a direct chat question to the user (wait for their reply before continuing)'
+models:
+  map:
+    small:  gpt-5.1-codex-mini
+    medium: gpt-5.1-codex
+    large:  gpt-5.1-codex
+    xlarge: gpt-5.1-codex-max
+reasoning:
+  key: model_reasoning_effort
+  map: { minimal: minimal, low: low, medium: medium, high: high, max: xhigh }

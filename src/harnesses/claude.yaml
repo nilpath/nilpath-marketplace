@@ -1,0 +1,46 @@
+id: claude
+output:
+  dist_root: dist/claude        # plugins render under <dist_root>/plugins/<plugin>/
+  skills_dir: skills            # plugin-relative
+  agents_dir: agents
+paths:
+  skill_root: "${{CLAUDE_PLUGIN_ROOT}}/skills/{skill_name}"
+frontmatter:
+  skill:
+    key_for_tools: allowed-tools
+    required: [name, description]
+    allowed: [name, description, argument-hint, allowed-tools, license, effort]
+  agent:
+    key_for_tools: tools
+    required: [name, description]
+    allowed: [name, description, tools, model, permissionMode, disallowedTools, skills, effort]
+tools:
+  format: comma          # rendered as a comma-joined string
+  keep_scopes: true      # shell(git add:*) -> Bash(git add:*)
+  map:
+    shell: Bash
+    file-read: Read
+    file-write: Write
+    file-edit: Edit
+    glob-search: Glob
+    content-search: Grep
+    web-fetch: WebFetch
+    web-search: WebSearch
+    subagent: Agent
+    skill: Skill
+    ask-user: AskUserQuestion
+    todo: TodoWrite
+# Phrasing templates for skill/agent bodies, exposed as Jinja helpers:
+# {{ spawn('plugin:cat:agent') }}, {{ skill_ref('plugin:skill') }}, {{ todo }}, {{ ask_user }}
+prose:
+  spawn: '`Agent(subagent_type="{full}")`'
+  skill: 'the `{full}` skill'
+  todo: 'the `TodoWrite` tool'
+  ask_user: 'the `AskUserQuestion` tool'
+models:
+  map: { small: haiku, medium: sonnet, large: opus, xlarge: fable }
+reasoning:
+  # Claude Code `effort` frontmatter (skills and agents): low|medium|high|xhigh|max
+  # https://code.claude.com/docs/en/skills#frontmatter-reference
+  key: effort
+  map: { minimal: low, low: low, medium: medium, high: high, max: max }

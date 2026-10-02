@@ -1,0 +1,28 @@
+{
+  "name": "documentation",
+  "version": "0.8.0",
+  "description": "Technical documentation tooling — orchestrated doc writing and auditing, plus Mermaid diagram creation and validation.",
+  "skills": "./skills/",
+  "author": {
+    "name": "Christoffer Ahrling",
+    "url": "https://github.com/nilpath"
+  },
+  "keywords": [
+    "documentation",
+    "technical-writing",
+    "mermaid",
+    "diagrams"
+  ],
+  "interface": {
+    "displayName": "Documentation",
+    "shortDescription": "Technical documentation tooling — orchestrated doc writing and auditing, plus Mermaid diagram creati",
+    "longDescription": "Technical documentation tooling — orchestrated doc writing and auditing, plus Mermaid diagram creation and validation.",
+    "category": "Productivity"
+  },
+  "components": {
+    "agents": [
+      "agents/doc-auditor.toml",
+      "agents/doc-writer.toml"
+    ]
+  }
+}

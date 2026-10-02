@@ -3,7 +3,7 @@ from pathlib import Path
 
 import frontmatter
 import pytest
-from paths import SKILLS_DIR
+from paths import all_skill_dirs
 
 KNOWN_MODELS = {"haiku", "sonnet", "opus"}
 KNOWN_SUBDIRS = {"references", "templates", "workflows", "scripts", "examples", "prompts"}
@@ -16,9 +16,7 @@ def _skill_ids(skill_dirs):
 
 def pytest_generate_tests(metafunc):
     if "skill_dir" in metafunc.fixturenames:
-        skill_dirs = sorted(
-            p for p in SKILLS_DIR.iterdir() if p.is_dir() and (p / "SKILL.md").exists()
-        )
+        skill_dirs = all_skill_dirs()
         metafunc.parametrize("skill_dir", skill_dirs, ids=[d.name for d in skill_dirs])
 
 
