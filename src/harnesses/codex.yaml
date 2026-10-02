@@ -27,6 +27,11 @@ frontmatter:
         map: { plan: read-only }
 tools:
   map: {}                          # no tool concept — stripped silently
+prose:
+  spawn: 'the `{name}` agent (spawn it as a subagent)'
+  skill: 'the `{name}` skill'
+  todo: 'the plan tool (`update_plan`)'
+  ask_user: 'a direct chat question to the user (wait for their reply before continuing)'
 models:
   map:
     small:  gpt-5.1-codex-mini

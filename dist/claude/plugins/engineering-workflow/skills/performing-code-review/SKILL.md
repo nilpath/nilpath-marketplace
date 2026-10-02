@@ -20,14 +20,14 @@ Orchestrate a full code review: detect context, delegate to `code-reviewer`, dis
 
 ```mermaid
 flowchart TD
-    A([Start]) --> D[Detect context\npr-info.sh or $ARGUMENTS]
+    A([Start]) --> D[Detect context\npr-info.sh or explicit PR number]
     D --> E{PR found?}
     E -- No --> R[Spawn code-reviewer\nlocal branch review]
     E -- Yes --> R2[Spawn code-reviewer\nPR-targeted review]
     R --> OUT[Output report]
     OUT --> Z([Done])
     R2 --> SHOW[Display report to user]
-    SHOW --> Q[AskUserQuestion\nhow to post?]
+    SHOW --> Q[Ask user\nhow to post?]
     Q --> L{Choice}
     L -- Line comments --> GH[Use git-tools:gh-pr-review skill\ncreate PENDING review]
     L -- Single comment --> SC[gh pr comment\nfull report as one comment]
@@ -46,7 +46,7 @@ flowchart TD
 **Otherwise, run:**
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/pr-info.sh
+${CLAUDE_PLUGIN_ROOT}/skills/performing-code-review/scripts/pr-info.sh
 ```
 
 - Output contains `"error": true` or `"code": "NO_PR"` → **local branch review**
@@ -58,7 +58,7 @@ If the script is not accessible, fall back to local branch review and note this 
 
 ### Step 2: Delegate Review
 
-Spawn `Agent(code-reviewer)` to perform the full review. **Do not use the `/code-review` skill or any other shortcut — always use `Agent(code-reviewer)` directly.**
+Spawn `Agent(subagent_type="engineering-workflow:review:code-reviewer")` to perform the full review. **Do not use the `/code-review` skill or any other shortcut — always use `Agent(subagent_type="engineering-workflow:review:code-reviewer")` directly.**
 
 - **Local:** `"Review the current branch changes using git diff."`
 - **PR:** `"Review PR #<number>. Use git diff to identify the changed files and focus the review on those."`
@@ -79,7 +79,7 @@ Display the full markdown report to the user.
 
 ### Step 4: Ask How to Post (PR mode only)
 
-Use `AskUserQuestion` to ask:
+Ask the user (via the `AskUserQuestion` tool):
 
 > "The review is ready. How would you like to post it to PR #[number]?"
 
@@ -126,7 +126,7 @@ Nothing to do — report was already displayed.
 | Situation | Behavior |
 |-----------|----------|
 | PR number passed but not found | Report error; fall back to local branch review |
-| No git repository at all | Treat as local review; instruct `code-reviewer` to use Read/Glob instead of git diff |
+| No git repository at all | Treat as local review; instruct `code-reviewer` to read the files directly instead of using git diff |
 | No local changes | Warn: "No changes found. Reviewing HEAD." Proceed. |
 | `code-reviewer` returns no report | Report failure; do not attempt to post |
 | `git-tools:gh-pr-review` auth error | Tell user to run `gh auth login` |

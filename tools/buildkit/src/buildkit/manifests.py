@@ -89,8 +89,14 @@ def write_codex_plugin_manifest(
     return list(paths)
 
 
-def write_marketplace_registries(out_root: Path, cfg: SourceConfig) -> list[Path]:
+def write_marketplace_registries(
+    out_root: Path, cfg: SourceConfig, included: dict[str, list] | None = None
+) -> list[Path]:
+    """Write the root registries. `included` maps harness id -> plugins that
+    actually have components for that harness (empty plugins are omitted)."""
     marketplace = cfg.marketplace
+    claude_plugins = included.get("claude", cfg.plugins) if included else cfg.plugins
+    codex_plugins = included.get("codex", cfg.plugins) if included else cfg.plugins
     claude_registry = {
         "name": marketplace["name"],
         "owner": marketplace["owner"],
@@ -108,7 +114,7 @@ def write_marketplace_registries(out_root: Path, cfg: SourceConfig) -> list[Path
                 "homepage": p.meta["homepage"],
                 "tags": p.meta.get("keywords", []),
             }
-            for p in cfg.plugins
+            for p in claude_plugins
         ],
     }
     codex_registry = {
@@ -124,7 +130,7 @@ def write_marketplace_registries(out_root: Path, cfg: SourceConfig) -> list[Path
                 "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
                 "category": p.meta.get("category", "Productivity"),
             }
-            for p in cfg.plugins
+            for p in codex_plugins
         ],
     }
     paths = {

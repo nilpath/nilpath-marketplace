@@ -63,6 +63,12 @@ class HarnessConfig:
         return self.raw.get("reasoning", {}).get("map", {})
 
     @property
+    def prose(self) -> dict:
+        """Harness-specific phrasing templates exposed to skill bodies as
+        Jinja helpers: spawn/skill templates and plain snippets (todo, ask_user)."""
+        return self.raw.get("prose", {})
+
+    @property
     def agent_format(self) -> str:
         """Output format for agents: 'markdown' (frontmatter + body) or 'toml'."""
         return self.output.get("agent_format", "markdown")

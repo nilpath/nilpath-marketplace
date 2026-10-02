@@ -17,7 +17,8 @@ First multi-client, multi-plugin release. The former single `claude-code-tools` 
 - **Single authored source under `src/`** — skills and agents are Jinja templates (`SKILL.md.j2` / `<agent>.md.j2`) grouped per plugin (`src/plugins/<plugin>/` with `plugin.yaml` + README), using a canonical harness-neutral vocabulary: tools (`shell`, `file-read`, `subagent(x)`, …), model tiers (`small`–`xlarge`), and reasoning levels (`minimal`–`max`), mapped per harness in `src/harnesses/*.yaml`.
 - **`tools/buildkit` build CLI** (`nilpath-build`) — `build`, `check` (CI drift gate), `validate`, `new-skill`. Rendered frontmatter is parsed, translated (tool names, model tiers, reasoning, key translation such as `permissionMode: plan` → Codex `sandbox_mode: "read-only"`), schema-validated, and re-serialized per harness.
 - **All 12 agents ship to all three clients** — Claude markdown agents, Copilot `.agent.md` (under `com.github.copilot/agents/`), and Codex custom-agent TOML (listed via `components.agents`).
-- 8 portable skills ship to all three clients: creating-mermaid-diagrams, engineering-principles, gh-address-comments, gh-pr-review, git-advanced, git-commits, git-stacked-prs, using-git-worktrees.
+- **13 of 15 skills ship to all three clients**, including the five orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation). Harness-specific phrasing (subagent dispatch, todo tracking, user questions, skill references) is produced by per-harness `prose:` templates in `src/harnesses/*.yaml`, exposed to skill bodies as Jinja helpers (`{{ spawn(...) }}`, `{{ skill_ref(...) }}`, `{{ todo }}`, `{{ ask_user }}`). Only creating-skills and creating-agents remain Claude-only (their content documents Claude Code's own formats).
+- **Empty plugin trees are skipped** — a plugin with no components for a harness is omitted from that harness's dist tree and marketplace registry (authoring-tools exists only in the Claude tree).
 
 ### Changed
 
@@ -29,6 +30,7 @@ First multi-client, multi-plugin release. The former single `claude-code-tools` 
 
 - Agent bodies are shared across harnesses; prose may reference Claude tool names. Harness-conditional body blocks can refine this later.
 - Claude-only frontmatter (`skills:`, `disallowedTools`, Copilot `permissionMode`) and `skill(...)` tool entries drop with build warnings on other harnesses.
+- Orchestrator skills on Copilot/Codex degrade gracefully rather than reach parity: no structured question UI, no plan-mode gates, and researching loses the parallel `Explore` fan-out (sequential self-exploration instead).
 
 ## [0.7.0] - 2026-08-25
 

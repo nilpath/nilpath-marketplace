@@ -61,6 +61,17 @@ Sources use the **canonical vocabulary** from `src/harnesses/tools.yaml`, never 
 - Harness-specific content uses `{% if harness == "claude" %}…{% endif %}`; script paths use `{{ skill_root }}`.
 - Templating is opt-in per file via the `.j2` suffix; other files copy verbatim.
 
+**Prose helpers** (from `prose:` in `src/harnesses/<h>.yaml`) render orchestration phrasing in each harness's native mechanism — use these instead of writing `Agent(...)`/`TodoWrite`/`AskUserQuestion` literally:
+
+| Helper | Claude render | Copilot/Codex render |
+| --- | --- | --- |
+| `{{ spawn('plugin:cat:agent') }}` | `` `Agent(subagent_type="…")` `` | "the `agent` custom agent…" / "the `agent` agent (spawn it as a subagent)" |
+| `{{ skill_ref('plugin:skill') }}` | "the `plugin:skill` skill" | "the `skill` skill (`/skill`)" / "the `skill` skill" |
+| `{{ todo }}` | "the `TodoWrite` tool" | "the todo list" / "the plan tool (`update_plan`)" |
+| `{{ ask_user }}` | "the `AskUserQuestion` tool" | "a direct chat question to the user (…)" |
+
+A plugin with zero components for a harness is skipped entirely in that harness's `dist/` tree and registry (e.g. authoring-tools exists only under `dist/claude/`).
+
 ## Common Tasks
 
 ### Add a skill

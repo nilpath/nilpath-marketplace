@@ -179,3 +179,61 @@ class TestCodexAgents:
         parsed = tomllib.loads(text)
         assert "'''" not in parsed["developer_instructions"]
         assert warnings
+
+
+class TestProseHelpers:
+    TEMPLATE = (
+        "Delegate to {{ spawn('engineering-workflow:review:code-reviewer') }}, "
+        "commit via {{ skill_ref('git-tools:git-commits') }}, "
+        "track with {{ todo }}, ask via {{ ask_user }}."
+    )
+
+    def _render(self, cfg, harness_id):
+        from buildkit.render import make_environment, render_text
+
+        return render_text(make_environment(), self.TEMPLATE, cfg.harnesses[harness_id], cfg)
+
+    def test_claude_prose(self, cfg):
+        out = self._render(cfg, "claude")
+        assert 'Agent(subagent_type="engineering-workflow:review:code-reviewer")' in out
+        assert "the `git-tools:git-commits` skill" in out
+        assert "`TodoWrite`" in out and "`AskUserQuestion`" in out
+
+    def test_copilot_prose(self, cfg):
+        out = self._render(cfg, "copilot")
+        assert "`code-reviewer` custom agent" in out
+        assert "`git-commits` skill (`/git-commits`)" in out
+        assert "todo list" in out and "chat question" in out
+
+    def test_codex_prose(self, cfg):
+        out = self._render(cfg, "codex")
+        assert "`code-reviewer` agent (spawn it as a subagent)" in out
+        assert "update_plan" in out
+
+    def test_missing_prose_key_fails_loudly(self, cfg):
+        from buildkit.render import make_environment, render_text
+
+        harness = cfg.harnesses["claude"]
+        saved = harness.raw.pop("prose")
+        try:
+            with pytest.raises(KeyError):
+                render_text(make_environment(), "{{ spawn('a:b:c') }}", harness, cfg)
+        finally:
+            harness.raw["prose"] = saved
+
+
+class TestEmptyPluginTrees:
+    def test_authoring_tools_only_in_claude_tree(self):
+        import json
+
+        assert (REPO_ROOT / "dist/claude/plugins/authoring-tools/skills").is_dir()
+        assert not (REPO_ROOT / "dist/copilot/plugins/authoring-tools").exists()
+        assert not (REPO_ROOT / "dist/codex/plugins/authoring-tools").exists()
+        codex_registry = json.loads(
+            (REPO_ROOT / ".agents/plugins/marketplace.json").read_text()
+        )
+        assert "authoring-tools" not in [p["name"] for p in codex_registry["plugins"]]
+        claude_registry = json.loads(
+            (REPO_ROOT / ".claude-plugin/marketplace.json").read_text()
+        )
+        assert "authoring-tools" in [p["name"] for p in claude_registry["plugins"]]

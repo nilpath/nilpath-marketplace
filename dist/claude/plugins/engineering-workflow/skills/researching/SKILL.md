@@ -14,18 +14,18 @@ Do **NOT** invoke any implementation skill, write any code or take any implement
 
 ## Checklist
 
-You **MUST** use `TodoWrite` to create a task for each item in the checklist below and complete them in order. Do not skip any steps.
+You **MUST** use the `TodoWrite` tool to create a task for each item in the checklist below and complete them in order. Do not skip any steps.
 
-1. **Feature Numbering**: The next feature number is: !`${CLAUDE_SKILL_DIR}/scripts/next-feature-number.sh`. The feature directory will be: `docs/features/<NNN>-<feature-slug>/`.
+1. **Feature Numbering**: The next feature number is: !`${CLAUDE_PLUGIN_ROOT}/skills/researching/scripts/next-feature-number.sh`. The feature directory will be: `docs/features/<NNN>-<feature-slug>/`.
 2. **Clarify Scope**: Ask any clarifying questions, one at a time, until you have a complete understanding of the problem/requirements/success criteria.
 3. **Exploration & Research**: Spawn parallel agents to explore the problem space and gather information.
 4. **Propose 2-3 approaches**: Based on the research, propose 2-3 approaches with trade-offs and your recommendation.
-5. **Present to User**: Use `AskUserQuestion` to present the proposed approaches and your recommendation. Ask the user to choose one or provide feedback until they approve an approach. If feedback requires more investigation, loop back to step 3.
+5. **Present to User**: Present the proposed approaches and your recommendation via the `AskUserQuestion` tool. Ask the user to choose one or provide feedback until they approve an approach. If feedback requires more investigation, loop back to step 3.
 6. **Write Design Spec**: Write a design specification for the chosen approach to `docs/features/<NNN>-<feature-slug>/design.md` using [templates/design-spec.md](templates/design-spec.md).
-7. **Spec self-review**: Delegate to the `spec-reviewer` agent with the path to the written `design.md`. Edit the spec based on its findings until it is ready for the user.
-8. **User reviews written spec**: Use `AskUserQuestion` to present the design spec to the user and ask for feedback. Edit as needed until the user approves the design spec.
+7. **Spec self-review**: Delegate to `Agent(subagent_type="engineering-workflow:review:spec-reviewer")` with the path to the written `design.md`. Edit the spec based on its findings until it is ready for the user.
+8. **User reviews written spec**: Present the design spec to the user for feedback via the `AskUserQuestion` tool. Edit as needed until the user approves the design spec.
 9. **Commit design spec**: Commit `docs/features/<NNN>-<feature-slug>/design.md` to git using the `git-tools:git-commits` skill.
-10. **Transition to implementation**: Once the design spec is committed, invoke the planning skill to create an implementation plan.
+10. **Transition to implementation**: Once the design spec is committed, invoke the `engineering-workflow:planning` skill to create an implementation plan.
 
 ## Process Flow
 
@@ -33,9 +33,9 @@ You **MUST** use `TodoWrite` to create a task for each item in the checklist bel
 flowchart TD
     A([Start]) --> B[Clarify Scope]
     B --> C{Questions?}
-    C -- Yes --> D[AskUserQuestion]
+    C -- Yes --> D[Ask user]
     D --> B
-    C -- No --> E[Spawn agents in parallel\nExplore + specialists]
+    C -- No --> E[Spawn agents in parallel\nexploration + specialists]
     E --> F[Collect & merge findings\ninternal synthesis]
     F --> G[Propose 2-3 approaches\nwith trade-offs]
     G --> H{User feedback?}
@@ -57,7 +57,7 @@ flowchart TD
 
 - Before asking any detailed questions, assess the scope. If the request is too broad (e.g. "build an ecommerce platform"), flag this immediately. Don't spend time refining details of a project that needs to be decomposed.
 - If the project is too large for a single specification, help the user break it down into smaller projects. What are the independent projects? How do they relate? In what order should they be tackled? Then research the first sub-project according to the process. Each sub-project should own its own research → plan → implement cycle.
-- **ALWAYS** use `AskUserQuestion` when asking the user for information, feedback, or decisions. Never ask for input in the main conversation.
+- **ALWAYS** use the `AskUserQuestion` tool when asking the user for information, feedback, or decisions. Never ask for input in the main conversation.
 - Ask questions one at a time until you have a complete understanding of the problem, requirements, and success criteria. Do not proceed until you have all the information you need.
 
 **What to clarify before researching:**
@@ -78,12 +78,14 @@ flowchart TD
 
 **Agents available for research:**
 
-| Agent | When to Spawn | Agent file |
-|-------|--------------|-----------|
-| `Explore` (built-in) | **Always** in round 1 | [prompts/codebase-explorer.md](prompts/codebase-explorer.md) |
-| `docs-library-researcher` | Libraries, frameworks, or doc lookup needed | [agents/research/docs-library-researcher.md](../../agents/research/docs-library-researcher.md) |
-| `api-integration-researcher` | Feature involves external APIs or services | [agents/research/api-integration-researcher.md](../../agents/research/api-integration-researcher.md) |
-| `architecture-researcher` | Significant architectural decisions involved | [agents/research/architecture-researcher.md](../../agents/research/architecture-researcher.md) |
+| Agent | When to Spawn |
+|-------|--------------|
+| `Explore` (built-in) | **Always** in round 1 — brief it with [prompts/codebase-explorer.md](prompts/codebase-explorer.md) |
+| `docs-library-researcher` | Libraries, frameworks, or doc lookup needed |
+| `api-integration-researcher` | Feature involves external APIs or services |
+| `architecture-researcher` | Significant architectural decisions involved |
+
+The specialist agents ship in this plugin — delegate with e.g. `Agent(subagent_type="engineering-workflow:research:docs-library-researcher")`.
 
 ### Presenting the Design
 
@@ -102,7 +104,7 @@ When designing the solution, break the work into small, focused units:
 - **Independent testability**: a good unit can be understood and verified without knowing its neighbours.
 - **Separation of concerns**: UI logic, business rules, and data access belong in separate layers. Mixing them makes every change risky.
 
-Apply the `engineering-principles` skill when choosing between design approaches or making structural trade-offs.
+Apply the `engineering-workflow:engineering-principles` skill when choosing between design approaches or making structural trade-offs.
 
 Avoid designing for hypothetical future requirements. Three similar functions are better than a premature abstraction. Design for what is known now — the spec should reflect the agreed scope, not every possibility.
 
@@ -122,12 +124,12 @@ Avoid designing for hypothetical future requirements. Three similar functions ar
 
 ### Spec Self-Review
 
-- After writing `design.md`, delegate to the `spec-reviewer` agent with the path to the written file.
+- After writing `design.md`, delegate to `Agent(subagent_type="engineering-workflow:review:spec-reviewer")` with the path to the written file.
 - Edit the spec based on the agent's findings before presenting it to the user.
 
 ### User Review
 
-Use `AskUserQuestion` to present the design spec to the user and ask for feedback.
+Present the design spec to the user and ask for feedback via the `AskUserQuestion` tool.
 
 > "Spec is ready for review. Please read through `docs/features/<NNN>-<feature-slug>/design.md` and let me know if you have any feedback or if it's good to proceed with implementation planning."
 
@@ -136,7 +138,7 @@ Wait for user feedback. If the user requests changes, edit the spec accordingly 
 ### Handoff
 
 - Once the design spec is approved, commit `docs/features/<NNN>-<feature-slug>/design.md` to git using the `git-tools:git-commits` skill.
-- Then invoke the planning skill to create an implementation plan.
+- Then invoke the `engineering-workflow:planning` skill to create an implementation plan.
 - Do **NOT** invoke any other skill, planning is the next step.
 
 ## Guidelines
@@ -144,7 +146,7 @@ Wait for user feedback. If the user requests changes, edit the spec accordingly 
 - Let the user drive research depth — don't auto-evaluate completeness.
 - Ask one question at a time. Don't bombard the user with multiple questions at once.
 - Multiple choice preferred when possible, but open-ended questions are fine if that's what's needed to clarify.
-- Use `AskUserQuestion` for all user-facing questions and decisions.
-- Apply the `engineering-principles` skill for structural and design trade-off decisions.
+- Use the `AskUserQuestion` tool for all user-facing questions and decisions.
+- Apply the `engineering-workflow:engineering-principles` skill for structural and design trade-off decisions.
 - Explore alternatives. Consider multiple approaches before recommending one.
 - Incremental validation is better than waiting until the end. Check in with the user frequently to confirm you're on the right track.

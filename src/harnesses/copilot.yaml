@@ -35,6 +35,11 @@ tools:
     web-search: web
     subagent: agent
     todo: todo
+prose:
+  spawn: 'the `{name}` custom agent (delegate to it via the agent tool)'
+  skill: 'the `{name}` skill (`/{name}`)'
+  todo: 'the todo list'
+  ask_user: 'a direct chat question to the user (wait for their reply before continuing)'
 models:
   map:                   # .agent.md accepts fallback priority lists
     small:  [claude-haiku-4-5]

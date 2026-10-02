@@ -63,13 +63,13 @@ def _build_skill(
     cfg: SourceConfig,
     out_root: Path,
     result: BuildResult,
-) -> None:
+) -> bool:
     name = skill_dir.name
     component = f"{plugin.name}/skill/{name}"
     rendered = render_file(env, skill_dir / "SKILL.md.j2", harness, cfg, skill_name=name)
     fm_data, body = split_document(rendered)
     if harness.id not in _component_targets(fm_data, component):
-        return
+        return False
 
     fm_out, warnings = process_frontmatter(fm_data, "skill", harness, cfg, component)
     result.warnings.extend(warnings)
@@ -94,6 +94,7 @@ def _build_skill(
             shutil.copyfile(src_file, out_file)
             shutil.copymode(src_file, out_file)
         result.written.append(out_file)
+    return True
 
 
 def _build_agent(
@@ -152,17 +153,24 @@ def build(
         elif path.exists():
             path.unlink()
 
+    included: dict[str, list] = {target: [] for target in targets}
     for plugin in cfg.plugins:
         for target in targets:
             harness = cfg.harnesses[target]
             plugin_dir = _plugin_dist_dir(out_root, harness, plugin)
+            skill_count = 0
             agent_files: list[str] = []
             for skill_dir in discover_skills(plugin):
-                _build_skill(env, skill_dir, harness, plugin, cfg, out_root, result)
+                if _build_skill(env, skill_dir, harness, plugin, cfg, out_root, result):
+                    skill_count += 1
             for agent_file in discover_agents(plugin):
                 written = _build_agent(env, agent_file, harness, plugin, cfg, out_root, result)
                 if written:
                     agent_files.append(written)
+
+            if skill_count == 0 and not agent_files:
+                continue  # no components for this harness: no tree, no registry entry
+            included[target].append(plugin)
 
             readme = plugin.src_dir / "README.md"
             if readme.exists():
@@ -177,7 +185,7 @@ def build(
             elif target == "codex":
                 result.written += write_codex_plugin_manifest(plugin_dir, plugin, agent_files)
 
-    result.written += write_marketplace_registries(out_root, cfg)
+    result.written += write_marketplace_registries(out_root, cfg, included)
     return result
 
 

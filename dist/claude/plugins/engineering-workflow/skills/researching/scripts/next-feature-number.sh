@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Outputs the next sequential 3-digit feature number based on docs/features/.
-# Usage: bash ${CLAUDE_SKILL_DIR}/scripts/next-feature-number.sh
+# Usage: bash scripts/next-feature-number.sh (relative to this skill directory)
 # Example output: 003
 max=0
 if [ -d docs/features ]; then

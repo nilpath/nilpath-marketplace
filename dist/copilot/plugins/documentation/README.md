@@ -7,7 +7,7 @@ Technical documentation tooling: orchestrated doc writing/auditing and Mermaid d
 | Skill | Purpose |
 | --- | --- |
 | writing-documentation | Write / Update / Audit modes; delegates to doc-writer and doc-auditor |
-| creating-mermaid-diagrams | Create, edit, and validate Mermaid diagrams (portable: all harnesses) |
+| creating-mermaid-diagrams | Create, edit, and validate Mermaid diagrams |
 
 ## Agents
 

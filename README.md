@@ -7,11 +7,11 @@ A marketplace for my AI coding-agent extensions — skills and agents authored o
 | Plugin | Contents | Claude Code | Copilot | Codex |
 | --- | --- | --- | --- | --- |
 | **git-tools** | 6 git/gh workflow skills | ✅ | ✅ | ✅ |
-| **engineering-workflow** | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | skills partial¹, agents ✅ | skills partial¹, agents ✅ |
-| **documentation** | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | mermaid + agents | mermaid + agents |
+| **engineering-workflow** | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
+| **documentation** | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | ✅¹ | ✅¹ |
 | **authoring-tools** | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
 
-¹ Orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are Claude-only — they drive Claude Code subagents. `engineering-principles` and all agents ship everywhere.
+¹ The orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are adapted per harness: subagent dispatch, todo tracking, and user questions render in each harness's native mechanism. They degrade gracefully on Copilot/Codex (chat questions instead of structured question UI, no parallel exploration fan-out).
 
 Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-writer agent from `documentation` — install them together.
 

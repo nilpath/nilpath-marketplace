@@ -7,7 +7,7 @@ allowed-tools: AskUserQuestion, Read, Glob, Grep, Write, Edit, Bash, Agent, Skil
 
 # Planning: Design Spec to Implementation Tasks
 
-Translate an approved design specification into a concrete, ordered list of TDD implementation tasks. Each task is small enough to complete in 2–5 minutes, follows the red → green → commit cycle, and adheres to the `engineering-principles` skill.
+Translate an approved design specification into a concrete, ordered list of TDD implementation tasks. Each task is small enough to complete in 2–5 minutes, follows the red → green → commit cycle, and adheres to the `engineering-workflow:engineering-principles` skill.
 
 Do **NOT** write any implementation code. This skill produces only `plan.md` — the full task list for implementation. Every line of code comes after the plan is approved.
 
@@ -19,15 +19,15 @@ Do **NOT** write any implementation code. This skill produces only `plan.md` —
 
 ## Checklist
 
-You **MUST** use `TodoWrite` to create a task for each item below and complete them in order.
+You **MUST** use the `TodoWrite` tool to create a task for each item below and complete them in order.
 
 1. **Locate design spec**: Find `docs/features/<NNN>-<slug>/design.md` — derive the feature path from the argument or context.
 2. **Read design spec**: Read the full spec: goals, architecture, component breakdown, and implementation notes.
-3. **Spawn task-decomposer**: Delegate to the `task-decomposer` agent with the design spec path to produce a draft task list.
+3. **Spawn task-decomposer**: Delegate to `Agent(subagent_type="engineering-workflow:planning:task-decomposer")` with the design spec path to produce a draft task list.
 4. **Review draft**: Check the draft for task sizing, ordering, and format. Adjust as needed before writing the plan.
 5. **Write plan**: Write to `docs/features/<NNN>-<slug>/plan.md` using [templates/plan.md](templates/plan.md).
-6. **Spawn plan-reviewer**: Delegate to the `plan-reviewer` agent with the path to `plan.md`. Edit based on its findings.
-7. **User review**: Use `AskUserQuestion` to present the plan path; iterate until the user approves.
+6. **Spawn plan-reviewer**: Delegate to `Agent(subagent_type="engineering-workflow:review:plan-reviewer")` with the path to `plan.md`. Edit based on its findings.
+7. **User review**: Present the plan path to the user via the `AskUserQuestion` tool; iterate until the user approves.
 8. **Commit**: Commit `plan.md` to git using the `git-tools:git-commits` skill.
 
 ## Process Flow
@@ -71,7 +71,7 @@ A task is a single verifiable behavior — one function, one method, one endpoin
 
 ### Applying engineering principles
 
-Before writing a task, verify against the `engineering-principles` skill:
+Before writing a task, verify against the `engineering-workflow:engineering-principles` skill:
 
 - **Single Responsibility** — the test should only assert one thing
 - **Encapsulation** — the task's implementation should not leak internal state
@@ -132,7 +132,7 @@ Each task in the plan follows this structure:
 ## Guidelines
 
 - Do not write implementation code — this skill produces `plan.md` only
-- If the design spec is missing a test command or tech stack detail, use `AskUserQuestion` before writing the plan
+- If the design spec is missing a test command or tech stack detail, ask the user via the `AskUserQuestion` tool before writing the plan
 - If a component has no testable behavior (e.g., pure config), mark the task as `no-test` and explain why
-- Use `AskUserQuestion` for all user-facing questions and decisions
+- Use the `AskUserQuestion` tool for all user-facing questions and decisions
 - Ask one question at a time
