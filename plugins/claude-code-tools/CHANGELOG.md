@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-02
+
+### Added
+
+- **All 12 agents now ship to Copilot and Codex** (previously Claude-only):
+  - *Copilot*: rendered as `.agent.md` files under `com.github.copilot/agents/` (the Agent Plugins 1.0 reverse-domain dir), with tools translated to Copilot aliases and model tiers as fallback lists.
+  - *Codex*: rendered as custom-agent TOML files under `agents-codex/` (`name`, `description`, `model`, `model_reasoning_effort`, `sandbox_mode`, `developer_instructions`), referenced from `.codex-plugin/plugin.json` via `components.agents`.
+- **Frontmatter key translation** in the build: harness configs can map a key+value to a different harness concept — used to translate `permissionMode: plan` into Codex `sandbox_mode: "read-only"` for the read-only research/review agents.
+
+### Known limitations
+
+- Agent *bodies* are shared across harnesses; prose may still reference Claude tool names (e.g. "Glob/Grep"). Harness-conditional body blocks can refine this later.
+- Claude-only frontmatter (`skills:`, `disallowedTools`, Copilot `permissionMode`) is dropped with build warnings on the other harnesses; `skill(...)` tool entries have no Copilot/Codex equivalent.
+
 ## [0.8.0] - 2026-10-01
 
 ### Added

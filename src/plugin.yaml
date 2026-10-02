@@ -1,7 +1,7 @@
 # Single source of truth for plugin + marketplace metadata.
 # The build propagates these values into every generated manifest.
 name: claude-code-tools
-version: 0.8.0
+version: 0.9.0
 description: A collection Agents and Skills I use for coding with Claude.
 author:
   name: Christoffer Ahrling

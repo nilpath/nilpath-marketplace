@@ -57,6 +57,11 @@ class HarnessConfig:
     def reasoning_map(self) -> dict:
         return self.raw.get("reasoning", {}).get("map", {})
 
+    @property
+    def agent_format(self) -> str:
+        """Output format for agents: 'markdown' (frontmatter + body) or 'toml'."""
+        return self.raw.get("output", {}).get("agent_format", "markdown")
+
     def supports_kind(self, kind: str) -> bool:
         dir_key = {"skill": "skills_dir", "agent": "agents_dir"}[kind]
         return dir_key in self.output

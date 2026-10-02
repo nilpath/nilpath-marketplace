@@ -5,7 +5,13 @@ from pathlib import Path
 import pytest
 
 from buildkit.config import load_config
-from buildkit.fm import FrontmatterError, dump_frontmatter, process_frontmatter, split_document
+from buildkit.fm import (
+    FrontmatterError,
+    dump_agent_toml,
+    dump_frontmatter,
+    process_frontmatter,
+    split_document,
+)
 from buildkit.toolmap import parse_entry, resolve_model_tier, split_tool_list, translate_tools
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -139,3 +145,37 @@ class TestFrontmatter:
         assert text.startswith("---\n")
         assert "description: 'a: b'" in text
         assert "  - Read" in text
+
+
+class TestCodexAgents:
+    def test_permission_mode_translates_to_sandbox(self, cfg):
+        data = {"name": "x", "description": "y", "permissionMode": "plan"}
+        out, warnings = process_frontmatter(data, "agent", cfg.harnesses["codex"], cfg, "agent/x")
+        assert out["sandbox_mode"] == "read-only"
+        assert "permissionMode" not in out
+
+    def test_unmapped_permission_mode_dropped_with_warning(self, cfg):
+        data = {"name": "x", "description": "y", "permissionMode": "acceptEdits"}
+        out, warnings = process_frontmatter(data, "agent", cfg.harnesses["codex"], cfg, "agent/x")
+        assert "sandbox_mode" not in out
+        assert any("permissionMode" in w for w in warnings)
+
+    def test_dump_agent_toml_round_trips(self):
+        import tomllib
+
+        text, warnings = dump_agent_toml(
+            {"name": "x", "description": 'says "hi" \\ there', "model": "gpt-5.1-codex"},
+            "# Title\n\nDo the thing.\n",
+        )
+        parsed = tomllib.loads(text)
+        assert parsed["description"] == 'says "hi" \\ there'
+        assert parsed["developer_instructions"] == "# Title\n\nDo the thing.\n"
+        assert warnings == []
+
+    def test_dump_agent_toml_defuses_triple_quotes(self):
+        import tomllib
+
+        text, warnings = dump_agent_toml({"name": "x", "description": "y"}, "code: '''py'''\n")
+        parsed = tomllib.loads(text)
+        assert "'''" not in parsed["developer_instructions"]
+        assert warnings

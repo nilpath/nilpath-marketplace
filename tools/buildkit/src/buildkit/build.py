@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .config import HarnessConfig, SourceConfig, load_config
-from .fm import dump_frontmatter, process_frontmatter, split_document
+from .fm import dump_agent_toml, dump_frontmatter, process_frontmatter, split_document
 from .manifests import (
     write_claude_manifests,
     write_codex_manifests,
@@ -113,14 +113,16 @@ def _build_skill(
 
 def _build_agent(
     env, agent_file: Path, harness: HarnessConfig, cfg: SourceConfig, out_root: Path, result: BuildResult
-) -> None:
+) -> str | None:
+    """Render one agent for one harness. Returns the output filename when the
+    agent targets this harness, else None."""
     name = agent_file.stem.removesuffix(".md")
     category = agent_file.parent.name
     component = f"agent/{category}/{name}"
     rendered = render_file(env, agent_file, harness, cfg)
     fm_data, body = split_document(rendered)
     if harness.id not in _component_targets(fm_data, component):
-        return
+        return None
     if not harness.supports_kind("agent"):
         raise ValueError(f"{component}: targets {harness.id}, which has no agent output")
 
@@ -133,8 +135,14 @@ def _build_agent(
         out_dir = out_dir / category
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / f"{name}{suffix}"
-    out_file.write_text(dump_frontmatter(fm_out) + body)
+    if harness.agent_format == "toml":
+        content, toml_warnings = dump_agent_toml(fm_out, body)
+        result.warnings.extend(f"{component}: {w}" for w in toml_warnings)
+        out_file.write_text(content)
+    else:
+        out_file.write_text(dump_frontmatter(fm_out) + body)
     result.written.append(out_file)
+    return out_file.name
 
 
 def build(repo_root: Path, targets: tuple[str, ...] = ALL_TARGETS, out_root: Path | None = None) -> BuildResult:
@@ -152,23 +160,30 @@ def build(repo_root: Path, targets: tuple[str, ...] = ALL_TARGETS, out_root: Pat
             path.unlink()
 
     skills_index: dict[str, list[dict]] = {}
+    agents_index: dict[str, list[str]] = {}
     for target in targets:
         harness = cfg.harnesses[target]
         index: list[dict] = []
+        agent_files: list[str] = []
         for skill_dir in discover_skills(cfg):
             entry = _build_skill(env, skill_dir, harness, cfg, out_root, result)
             if entry:
                 index.append(entry)
         for agent_file in discover_agents(cfg):
-            _build_agent(env, agent_file, harness, cfg, out_root, result)
+            written = _build_agent(env, agent_file, harness, cfg, out_root, result)
+            if written:
+                agent_files.append(written)
         skills_index[target] = index
+        agents_index[target] = agent_files
 
     if "claude" in targets:
         result.written += write_claude_manifests(out_root, cfg.plugin)
     if "copilot" in targets:
         result.written += write_copilot_manifests(out_root, cfg.plugin)
     if "codex" in targets:
-        result.written += write_codex_manifests(out_root, cfg.plugin, skills_index["codex"])
+        result.written += write_codex_manifests(
+            out_root, cfg.plugin, skills_index["codex"], agents_index["codex"]
+        )
     return result
 
 

@@ -1,16 +1,12 @@
 ---
 name: api-integration-researcher
 description: Researches external APIs, services, and integration points relevant to a topic. Investigates authentication, data formats, rate limits, and existing integration patterns. Use when a feature involves external APIs or third-party services.
-targets: [claude, copilot, codex]
-model: medium
-permissionMode: plan
+model:
+  - claude-sonnet-5
 tools:
-  - "file-read"
-  - "glob-search"
-  - "content-search"
-  - "web-fetch"
-  - "web-search"
-disallowedTools: Write, Edit
+  - read
+  - search
+  - web
 ---
 
 # API & Integration Researcher

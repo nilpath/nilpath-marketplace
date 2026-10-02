@@ -1,19 +1,12 @@
 ---
 name: docs-library-researcher
 description: Researches external documentation, libraries, and frameworks relevant to a topic. Looks up official docs, best practices, and known limitations. Use when investigating which libraries to use, how to use them, or what patterns are recommended.
-targets: [claude, copilot, codex]
-model: medium
-permissionMode: plan
+model:
+  - claude-sonnet-5
 tools:
-  - "file-read"
-  - "glob-search"
-  - "content-search"
-  - "web-fetch"
-  - "web-search"
-  - "claude:mcp__plugin_claude-code-tools_context7__resolve-library-id"
-  - "claude:mcp__plugin_claude-code-tools_context7__query-docs"
-  - "claude:mcp__plugin_context7-plugin_context7__resolve-library-id"
-  - "claude:mcp__plugin_context7-plugin_context7__query-docs"
+  - read
+  - search
+  - web
 ---
 
 # Documentation & Library Researcher

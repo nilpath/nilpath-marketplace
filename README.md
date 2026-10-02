@@ -33,10 +33,10 @@ Skills are also discoverable via the `.well-known/skills/` index.
 | Component | Claude Code | Copilot | Codex |
 | --- | --- | --- | --- |
 | creating-mermaid-diagrams, engineering-principles, gh-address-comments, gh-pr-review, git-advanced, git-commits, git-stacked-prs, using-git-worktrees | ✅ | ✅ | ✅ |
+| all 12 agents | ✅ | ✅ `com.github.copilot/agents/*.agent.md` | ✅ `agents-codex/*.toml` |
 | creating-agents, creating-skills, executing-plan, performing-code-review, planning, researching, writing-documentation | ✅ | — | — |
-| all 12 agents | ✅ | — | — |
 
-The Claude-only skills orchestrate Claude Code subagents (TodoWrite, AskUserQuestion, `Agent(...)`) or document Claude Code's own formats, so they are exempted from the other targets.
+The Claude-only skills orchestrate Claude Code subagents (TodoWrite, AskUserQuestion, `Agent(...)`) or document Claude Code's own formats, so they are exempted from the other targets. Agent renders adapt frontmatter per harness (tool aliases, model fallback lists, `permissionMode: plan` → Codex `sandbox_mode: "read-only"`); agent bodies are shared.
 
 ## How it works
 

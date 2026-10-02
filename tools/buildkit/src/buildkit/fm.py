@@ -76,6 +76,26 @@ def dump_frontmatter(data: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def dump_agent_toml(data: dict, body: str) -> tuple[str, list[str]]:
+    """Serialize an agent as a Codex custom-agent TOML file.
+
+    The markdown body becomes `developer_instructions` as a TOML multi-line
+    literal string (no escape processing), so only a literal ''' inside the
+    body needs defusing."""
+    warnings: list[str] = []
+
+    def quote(value: str) -> str:
+        return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+    lines = [f"{key} = {quote(str(value))}" for key, value in data.items()]
+    body = body.strip("\n")
+    if "'''" in body:
+        warnings.append("agent body contains ''' — rewritten to '' ' for TOML")
+        body = body.replace("'''", "'' '")
+    lines.append(f"developer_instructions = '''\n{body}\n'''")
+    return "\n".join(lines) + "\n", warnings
+
+
 def process_frontmatter(
     data: dict,
     kind: str,
@@ -127,6 +147,18 @@ def process_frontmatter(
                     f"{component}: unknown reasoning level '{level}' (expected one of {cfg.reasoning_levels})"
                 )
             out[reasoning_key] = harness.reasoning_map.get(level, level)
+            continue
+
+        translate = schema.get("translate", {})
+        if key in translate:
+            spec = translate[key]
+            value_map = spec.get("map", {})
+            if str(value) in value_map:
+                out[spec["key"]] = value_map[str(value)]
+            else:
+                warnings.append(
+                    f"{component}: '{key}: {value}' has no {harness.id} translation; dropped"
+                )
             continue
 
         if key in drop_keys:

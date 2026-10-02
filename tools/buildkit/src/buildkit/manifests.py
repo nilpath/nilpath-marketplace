@@ -81,7 +81,9 @@ def write_copilot_manifests(out_root: Path, plugin: dict) -> list[Path]:
     return list(paths)
 
 
-def write_codex_manifests(out_root: Path, plugin: dict, skills_index: list[dict]) -> list[Path]:
+def write_codex_manifests(
+    out_root: Path, plugin: dict, skills_index: list[dict], agent_files: list[str]
+) -> list[Path]:
     pdir = plugin_dir(out_root, plugin)
     display_name = plugin["name"].replace("-", " ").title()
     plugin_json = {
@@ -89,6 +91,9 @@ def write_codex_manifests(out_root: Path, plugin: dict, skills_index: list[dict]
         "version": plugin["version"],
         "description": plugin["description"],
         "skills": "./skills-portable/",
+        "components": {
+            "agents": [f"agents-codex/{name}" for name in sorted(agent_files)],
+        },
         "author": plugin["author"],
         "keywords": plugin.get("keywords", []),
         "interface": {

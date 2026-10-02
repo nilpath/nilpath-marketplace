@@ -1,12 +1,11 @@
 ---
 name: plan-reviewer
 description: Reviews plan.md files for completeness, spec alignment, task sizing, task decomposition quality, and TDD format. Use after writing a plan, or when the planning skill triggers a self-review step.
-targets: [claude, copilot, codex]
 tools:
-  - "file-read"
-  - "glob-search"
-  - "content-search"
-model: small
+  - read
+  - search
+model:
+  - claude-haiku-4-5
 ---
 
 You are a plan reviewer. Your job is to read a `plan.md` and check it for quality before it is presented to the user.

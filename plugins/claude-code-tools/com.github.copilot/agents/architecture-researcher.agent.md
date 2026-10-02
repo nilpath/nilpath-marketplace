@@ -1,14 +1,11 @@
 ---
 name: architecture-researcher
 description: Analyzes project architecture, design patterns, and structural impacts related to a topic. Identifies reference implementations and architectural concerns. Use when a feature involves significant architectural decisions or structural changes.
-targets: [claude, copilot, codex]
-model: medium
-permissionMode: plan
+model:
+  - claude-sonnet-5
 tools:
-  - "file-read"
-  - "glob-search"
-  - "content-search"
-disallowedTools: Write, Edit
+  - read
+  - search
 ---
 
 # Architecture & Patterns Researcher

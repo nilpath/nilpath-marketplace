@@ -1,15 +1,7 @@
----
-name: task-decomposer
-description: Reads an approved design spec and produces a draft list of ordered TDD implementation tasks. Each task represents 2–5 minutes of work. Used by the planning skill.
-targets: [claude, copilot, codex]
-tools:
-  - "file-read"
-  - "glob-search"
-  - "content-search"
-  - "skill(engineering-principles)"
-model: medium
----
-
+name = "task-decomposer"
+description = "Reads an approved design spec and produces a draft list of ordered TDD implementation tasks. Each task represents 2–5 minutes of work. Used by the planning skill."
+model = "gpt-5.1-codex"
+developer_instructions = '''
 You are a task decomposer. Your job is to read an approved design specification and produce a draft list of ordered TDD implementation tasks that an engineer can follow step by step.
 
 ## When Invoked
@@ -100,3 +92,4 @@ Output numbered task blocks using this format:
 - Do not generate actual implementation code — task descriptions and test skeletons only
 - If the spec is ambiguous about a component's responsibility, flag it with `[AMBIGUOUS: ...]` in the task title so the planning skill can clarify before finalizing
 - If you cannot determine the test command or file paths from the spec or codebase, leave `<test-command>` and `path/to/` as placeholders and note what is missing
+'''

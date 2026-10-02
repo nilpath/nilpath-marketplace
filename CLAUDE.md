@@ -26,8 +26,8 @@ flowchart TD
 
     subgraph OUT[Generated output — committed]
         CLAUDE[plugins/claude-code-tools/<br/>skills/, agents/, .claude-plugin/, .mcp.json]
-        COPILOT[plugins/claude-code-tools/<br/>plugin.json, mcp.json, skills-portable/]
-        CODEX[.codex-plugin/, .codex-mcp.json,<br/>.agents/, .well-known/skills/]
+        COPILOT[plugins/claude-code-tools/<br/>plugin.json, mcp.json, skills-portable/,<br/>com.github.copilot/agents/]
+        CODEX[.codex-plugin/, .codex-mcp.json, agents-codex/,<br/>.agents/, .well-known/skills/]
     end
 
     SRC --> BUILD --> OUT
@@ -84,7 +84,7 @@ The build propagates the version from **`src/plugin.yaml`** into every generated
 
 ## Current Components
 
-- **Agents (12, Claude-only)**: review (code-reviewer, doc-auditor, plan-reviewer, spec-reviewer), research (api-integration-researcher, architecture-researcher, docs-library-researcher), implementation (code-debugger, coding-task-agent, python-task-agent, doc-writer), planning (task-decomposer)
+- **Agents (12, all three clients)**: review (code-reviewer, doc-auditor, plan-reviewer, spec-reviewer), research (api-integration-researcher, architecture-researcher, docs-library-researcher), implementation (code-debugger, coding-task-agent, python-task-agent, doc-writer), planning (task-decomposer). Rendered as Claude markdown agents, Copilot `.agent.md` (in `com.github.copilot/agents/`), and Codex custom-agent TOML (in `agents-codex/`).
 - **Skills (15)**: portable to all three clients — creating-mermaid-diagrams, engineering-principles, gh-address-comments, gh-pr-review, git-advanced, git-commits, git-stacked-prs, using-git-worktrees; Claude-only — creating-agents, creating-skills, executing-plan, performing-code-review, planning, researching, writing-documentation
 
 ## Deep Dives
