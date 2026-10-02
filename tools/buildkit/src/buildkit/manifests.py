@@ -97,6 +97,30 @@ def write_marketplace_registries(
     marketplace = cfg.marketplace
     claude_plugins = included.get("claude", cfg.plugins) if included else cfg.plugins
     codex_plugins = included.get("codex", cfg.plugins) if included else cfg.plugins
+    copilot_plugins = included.get("copilot", cfg.plugins) if included else cfg.plugins
+    # VS Code discovers marketplace plugins via .github/plugin/marketplace.json
+    # (it does NOT read the Claude-format registry); source paths are
+    # repo-relative and may point into dist/.
+    copilot_registry = {
+        "name": marketplace["name"],
+        "metadata": {
+            "description": marketplace["description"],
+            "version": marketplace["version"],
+        },
+        "owner": marketplace["owner"],
+        "plugins": [
+            {
+                "name": p.name,
+                "source": f"{cfg.harnesses['copilot'].dist_root}/plugins/{p.name}",
+                "description": p.meta["description"],
+                "version": p.version,
+                "author": p.meta["author"],
+                "license": p.meta["license"],
+                "keywords": p.meta.get("keywords", []),
+            }
+            for p in copilot_plugins
+        ],
+    }
     claude_registry = {
         "name": marketplace["name"],
         "owner": marketplace["owner"],
@@ -136,6 +160,7 @@ def write_marketplace_registries(
     paths = {
         out_root / ".claude-plugin" / "marketplace.json": claude_registry,
         out_root / ".agents" / "plugins" / "marketplace.json": codex_registry,
+        out_root / ".github" / "plugin" / "marketplace.json": copilot_registry,
     }
     for path, data in paths.items():
         _write_json(path, data)

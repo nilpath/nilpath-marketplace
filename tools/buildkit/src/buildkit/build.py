@@ -18,12 +18,14 @@ from .render import make_environment, render_file
 
 ALL_TARGETS = ("claude", "copilot", "codex")
 
-# Repo-relative paths fully managed (regenerated) by the build. The two
-# registry files live at fixed discovery locations outside dist/.
+# Repo-relative paths fully managed (regenerated) by the build. The three
+# registry files live at fixed discovery locations outside dist/:
+# Claude Code, Codex, and VS Code Copilot respectively.
 OWNED_PATHS = (
     Path("dist"),
     Path(".claude-plugin") / "marketplace.json",
     Path(".agents") / "plugins" / "marketplace.json",
+    Path(".github") / "plugin" / "marketplace.json",
 )
 
 

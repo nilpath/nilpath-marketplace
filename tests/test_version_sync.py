@@ -39,6 +39,22 @@ def test_plugin_version_sync(plugin_dir):
     )
 
 
+def test_copilot_registry_syncs_with_sources():
+    """VS Code's .github/plugin/marketplace.json must list every plugin that
+    has copilot components, with versions matching src."""
+    registry = json.loads(
+        (MARKETPLACE_JSON.parent.parent / ".github" / "plugin" / "marketplace.json").read_text()
+    )
+    src = _src_plugins()
+    copilot_dist = MARKETPLACE_JSON.parent.parent / "dist" / "copilot" / "plugins"
+    dist_names = {p.name for p in copilot_dist.iterdir() if p.is_dir()}
+    registry_entries = {p["name"]: p for p in registry["plugins"]}
+    assert set(registry_entries) == dist_names
+    for name, entry in registry_entries.items():
+        assert entry["version"] == src[name]["version"]
+        assert entry["source"] == f"dist/copilot/plugins/{name}"
+
+
 @pytest.mark.parametrize("plugin_dir", PLUGIN_DIRS, ids=lambda p: p.name)
 def test_changelog_contains_plugin_version(plugin_dir):
     version = _src_plugins()[plugin_dir.name]["version"]
