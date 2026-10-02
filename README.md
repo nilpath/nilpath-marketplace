@@ -41,7 +41,7 @@ codex plugin install git-tools
 
 ## How it works
 
-Everything under `dist/`, plus the two root registry files (`.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`), is **generated** — never edit it. The single source of truth is `src/`:
+Everything under `dist/`, plus the three root registry files (`.claude-plugin/marketplace.json` for Claude Code, `.github/plugin/marketplace.json` for VS Code Copilot, `.agents/plugins/marketplace.json` for Codex), is **generated** — never edit it. The single source of truth is `src/`:
 
 ```text
 src/

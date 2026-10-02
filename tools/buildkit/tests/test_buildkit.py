@@ -233,6 +233,10 @@ class TestEmptyPluginTrees:
             (REPO_ROOT / ".agents/plugins/marketplace.json").read_text()
         )
         assert "authoring-tools" not in [p["name"] for p in codex_registry["plugins"]]
+        copilot_registry = json.loads(
+            (REPO_ROOT / ".github/plugin/marketplace.json").read_text()
+        )
+        assert "authoring-tools" not in [p["name"] for p in copilot_registry["plugins"]]
         claude_registry = json.loads(
             (REPO_ROOT / ".claude-plugin/marketplace.json").read_text()
         )

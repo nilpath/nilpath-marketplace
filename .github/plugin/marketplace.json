@@ -1,0 +1,66 @@
+{
+  "name": "nilpath-marketplace",
+  "metadata": {
+    "description": "A marketplace for my claude code extensions",
+    "version": "0.1.0"
+  },
+  "owner": {
+    "name": "Christoffer Ahrling",
+    "url": "https://github.com/nilpath"
+  },
+  "plugins": [
+    {
+      "name": "documentation",
+      "source": "dist/copilot/plugins/documentation",
+      "description": "Technical documentation tooling — orchestrated doc writing and auditing, plus Mermaid diagram creation and validation.",
+      "version": "0.8.0",
+      "author": {
+        "name": "Christoffer Ahrling",
+        "url": "https://github.com/nilpath"
+      },
+      "license": "MIT",
+      "keywords": [
+        "documentation",
+        "technical-writing",
+        "mermaid",
+        "diagrams"
+      ]
+    },
+    {
+      "name": "engineering-workflow",
+      "source": "dist/copilot/plugins/engineering-workflow",
+      "description": "Research → design → plan → implement → review pipeline. Orchestrator skills plus the reviewer, researcher, and implementation agents they delegate to, and core engineering principles.",
+      "version": "0.8.0",
+      "author": {
+        "name": "Christoffer Ahrling",
+        "url": "https://github.com/nilpath"
+      },
+      "license": "MIT",
+      "keywords": [
+        "workflow",
+        "planning",
+        "tdd",
+        "code-review",
+        "research"
+      ]
+    },
+    {
+      "name": "git-tools",
+      "source": "dist/copilot/plugins/git-tools",
+      "description": "Git and GitHub workflow skills — commit conventions, advanced git operations, stacked PRs, worktrees, and gh-based PR review and comment handling.",
+      "version": "0.8.0",
+      "author": {
+        "name": "Christoffer Ahrling",
+        "url": "https://github.com/nilpath"
+      },
+      "license": "MIT",
+      "keywords": [
+        "git",
+        "github",
+        "commits",
+        "pull-requests",
+        "worktrees"
+      ]
+    }
+  ]
+}

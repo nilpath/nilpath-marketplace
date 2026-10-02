@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **VS Code Copilot marketplace discovery** — the build now generates `.github/plugin/marketplace.json`, the registry VS Code actually reads when a repo is added via `chat.plugins.marketplaces` (VS Code does not read the Claude-format registry; only Copilot CLI does). Plugin `source` entries point into `dist/copilot/plugins/<plugin>`.
+
 ## [0.8.0] - 2026-10-02
 
 First multi-client, multi-plugin release. The former single `claude-code-tools` plugin is split into four plugins: **git-tools**, **engineering-workflow**, **documentation**, and **authoring-tools** (all at 0.8.0). Entries below 0.8.0 refer to the former single plugin.

@@ -6,8 +6,8 @@ Complete guide for developing and releasing changes to the plugin.
 
 All skills and agents are authored under `src/plugins/<plugin>/` and rendered
 into the committed per-harness trees under `dist/` by `nilpath-build` (see
-`tools/buildkit`). Never edit `dist/`, `.claude-plugin/marketplace.json`, or
-`.agents/plugins/marketplace.json` directly.
+`tools/buildkit`). Never edit `dist/`, `.claude-plugin/marketplace.json`,
+`.agents/plugins/marketplace.json`, or `.github/plugin/marketplace.json` directly.
 
 ```mermaid
 flowchart TD
