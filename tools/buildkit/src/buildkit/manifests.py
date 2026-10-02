@@ -1,9 +1,11 @@
-"""Generate per-harness manifest files from src/plugin.yaml."""
+"""Generate per-plugin manifests and the root marketplace registries."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
+
+from .config import PluginConfig, SourceConfig
 
 AGENT_PLUGINS_SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
 
@@ -13,24 +15,83 @@ def _write_json(path: Path, data: dict) -> None:
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
 
 
-def plugin_dir(out_root: Path, plugin: dict) -> Path:
-    return out_root / "plugins" / plugin["name"]
+def _display_name(name: str) -> str:
+    return name.replace("-", " ").title()
 
 
-def write_claude_manifests(out_root: Path, plugin: dict) -> list[Path]:
-    pdir = plugin_dir(out_root, plugin)
-    plugin_json = {
-        "name": plugin["name"],
-        "version": plugin["version"],
-        "description": plugin["description"],
-        "author": plugin["author"],
-        "homepage": plugin["homepage"],
-        "repository": plugin["repository"],
-        "license": plugin["license"],
-        "keywords": plugin.get("keywords", []),
+def write_claude_plugin_manifest(plugin_dir: Path, plugin: PluginConfig) -> list[Path]:
+    meta = plugin.meta
+    manifest = {
+        "name": meta["name"],
+        "version": meta["version"],
+        "description": meta["description"],
+        "author": meta["author"],
+        "homepage": meta["homepage"],
+        "repository": meta["repository"],
+        "license": meta["license"],
+        "keywords": meta.get("keywords", []),
     }
-    marketplace = plugin["marketplace"]
-    marketplace_json = {
+    paths = {plugin_dir / ".claude-plugin" / "plugin.json": manifest}
+    if plugin.mcp:
+        paths[plugin_dir / ".mcp.json"] = plugin.mcp
+    for path, data in paths.items():
+        _write_json(path, data)
+    return list(paths)
+
+
+def write_copilot_plugin_manifest(plugin_dir: Path, plugin: PluginConfig) -> list[Path]:
+    meta = plugin.meta
+    manifest = {
+        "$schema": AGENT_PLUGINS_SCHEMA,
+        "name": meta["name"],
+        "version": meta["version"],
+        "description": meta["description"],
+        "author": meta["author"],
+        "license": meta["license"],
+        "skills": "./skills/",
+        "keywords": meta.get("keywords", []),
+    }
+    paths = {plugin_dir / "plugin.json": manifest}
+    if plugin.mcp:
+        paths[plugin_dir / "mcp.json"] = {"mcpServers": plugin.mcp}
+    for path, data in paths.items():
+        _write_json(path, data)
+    return list(paths)
+
+
+def write_codex_plugin_manifest(
+    plugin_dir: Path, plugin: PluginConfig, agent_files: list[str]
+) -> list[Path]:
+    meta = plugin.meta
+    manifest = {
+        "name": meta["name"],
+        "version": meta["version"],
+        "description": meta["description"],
+        "skills": "./skills/",
+        "author": meta["author"],
+        "keywords": meta.get("keywords", []),
+        "interface": {
+            "displayName": _display_name(meta["name"]),
+            "shortDescription": meta["description"][:100],
+            "longDescription": meta["description"],
+            "category": meta.get("category", "Productivity"),
+        },
+    }
+    if agent_files:
+        manifest["components"] = {
+            "agents": [f"agents/{name}" for name in sorted(agent_files)],
+        }
+    paths = {plugin_dir / ".codex-plugin" / "plugin.json": manifest}
+    if plugin.mcp:
+        paths[plugin_dir / ".codex-mcp.json"] = plugin.mcp
+    for path, data in paths.items():
+        _write_json(path, data)
+    return list(paths)
+
+
+def write_marketplace_registries(out_root: Path, cfg: SourceConfig) -> list[Path]:
+    marketplace = cfg.marketplace
+    claude_registry = {
         "name": marketplace["name"],
         "owner": marketplace["owner"],
         "metadata": {
@@ -39,88 +100,36 @@ def write_claude_manifests(out_root: Path, plugin: dict) -> list[Path]:
         },
         "plugins": [
             {
-                "name": plugin["name"],
-                "source": f"./plugins/{plugin['name']}",
-                "description": plugin["description"],
-                "version": plugin["version"],
-                "author": plugin["author"],
-                "homepage": plugin["homepage"],
-                "tags": plugin.get("keywords", []),
+                "name": p.name,
+                "source": f"./{cfg.harnesses['claude'].dist_root}/plugins/{p.name}",
+                "description": p.meta["description"],
+                "version": p.version,
+                "author": p.meta["author"],
+                "homepage": p.meta["homepage"],
+                "tags": p.meta.get("keywords", []),
             }
+            for p in cfg.plugins
         ],
     }
-    paths = {
-        pdir / ".claude-plugin" / "plugin.json": plugin_json,
-        out_root / ".claude-plugin" / "marketplace.json": marketplace_json,
-        pdir / ".mcp.json": plugin.get("mcp", {}),
-    }
-    for path, data in paths.items():
-        _write_json(path, data)
-    return list(paths)
-
-
-def write_copilot_manifests(out_root: Path, plugin: dict) -> list[Path]:
-    pdir = plugin_dir(out_root, plugin)
-    plugin_json = {
-        "$schema": AGENT_PLUGINS_SCHEMA,
-        "name": plugin["name"],
-        "version": plugin["version"],
-        "description": plugin["description"],
-        "author": plugin["author"],
-        "license": plugin["license"],
-        "skills": "./skills-portable/",
-        "keywords": plugin.get("keywords", []),
-    }
-    mcp_json = {"mcpServers": plugin.get("mcp", {})}
-    paths = {
-        pdir / "plugin.json": plugin_json,
-        pdir / "mcp.json": mcp_json,
-    }
-    for path, data in paths.items():
-        _write_json(path, data)
-    return list(paths)
-
-
-def write_codex_manifests(
-    out_root: Path, plugin: dict, skills_index: list[dict], agent_files: list[str]
-) -> list[Path]:
-    pdir = plugin_dir(out_root, plugin)
-    display_name = plugin["name"].replace("-", " ").title()
-    plugin_json = {
-        "name": plugin["name"],
-        "version": plugin["version"],
-        "description": plugin["description"],
-        "skills": "./skills-portable/",
-        "components": {
-            "agents": [f"agents-codex/{name}" for name in sorted(agent_files)],
-        },
-        "author": plugin["author"],
-        "keywords": plugin.get("keywords", []),
-        "interface": {
-            "displayName": display_name,
-            "shortDescription": plugin["description"][:100],
-            "longDescription": plugin["description"],
-            "category": plugin.get("category", "Productivity"),
-        },
-    }
-    marketplace = plugin["marketplace"]
-    registry_json = {
+    codex_registry = {
         "name": marketplace["name"],
-        "interface": {"displayName": marketplace["name"].replace("-", " ").title()},
+        "interface": {"displayName": _display_name(marketplace["name"])},
         "plugins": [
             {
-                "name": plugin["name"],
-                "source": {"source": "local", "path": f"./plugins/{plugin['name']}"},
+                "name": p.name,
+                "source": {
+                    "source": "local",
+                    "path": f"./{cfg.harnesses['codex'].dist_root}/plugins/{p.name}",
+                },
                 "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
-                "category": plugin.get("category", "Productivity"),
+                "category": p.meta.get("category", "Productivity"),
             }
+            for p in cfg.plugins
         ],
     }
     paths = {
-        pdir / ".codex-plugin" / "plugin.json": plugin_json,
-        pdir / ".codex-mcp.json": plugin.get("mcp", {}),
-        out_root / ".agents" / "plugins" / "marketplace.json": registry_json,
-        out_root / ".well-known" / "skills" / "index.json": {"skills": skills_index},
+        out_root / ".claude-plugin" / "marketplace.json": claude_registry,
+        out_root / ".agents" / "plugins" / "marketplace.json": codex_registry,
     }
     for path, data in paths.items():
         _write_json(path, data)

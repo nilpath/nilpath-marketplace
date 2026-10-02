@@ -1,7 +1,7 @@
 from pathlib import Path
 import frontmatter
 import pytest
-from paths import SKILLS_DIR, AGENTS_DIR
+from paths import all_agent_files, all_skill_dirs
 
 
 def _load_frontmatter(path: Path) -> dict:
@@ -11,12 +11,12 @@ def _load_frontmatter(path: Path) -> dict:
 
 @pytest.fixture(scope="session")
 def skill_dirs() -> list[Path]:
-    return sorted(p for p in SKILLS_DIR.iterdir() if p.is_dir() and (p / "SKILL.md").exists())
+    return all_skill_dirs()
 
 
 @pytest.fixture(scope="session")
 def agent_files() -> list[Path]:
-    return sorted(AGENTS_DIR.rglob("*.md"))
+    return all_agent_files()
 
 
 @pytest.fixture(scope="session")

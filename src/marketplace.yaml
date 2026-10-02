@@ -1,0 +1,18 @@
+# Marketplace metadata + shared defaults inherited by every plugin.yaml.
+name: nilpath-marketplace
+version: 0.1.0
+description: A marketplace for my claude code extensions
+owner:
+  name: Christoffer Ahrling
+  url: https://github.com/nilpath
+
+# Defaults merged into each plugin's metadata (plugin.yaml keys win).
+defaults:
+  author:
+    name: Christoffer Ahrling
+    url: https://github.com/nilpath
+  homepage: https://github.com/nilpath/nilpath-marketplace
+  repository: https://github.com/nilpath/nilpath-marketplace
+  license: MIT
+  category: Productivity
+  keywords: []

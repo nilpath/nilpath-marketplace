@@ -1,0 +1,18 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "documentation",
+  "version": "0.8.0",
+  "description": "Technical documentation tooling — orchestrated doc writing and auditing, plus Mermaid diagram creation and validation.",
+  "author": {
+    "name": "Christoffer Ahrling",
+    "url": "https://github.com/nilpath"
+  },
+  "license": "MIT",
+  "skills": "./skills/",
+  "keywords": [
+    "documentation",
+    "technical-writing",
+    "mermaid",
+    "diagrams"
+  ]
+}

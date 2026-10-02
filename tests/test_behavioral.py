@@ -7,7 +7,8 @@ from behavioral.runner import run_skill_test
 from behavioral.assertions import assert_required_invocations, assert_expected_sequence
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "behavioral"
-PLUGIN_DIR = Path(__file__).parent.parent / "plugins" / "claude-code-tools"
+PLUGINS_ROOT = Path(__file__).parent.parent / "dist" / "claude" / "plugins"
+PLUGIN_DIRS = sorted(p for p in PLUGINS_ROOT.iterdir() if p.is_dir()) if PLUGINS_ROOT.exists() else []
 
 
 def _collect_fixtures() -> list[Path]:
@@ -32,7 +33,7 @@ def test_behavioral(fixture_dir: Path):
     calls = run_skill_test(
         prompt=prompt,
         context_dir=context_dir if context_dir.exists() else None,
-        plugin_dir=PLUGIN_DIR,
+        plugin_dirs=PLUGIN_DIRS,
     )
 
     if required := expectations.get("required_invocations"):

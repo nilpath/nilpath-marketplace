@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "engineering-workflow",
+  "version": "0.8.0",
+  "description": "Research → design → plan → implement → review pipeline. Orchestrator skills plus the reviewer, researcher, and implementation agents they delegate to, and core engineering principles.",
+  "author": {
+    "name": "Christoffer Ahrling",
+    "url": "https://github.com/nilpath"
+  },
+  "license": "MIT",
+  "skills": "./skills/",
+  "keywords": [
+    "workflow",
+    "planning",
+    "tdd",
+    "code-review",
+    "research"
+  ]
+}

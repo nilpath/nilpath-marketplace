@@ -1,4 +1,4 @@
-"""Build orchestration: render src/ into per-harness output trees."""
+"""Build orchestration: render src/plugins/* into per-harness dist trees."""
 
 from __future__ import annotations
 
@@ -6,16 +6,25 @@ import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .config import HarnessConfig, SourceConfig, load_config
+from .config import HarnessConfig, PluginConfig, SourceConfig, load_config
 from .fm import dump_agent_toml, dump_frontmatter, process_frontmatter, split_document
 from .manifests import (
-    write_claude_manifests,
-    write_codex_manifests,
-    write_copilot_manifests,
+    write_claude_plugin_manifest,
+    write_codex_plugin_manifest,
+    write_copilot_plugin_manifest,
+    write_marketplace_registries,
 )
 from .render import make_environment, render_file
 
 ALL_TARGETS = ("claude", "copilot", "codex")
+
+# Repo-relative paths fully managed (regenerated) by the build. The two
+# registry files live at fixed discovery locations outside dist/.
+OWNED_PATHS = (
+    Path("dist"),
+    Path(".claude-plugin") / "marketplace.json",
+    Path(".agents") / "plugins" / "marketplace.json",
+)
 
 
 @dataclass
@@ -24,42 +33,12 @@ class BuildResult:
     written: list[Path] = field(default_factory=list)
 
 
-def discover_skills(cfg: SourceConfig) -> list[Path]:
-    return sorted(
-        p.parent for p in (cfg.root / "skills").glob("*/SKILL.md.j2")
-    )
+def discover_skills(plugin: PluginConfig) -> list[Path]:
+    return sorted(p.parent for p in (plugin.src_dir / "skills").glob("*/SKILL.md.j2"))
 
 
-def discover_agents(cfg: SourceConfig) -> list[Path]:
-    return sorted((cfg.root / "agents").glob("*/*.md.j2"))
-
-
-def owned_paths(cfg: SourceConfig, targets: tuple[str, ...] = ALL_TARGETS) -> list[Path]:
-    """Repo-relative paths fully managed (regenerated) by the build."""
-    plugin_name = cfg.plugin["name"]
-    pdir = Path("plugins") / plugin_name
-    owned: list[Path] = []
-    for target in targets:
-        harness = cfg.harnesses[target]
-        for key in ("skills_dir", "agents_dir"):
-            if key in harness.output:
-                owned.append(Path(harness.output[key]))
-    if "claude" in targets:
-        owned += [
-            pdir / ".claude-plugin" / "plugin.json",
-            Path(".claude-plugin") / "marketplace.json",
-            pdir / ".mcp.json",
-        ]
-    if "copilot" in targets:
-        owned += [pdir / "plugin.json", pdir / "mcp.json"]
-    if "codex" in targets:
-        owned += [
-            pdir / ".codex-plugin" / "plugin.json",
-            pdir / ".codex-mcp.json",
-            Path(".agents") / "plugins" / "marketplace.json",
-            Path(".well-known") / "skills",
-        ]
-    return owned
+def discover_agents(plugin: PluginConfig) -> list[Path]:
+    return sorted((plugin.src_dir / "agents").glob("*/*.md.j2"))
 
 
 def _component_targets(fm_data: dict, component: str) -> list[str]:
@@ -72,27 +51,35 @@ def _component_targets(fm_data: dict, component: str) -> list[str]:
     return targets
 
 
+def _plugin_dist_dir(out_root: Path, harness: HarnessConfig, plugin: PluginConfig) -> Path:
+    return out_root / harness.dist_root / "plugins" / plugin.name
+
+
 def _build_skill(
-    env, skill_dir: Path, harness: HarnessConfig, cfg: SourceConfig, out_root: Path, result: BuildResult
-) -> dict | None:
-    """Render one skill for one harness. Returns an index entry (name,
-    description, files) when the skill targets this harness, else None."""
+    env,
+    skill_dir: Path,
+    harness: HarnessConfig,
+    plugin: PluginConfig,
+    cfg: SourceConfig,
+    out_root: Path,
+    result: BuildResult,
+) -> None:
     name = skill_dir.name
+    component = f"{plugin.name}/skill/{name}"
     rendered = render_file(env, skill_dir / "SKILL.md.j2", harness, cfg, skill_name=name)
     fm_data, body = split_document(rendered)
-    if harness.id not in _component_targets(fm_data, f"skill/{name}"):
-        return None
+    if harness.id not in _component_targets(fm_data, component):
+        return
 
-    fm_out, warnings = process_frontmatter(fm_data, "skill", harness, cfg, f"skill/{name}")
+    fm_out, warnings = process_frontmatter(fm_data, "skill", harness, cfg, component)
     result.warnings.extend(warnings)
 
-    out_dir = out_root / harness.output["skills_dir"] / name
+    out_dir = _plugin_dist_dir(out_root, harness, plugin) / harness.output["skills_dir"] / name
     out_dir.mkdir(parents=True, exist_ok=True)
     skill_md = out_dir / "SKILL.md"
     skill_md.write_text(dump_frontmatter(fm_out) + body)
     result.written.append(skill_md)
 
-    files = ["SKILL.md"]
     for src_file in sorted(skill_dir.rglob("*")):
         if not src_file.is_file() or src_file.name == "SKILL.md.j2":
             continue
@@ -107,18 +94,22 @@ def _build_skill(
             shutil.copyfile(src_file, out_file)
             shutil.copymode(src_file, out_file)
         result.written.append(out_file)
-        files.append(str(out_file.relative_to(out_dir)))
-    return {"name": name, "description": fm_data["description"], "files": files}
 
 
 def _build_agent(
-    env, agent_file: Path, harness: HarnessConfig, cfg: SourceConfig, out_root: Path, result: BuildResult
+    env,
+    agent_file: Path,
+    harness: HarnessConfig,
+    plugin: PluginConfig,
+    cfg: SourceConfig,
+    out_root: Path,
+    result: BuildResult,
 ) -> str | None:
     """Render one agent for one harness. Returns the output filename when the
     agent targets this harness, else None."""
     name = agent_file.stem.removesuffix(".md")
     category = agent_file.parent.name
-    component = f"agent/{category}/{name}"
+    component = f"{plugin.name}/agent/{category}/{name}"
     rendered = render_file(env, agent_file, harness, cfg)
     fm_data, body = split_document(rendered)
     if harness.id not in _component_targets(fm_data, component):
@@ -130,7 +121,7 @@ def _build_agent(
     result.warnings.extend(warnings)
 
     suffix = harness.output.get("agent_suffix", ".md")
-    out_dir = out_root / harness.output["agents_dir"]
+    out_dir = _plugin_dist_dir(out_root, harness, plugin) / harness.output["agents_dir"]
     if harness.id == "claude":
         out_dir = out_dir / category
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -145,45 +136,48 @@ def _build_agent(
     return out_file.name
 
 
-def build(repo_root: Path, targets: tuple[str, ...] = ALL_TARGETS, out_root: Path | None = None) -> BuildResult:
+def build(
+    repo_root: Path, targets: tuple[str, ...] = ALL_TARGETS, out_root: Path | None = None
+) -> BuildResult:
     cfg = load_config(repo_root)
     out_root = out_root or repo_root
     env = make_environment()
     result = BuildResult()
 
-    # Clean owned output dirs so removed components disappear.
-    for rel in owned_paths(cfg, targets):
+    # Full regeneration: clean everything the build owns.
+    for rel in OWNED_PATHS:
         path = out_root / rel
         if path.is_dir():
             shutil.rmtree(path)
         elif path.exists():
             path.unlink()
 
-    skills_index: dict[str, list[dict]] = {}
-    agents_index: dict[str, list[str]] = {}
-    for target in targets:
-        harness = cfg.harnesses[target]
-        index: list[dict] = []
-        agent_files: list[str] = []
-        for skill_dir in discover_skills(cfg):
-            entry = _build_skill(env, skill_dir, harness, cfg, out_root, result)
-            if entry:
-                index.append(entry)
-        for agent_file in discover_agents(cfg):
-            written = _build_agent(env, agent_file, harness, cfg, out_root, result)
-            if written:
-                agent_files.append(written)
-        skills_index[target] = index
-        agents_index[target] = agent_files
+    for plugin in cfg.plugins:
+        for target in targets:
+            harness = cfg.harnesses[target]
+            plugin_dir = _plugin_dist_dir(out_root, harness, plugin)
+            agent_files: list[str] = []
+            for skill_dir in discover_skills(plugin):
+                _build_skill(env, skill_dir, harness, plugin, cfg, out_root, result)
+            for agent_file in discover_agents(plugin):
+                written = _build_agent(env, agent_file, harness, plugin, cfg, out_root, result)
+                if written:
+                    agent_files.append(written)
 
-    if "claude" in targets:
-        result.written += write_claude_manifests(out_root, cfg.plugin)
-    if "copilot" in targets:
-        result.written += write_copilot_manifests(out_root, cfg.plugin)
-    if "codex" in targets:
-        result.written += write_codex_manifests(
-            out_root, cfg.plugin, skills_index["codex"], agents_index["codex"]
-        )
+            readme = plugin.src_dir / "README.md"
+            if readme.exists():
+                plugin_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(readme, plugin_dir / "README.md")
+                result.written.append(plugin_dir / "README.md")
+
+            if target == "claude":
+                result.written += write_claude_plugin_manifest(plugin_dir, plugin)
+            elif target == "copilot":
+                result.written += write_copilot_plugin_manifest(plugin_dir, plugin)
+            elif target == "codex":
+                result.written += write_codex_plugin_manifest(plugin_dir, plugin, agent_files)
+
+    result.written += write_marketplace_registries(out_root, cfg)
     return result
 
 
@@ -191,12 +185,11 @@ def check(repo_root: Path, targets: tuple[str, ...] = ALL_TARGETS) -> list[str]:
     """Rebuild into a temp tree and diff against the committed output."""
     import tempfile
 
-    cfg = load_config(repo_root)
     diffs: list[str] = []
     with tempfile.TemporaryDirectory() as tmp:
         tmp_root = Path(tmp)
         build(repo_root, targets, out_root=tmp_root)
-        for rel in owned_paths(cfg, targets):
+        for rel in OWNED_PATHS:
             expected_root, actual_root = tmp_root / rel, repo_root / rel
             expected = {
                 p.relative_to(tmp_root): p for p in expected_root.rglob("*") if p.is_file()

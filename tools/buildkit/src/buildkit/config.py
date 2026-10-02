@@ -18,6 +18,11 @@ class HarnessConfig:
         return self.raw.get("output", {})
 
     @property
+    def dist_root(self) -> str:
+        """Repo-relative root of this harness's generated tree (e.g. dist/claude)."""
+        return self.output["dist_root"]
+
+    @property
     def skill_root_template(self) -> str:
         return self.raw.get("paths", {}).get("skill_root", ".")
 
@@ -60,7 +65,7 @@ class HarnessConfig:
     @property
     def agent_format(self) -> str:
         """Output format for agents: 'markdown' (frontmatter + body) or 'toml'."""
-        return self.raw.get("output", {}).get("agent_format", "markdown")
+        return self.output.get("agent_format", "markdown")
 
     def supports_kind(self, kind: str) -> bool:
         dir_key = {"skill": "skills_dir", "agent": "agents_dir"}[kind]
@@ -68,10 +73,31 @@ class HarnessConfig:
 
 
 @dataclass
+class PluginConfig:
+    """One plugin's metadata (marketplace defaults overlaid with plugin.yaml)."""
+
+    src_dir: Path
+    meta: dict
+
+    @property
+    def name(self) -> str:
+        return self.meta["name"]
+
+    @property
+    def version(self) -> str:
+        return self.meta["version"]
+
+    @property
+    def mcp(self) -> dict:
+        return self.meta.get("mcp", {})
+
+
+@dataclass
 class SourceConfig:
     root: Path  # the src/ directory
     repo_root: Path
-    plugin: dict
+    marketplace: dict
+    plugins: list[PluginConfig]
     tools: dict  # canonical vocabulary (tools.yaml)
     harnesses: dict[str, HarnessConfig] = field(default_factory=dict)
 
@@ -92,7 +118,13 @@ def load_config(repo_root: Path) -> SourceConfig:
     src = repo_root / "src"
     harness_dir = src / "harnesses"
     tools = yaml.safe_load((harness_dir / "tools.yaml").read_text())
-    plugin = yaml.safe_load((src / "plugin.yaml").read_text())
+    marketplace = yaml.safe_load((src / "marketplace.yaml").read_text())
+    defaults = marketplace.get("defaults", {})
+
+    plugins: list[PluginConfig] = []
+    for plugin_yaml in sorted((src / "plugins").glob("*/plugin.yaml")):
+        meta = {**defaults, **yaml.safe_load(plugin_yaml.read_text())}
+        plugins.append(PluginConfig(src_dir=plugin_yaml.parent, meta=meta))
 
     harnesses: dict[str, HarnessConfig] = {}
     for path in sorted(harness_dir.glob("*.yaml")):
@@ -104,7 +136,8 @@ def load_config(repo_root: Path) -> SourceConfig:
     return SourceConfig(
         root=src,
         repo_root=repo_root,
-        plugin=plugin,
+        marketplace=marketplace,
+        plugins=plugins,
         tools=tools,
         harnesses=harnesses,
     )

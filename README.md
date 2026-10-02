@@ -1,53 +1,62 @@
 # nilpath-marketplace
 
-A marketplace for my AI coding-agent extensions — skills and agents authored once, distributed to **Claude Code**, **GitHub Copilot (VS Code)**, and **Codex**. Inspired by [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin).
+A marketplace for my AI coding-agent extensions — skills and agents authored once under `src/`, built into per-harness distributions for **Claude Code**, **GitHub Copilot (VS Code)**, and **Codex**. Inspired by [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin).
+
+## Plugins
+
+| Plugin | Contents | Claude Code | Copilot | Codex |
+| --- | --- | --- | --- | --- |
+| **git-tools** | 6 git/gh workflow skills | ✅ | ✅ | ✅ |
+| **engineering-workflow** | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | skills partial¹, agents ✅ | skills partial¹, agents ✅ |
+| **documentation** | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | mermaid + agents | mermaid + agents |
+| **authoring-tools** | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
+
+¹ Orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are Claude-only — they drive Claude Code subagents. `engineering-principles` and all agents ship everywhere.
+
+Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-writer agent from `documentation` — install them together.
 
 ## Install
 
-**Claude Code** (all 15 skills + 12 agents):
+**Claude Code:**
 
 ```bash
 /plugin marketplace add nilpath/nilpath-marketplace
-/plugin install claude-code-tools
+/plugin install git-tools          # or engineering-workflow, documentation, authoring-tools
 ```
 
-**GitHub Copilot (VS Code)** (8 portable skills): add this repo as a plugin marketplace in your settings:
+**GitHub Copilot (VS Code):** add the repo as a plugin marketplace in settings, then install from the Extensions view (`@agentPlugins`):
 
 ```json
 "chat.plugins.marketplaces": ["nilpath/nilpath-marketplace"]
 ```
 
-then install `claude-code-tools` from the Extensions view (`@agentPlugins`). Alternatively, copy any folder from `plugins/claude-code-tools/skills-portable/` into your repo's `.github/skills/`.
+Alternatively, copy any skill folder from `dist/copilot/plugins/<plugin>/skills/` into your repo's `.github/skills/`.
 
-**Codex** (8 portable skills):
+**Codex:**
 
 ```bash
 codex plugin marketplace add git@github.com:nilpath/nilpath-marketplace.git
-codex plugin install claude-code-tools
+codex plugin install git-tools
 ```
-
-Skills are also discoverable via the `.well-known/skills/` index.
-
-## Portability
-
-| Component | Claude Code | Copilot | Codex |
-| --- | --- | --- | --- |
-| creating-mermaid-diagrams, engineering-principles, gh-address-comments, gh-pr-review, git-advanced, git-commits, git-stacked-prs, using-git-worktrees | ✅ | ✅ | ✅ |
-| all 12 agents | ✅ | ✅ `com.github.copilot/agents/*.agent.md` | ✅ `agents-codex/*.toml` |
-| creating-agents, creating-skills, executing-plan, performing-code-review, planning, researching, writing-documentation | ✅ | — | — |
-
-The Claude-only skills orchestrate Claude Code subagents (TodoWrite, AskUserQuestion, `Agent(...)`) or document Claude Code's own formats, so they are exempted from the other targets. Agent renders adapt frontmatter per harness (tool aliases, model fallback lists, `permissionMode: plan` → Codex `sandbox_mode: "read-only"`); agent bodies are shared.
 
 ## How it works
 
-Everything under `plugins/`, `.claude-plugin/`, `.agents/`, and `.well-known/` is **generated** — do not edit it directly. The single source of truth is `src/`:
+Everything under `dist/`, plus the two root registry files (`.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`), is **generated** — never edit it. The single source of truth is `src/`:
 
 ```text
 src/
-├── harnesses/          # per-harness config: tool-name maps, model tiers, frontmatter schemas
-├── skills/<name>/      # SKILL.md.j2 + references/ templates/ workflows/ scripts/
-├── agents/<cat>/       # <name>.md.j2
-└── plugin.yaml         # plugin + marketplace metadata, version, MCP servers
+├── harnesses/                  # per-harness config: tool-name maps, model tiers, schemas
+├── marketplace.yaml            # marketplace metadata + shared plugin defaults
+└── plugins/<plugin>/
+    ├── plugin.yaml             # name, version, description, optional MCP servers
+    ├── README.md               # copied into every harness tree
+    ├── skills/<name>/          # SKILL.md.j2 + references/ templates/ scripts/
+    └── agents/<cat>/<name>.md.j2
+
+dist/
+├── claude/plugins/<plugin>/    # Claude plugin trees (.claude-plugin/, skills/, agents/)
+├── copilot/plugins/<plugin>/   # Agent Plugins 1.0 trees (plugin.json, skills/, com.github.copilot/agents/)
+└── codex/plugins/<plugin>/     # Codex plugin trees (.codex-plugin/, skills/, agents/*.toml)
 ```
 
 Sources use a harness-neutral vocabulary — canonical tool names (`shell(git:*)`, `file-read`, `subagent(x)`), model tiers (`small`–`xlarge`), and reasoning levels (`minimal`–`max`) — which `tools/buildkit` translates per harness.
@@ -56,9 +65,9 @@ Sources use a harness-neutral vocabulary — canonical tool names (`shell(git:*)
 
 ```bash
 make install          # venv + deps + buildkit
-make build            # render src/ -> all harness outputs
+make build            # render src/ -> dist/ (all harnesses)
 make check            # fail if committed output drifts from src/ (CI gate)
 make test-static      # structure tests over the generated output
 ```
 
-Workflow: edit `src/`, run `make build`, commit sources **and** generated output together. See [ai_docs/release-workflow.md](ai_docs/release-workflow.md) for releases.
+Workflow: edit `src/`, run `make build`, commit sources **and** `dist/` together. See [ai_docs/release-workflow.md](ai_docs/release-workflow.md) for releases.

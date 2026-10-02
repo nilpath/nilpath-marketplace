@@ -1,7 +1,8 @@
 id: claude
 output:
-  skills_dir: plugins/claude-code-tools/skills
-  agents_dir: plugins/claude-code-tools/agents
+  dist_root: dist/claude        # plugins render under <dist_root>/plugins/<plugin>/
+  skills_dir: skills            # plugin-relative
+  agents_dir: agents
 paths:
   skill_root: "${{CLAUDE_PLUGIN_ROOT}}/skills/{skill_name}"
 frontmatter:

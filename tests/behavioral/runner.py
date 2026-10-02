@@ -14,14 +14,14 @@ class ToolCall:
     input: dict
 
 
-def run_skill_test(prompt: str, context_dir: Path | None, plugin_dir: Path) -> list[ToolCall]:
+def run_skill_test(prompt: str, context_dir: Path | None, plugin_dirs: list[Path]) -> list[ToolCall]:
     """
     Invoke Claude CLI with the given prompt and return the ordered list of tool calls made.
 
     Args:
         prompt: The prompt to send to Claude.
         context_dir: Optional directory whose contents are copied into the temp working dir.
-        plugin_dir: Path to the local plugin directory (passed via --plugin-dir).
+        plugin_dirs: Local plugin directories (each passed via --plugin-dir).
     """
     with tempfile.TemporaryDirectory() as tmp:
         cwd = Path(tmp)
@@ -40,8 +40,9 @@ def run_skill_test(prompt: str, context_dir: Path | None, plugin_dir: Path) -> l
             "--verbose",
             "--no-session-persistence",
             "--permission-mode", "bypassPermissions",
-            "--plugin-dir", str(plugin_dir),
         ]
+        for plugin_dir in plugin_dirs:
+            cmd += ["--plugin-dir", str(plugin_dir)]
 
         result = subprocess.run(
             cmd,

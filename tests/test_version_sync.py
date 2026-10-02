@@ -1,74 +1,51 @@
 import json
-import re
-from pathlib import Path
+
 import pytest
-from paths import ROOT, PLUGIN_DIR, SKILLS_DIR, AGENTS_DIR
+import yaml
 
-PLUGIN_JSON = PLUGIN_DIR / ".claude-plugin" / "plugin.json"
-MARKETPLACE_JSON = ROOT / ".claude-plugin" / "marketplace.json"
-CHANGELOG_MD = PLUGIN_DIR / "CHANGELOG.md"
-README_MD = PLUGIN_DIR / "README.md"
-
-AGENTS_COUNT_RE = re.compile(r"###\s+Agents\s*\((\d+)\)")
-SKILLS_COUNT_RE = re.compile(r"###\s+Skills\s*\((\d+)\)")
+from paths import CHANGELOG_MD, MARKETPLACE_JSON, PLUGIN_DIRS, SRC_PLUGINS_DIR
 
 
-def _plugin_version() -> str:
-    data = json.loads(PLUGIN_JSON.read_text())
-    return data["version"]
-
-
-def _marketplace_version(plugin_name: str) -> str:
+def _marketplace_plugins() -> dict[str, dict]:
     data = json.loads(MARKETPLACE_JSON.read_text())
-    for plugin in data.get("plugins", []):
-        if plugin["name"] == plugin_name:
-            return plugin["version"]
-    raise KeyError(f"Plugin '{plugin_name}' not found in marketplace.json")
+    return {p["name"]: p for p in data.get("plugins", [])}
 
 
-def _actual_skill_count() -> int:
-    return sum(
-        1 for p in SKILLS_DIR.iterdir() if p.is_dir() and (p / "SKILL.md").exists()
+def _src_plugins() -> dict[str, dict]:
+    return {
+        f.parent.name: yaml.safe_load(f.read_text())
+        for f in sorted(SRC_PLUGINS_DIR.glob("*/plugin.yaml"))
+    }
+
+
+def test_marketplace_lists_every_plugin():
+    marketplace = set(_marketplace_plugins())
+    src = set(_src_plugins())
+    dist = {p.name for p in PLUGIN_DIRS}
+    assert marketplace == src == dist, (
+        f"plugin sets diverge: marketplace={sorted(marketplace)}, "
+        f"src={sorted(src)}, dist={sorted(dist)}"
     )
 
 
-def _actual_agent_count() -> int:
-    return sum(1 for _ in AGENTS_DIR.rglob("*.md"))
-
-
-def test_plugin_version_matches_marketplace():
-    plugin_ver = _plugin_version()
-    market_ver = _marketplace_version("claude-code-tools")
-    assert plugin_ver == market_ver, (
-        f"plugin.json version '{plugin_ver}' != marketplace.json version '{market_ver}'"
+@pytest.mark.parametrize("plugin_dir", PLUGIN_DIRS, ids=lambda p: p.name)
+def test_plugin_version_sync(plugin_dir):
+    manifest = json.loads((plugin_dir / ".claude-plugin" / "plugin.json").read_text())
+    src_version = _src_plugins()[plugin_dir.name]["version"]
+    market_version = _marketplace_plugins()[plugin_dir.name]["version"]
+    assert manifest["version"] == src_version == market_version, (
+        f"{plugin_dir.name}: plugin.json={manifest['version']}, "
+        f"src={src_version}, marketplace={market_version}"
     )
 
 
-def test_changelog_contains_current_version():
-    version = _plugin_version()
+@pytest.mark.parametrize("plugin_dir", PLUGIN_DIRS, ids=lambda p: p.name)
+def test_changelog_contains_plugin_version(plugin_dir):
+    version = _src_plugins()[plugin_dir.name]["version"]
     changelog = CHANGELOG_MD.read_text()
-    assert version in changelog, (
-        f"Version '{version}' not found in CHANGELOG.md"
-    )
+    assert version in changelog, f"Version '{version}' not found in CHANGELOG.md"
 
 
-def test_readme_skill_count_matches_actual():
-    readme = README_MD.read_text()
-    match = SKILLS_COUNT_RE.search(readme)
-    assert match, "Could not find '### Skills (N)' heading in README.md"
-    readme_count = int(match.group(1))
-    actual = _actual_skill_count()
-    assert readme_count == actual, (
-        f"README.md says {readme_count} skills but found {actual} skill directories"
-    )
-
-
-def test_readme_agent_count_matches_actual():
-    readme = README_MD.read_text()
-    match = AGENTS_COUNT_RE.search(readme)
-    assert match, "Could not find '### Agents (N)' heading in README.md"
-    readme_count = int(match.group(1))
-    actual = _actual_agent_count()
-    assert readme_count == actual, (
-        f"README.md says {readme_count} agents but found {actual} agent files"
-    )
+@pytest.mark.parametrize("plugin_dir", PLUGIN_DIRS, ids=lambda p: p.name)
+def test_plugin_readme_exists(plugin_dir):
+    assert (plugin_dir / "README.md").exists(), f"{plugin_dir.name}: missing README.md in dist"

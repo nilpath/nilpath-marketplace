@@ -1,0 +1,22 @@
+{
+  "name": "authoring-tools",
+  "version": "0.8.0",
+  "description": "Guidance for authoring Claude Code extensions — designing and writing skills and subagents.",
+  "skills": "./skills/",
+  "author": {
+    "name": "Christoffer Ahrling",
+    "url": "https://github.com/nilpath"
+  },
+  "keywords": [
+    "claude-code",
+    "skills",
+    "agents",
+    "authoring"
+  ],
+  "interface": {
+    "displayName": "Authoring Tools",
+    "shortDescription": "Guidance for authoring Claude Code extensions — designing and writing skills and subagents.",
+    "longDescription": "Guidance for authoring Claude Code extensions — designing and writing skills and subagents.",
+    "category": "Productivity"
+  }
+}

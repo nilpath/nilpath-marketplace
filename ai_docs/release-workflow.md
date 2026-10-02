@@ -4,9 +4,10 @@ Complete guide for developing and releasing changes to the plugin.
 
 ## Dev Flow
 
-All skills and agents are authored under `src/` and rendered into the committed
-per-harness output by `nilpath-build` (see `tools/buildkit`). Never edit files
-under `plugins/`, `.claude-plugin/`, `.agents/`, or `.well-known/` directly.
+All skills and agents are authored under `src/plugins/<plugin>/` and rendered
+into the committed per-harness trees under `dist/` by `nilpath-build` (see
+`tools/buildkit`). Never edit `dist/`, `.claude-plugin/marketplace.json`, or
+`.agents/plugins/marketplace.json` directly.
 
 ```mermaid
 flowchart TD
@@ -24,19 +25,20 @@ flowchart TD
 
 ## Version Sync Requirement
 
-The version lives in **one editable place**: `src/plugin.yaml`. `make build`
-propagates it into every generated manifest (Claude `plugin.json` +
-`marketplace.json`, Copilot Agent Plugins `plugin.json`, Codex
-`.codex-plugin/plugin.json` + `.agents/plugins/marketplace.json`).
+Versions live in **one editable place per plugin**: `src/plugins/<plugin>/plugin.yaml`
+(marketplace metadata in `src/marketplace.yaml`). `make build` propagates them
+into every generated manifest (Claude `plugin.json` + `marketplace.json`,
+Copilot Agent Plugins `plugin.json`, Codex `.codex-plugin/plugin.json` +
+`.agents/plugins/marketplace.json`).
 
 Every release MUST update these files together:
 
 | File | Path | Updates |
 |------|------|---------|
-| plugin.yaml | `src/plugin.yaml` | Version bump (single source) |
-| CHANGELOG.md | `plugins/claude-code-tools/CHANGELOG.md` | Change documentation |
-| README.md | `plugins/claude-code-tools/README.md` | Component counts, tables |
-| README.md (root) | `README.md` | Portability matrix |
+| plugin.yaml | `src/plugins/<plugin>/plugin.yaml` | Version bump per changed plugin |
+| CHANGELOG.md | `CHANGELOG.md` (repo root) | Change documentation |
+| plugin README | `src/plugins/<plugin>/README.md` | Component tables |
+| README.md (root) | `README.md` | Plugin/portability matrix |
 | generated manifests | — | via `make build`, never by hand |
 
 `make check` (also part of `make test-static`) fails if the committed output
@@ -162,13 +164,13 @@ Verify counts match actual files:
 
 ```bash
 # Count agents
-find src/agents -name "*.md.j2" | wc -l
+find src/plugins/*/agents -name "*.md.j2" | wc -l
 
 # Count skills
-ls -d src/skills/*/ | wc -l
+ls -d src/plugins/*/skills/*/ | wc -l
 
-# Count portable skills (shipped to Copilot/Codex)
-ls -d plugins/claude-code-tools/skills-portable/*/ | wc -l
+# Count skills shipped to Copilot/Codex
+ls -d dist/copilot/plugins/*/skills/*/ | wc -l
 ```
 
 ## CHANGELOG Format

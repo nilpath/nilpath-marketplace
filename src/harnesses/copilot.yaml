@@ -1,11 +1,10 @@
 id: copilot
 output:
-  # Portable render shared by the Agent Plugins 1.0 manifest (plugin.json)
-  # and the Codex plugin manifest (.codex-plugin/plugin.json).
-  skills_dir: plugins/claude-code-tools/skills-portable
+  dist_root: dist/copilot       # plugins render under <dist_root>/plugins/<plugin>/
+  skills_dir: skills            # plugin-relative; Agent Plugins 1.0 default location
   # Copilot-specific components live in the plugin's reverse-domain dir
   # per the Agent Plugins 1.0 spec.
-  agents_dir: plugins/claude-code-tools/com.github.copilot/agents
+  agents_dir: com.github.copilot/agents
   agent_suffix: ".agent.md"
 paths:
   skill_root: "."        # skills resolve relative to their own directory

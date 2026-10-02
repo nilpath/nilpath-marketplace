@@ -29,7 +29,7 @@ def render_text(
 ) -> str:
     context = {
         "harness": harness.id,
-        "plugin": cfg.plugin,
+        "marketplace": cfg.marketplace,
     }
     if skill_name is not None:
         context["skill_name"] = skill_name
