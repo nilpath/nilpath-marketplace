@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Manual-only skill invocation** — researching and planning now require explicit user invocation on Claude Code, Copilot, and Codex; creating-skills and creating-agents require explicit invocation on their supported harness, Claude Code.
+- **Harness-native invocation controls** — Claude and the shared Copilot output retain `disable-model-invocation: true`; Codex uses `agents/openai.yaml` sidecars with `policy.allow_implicit_invocation: false`. The builder skips conditionally empty sidecar templates on other harnesses.
+- **Researching → planning handoff** — after committing the approved design spec, researching shows the user the harness-specific planning command with the feature path and stops, replacing automatic planning invocation.
+- **Shared VS Code / Copilot CLI enforcement** — the shared Copilot output keeps the manual-only flag for both clients despite known Copilot CLI manual-invocation issues ([github/copilot-cli#4438](https://github.com/github/copilot-cli/issues/4438), [github/copilot-cli#4637](https://github.com/github/copilot-cli/issues/4637)); no CLI-specific relaxation is applied.
+
 ### Fixed
 
 - **VS Code Copilot marketplace discovery** — the build now generates `.github/plugin/marketplace.json`, the registry VS Code actually reads when a repo is added via `chat.plugins.marketplaces` (VS Code does not read the Claude-format registry; only Copilot CLI does). Plugin `source` entries point into `dist/copilot/plugins/<plugin>`.

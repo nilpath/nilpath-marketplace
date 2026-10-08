@@ -9,7 +9,7 @@ frontmatter:
   skill:
     key_for_tools: allowed-tools
     required: [name, description]
-    allowed: [name, description, argument-hint, allowed-tools, license, effort]
+    allowed: [name, description, argument-hint, allowed-tools, license, effort, disable-model-invocation]
   agent:
     key_for_tools: tools
     required: [name, description]

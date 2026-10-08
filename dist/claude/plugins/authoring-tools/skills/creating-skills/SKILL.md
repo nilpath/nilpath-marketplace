@@ -1,12 +1,15 @@
 ---
 name: creating-skills
-description: Expert guidance for creating, writing, and refining Claude Code Skills. Use when working with SKILL.md files, authoring new skills, improving existing skills, or understanding skill structure and best practices.
+description: Expert guidance for creating, writing, and refining Claude Code Skills. Invoke explicitly to author new skills, improve existing skills, or understand skill structure and best practices.
 argument-hint: '[skill description or requirements]'
+disable-model-invocation: true
 ---
 
 # Creating Agent Skills
 
 This skill teaches how to create effective Claude Code Skills following Anthropic's official specification.
+
+Invoke explicitly with `/authoring-tools:creating-skills`. Do not load this skill automatically.
 
 ## Core Principles
 

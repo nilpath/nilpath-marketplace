@@ -1,6 +1,6 @@
 ---
 name: planning
-description: Translates an approved design specification into a sequenced list of TDD implementation tasks, each representing 2–5 minutes of work. Use after the researching skill produces an approved design.md, before writing any implementation code.
+description: Translates an approved design specification into a sequenced list of TDD implementation tasks, each representing 2–5 minutes of work. Invoke explicitly after an approved design.md is ready, before writing implementation code.
 ---
 
 # Planning: Design Spec to Implementation Tasks
@@ -8,6 +8,8 @@ description: Translates an approved design specification into a sequenced list o
 Translate an approved design specification into a concrete, ordered list of TDD implementation tasks. Each task is small enough to complete in 2–5 minutes, follows the red → green → commit cycle, and adheres to the `engineering-principles` skill.
 
 Do **NOT** write any implementation code. This skill produces only `plan.md` — the full task list for implementation. Every line of code comes after the plan is approved.
+
+This skill requires explicit user invocation. Do not load it automatically from another skill or agent.
 
 ## Quick Start
 
