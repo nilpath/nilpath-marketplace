@@ -1,7 +1,8 @@
 ---
 name: researching
-description: You MUST use this skill before doing any creative work, including creating features, writing code, adding functionality, or modifying any behavior. This skill is for researching and gathering information about the task at hand. It involves asking questions, seeking clarification, and collecting relevant data to ensure a thorough understanding of the problem before proceeding with any creative work.
+description: Researches a proposed feature or behavior change through clarification, codebase exploration, and design review. Invoke explicitly to produce an approved design specification before implementation.
 argument-hint: '"[topic-or-slug]" (e.g. "oauth", "refactor auth")'
+disable-model-invocation: true
 allowed-tools: AskUserQuestion, Read, Glob, Write, Edit, Bash, Grep, Agent, Skill(engineering-principles), Skill(git-tools:git-commits), TodoWrite
 ---
 
@@ -9,8 +10,9 @@ allowed-tools: AskUserQuestion, Read, Glob, Write, Edit, Bash, Grep, Agent, Skil
 
 Help researching ideas into complete design specification through exploring the problem space, asking clarifying questions and gathering information.
 
-Do **NOT** invoke any implementation skill, write any code or take any implementation action until you have a complete design specification that you have presented to the user and they have approved. This applies to EVERY task, regardless of how small or simple it may seem. Always start with research and design before any implementation.
+Invoke explicitly with `/engineering-workflow:researching`. Do not load this skill automatically.
 
+While this skill is active, do **NOT** invoke any implementation skill, write any code or take any implementation action until you have a complete design specification that you have presented to the user and they have approved.
 
 ## Checklist
 
@@ -25,7 +27,7 @@ You **MUST** use the `TodoWrite` tool to create a task for each item in the chec
 7. **Spec self-review**: Delegate to `Agent(subagent_type="engineering-workflow:review:spec-reviewer")` with the path to the written `design.md`. Edit the spec based on its findings until it is ready for the user.
 8. **User reviews written spec**: Present the design spec to the user for feedback via the `AskUserQuestion` tool. Edit as needed until the user approves the design spec.
 9. **Commit design spec**: Commit `docs/features/<NNN>-<feature-slug>/design.md` to git using the `git-tools:git-commits` skill.
-10. **Transition to implementation**: Once the design spec is committed, invoke the `engineering-workflow:planning` skill to create an implementation plan.
+10. **Planning handoff**: Once the design spec is committed, show the user `/engineering-workflow:planning docs/features/<NNN>-<feature-slug>` with the actual feature path, then stop. Do not invoke planning automatically.
 
 ## Process Flow
 
@@ -47,7 +49,7 @@ flowchart TD
     L --> M{Approved?}
     M -- Revisions needed --> K
     M -- Approved --> N[Commit design.md]
-    N --> O[Invoke planning skill]
+    N --> O[Show user planning invocation]
     O --> Z([Done])
 ```
 
@@ -138,8 +140,8 @@ Wait for user feedback. If the user requests changes, edit the spec accordingly 
 ### Handoff
 
 - Once the design spec is approved, commit `docs/features/<NNN>-<feature-slug>/design.md` to git using the `git-tools:git-commits` skill.
-- Then invoke the `engineering-workflow:planning` skill to create an implementation plan.
-- Do **NOT** invoke any other skill, planning is the next step.
+- Show the user `/engineering-workflow:planning docs/features/<NNN>-<feature-slug>` with the actual feature path to create an implementation plan.
+- Stop here and wait for explicit user invocation. Do not invoke planning automatically or start implementation.
 
 ## Guidelines
 

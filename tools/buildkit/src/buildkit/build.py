@@ -87,9 +87,12 @@ def _build_skill(
             continue
         rel = src_file.relative_to(skill_dir)
         if src_file.suffix == ".j2":
+            rendered = render_file(env, src_file, harness, cfg, skill_name=name)
+            if not rendered.strip():
+                continue
             out_file = out_dir / rel.with_suffix("")
             out_file.parent.mkdir(parents=True, exist_ok=True)
-            out_file.write_text(render_file(env, src_file, harness, cfg, skill_name=name))
+            out_file.write_text(rendered)
         else:
             out_file = out_dir / rel
             out_file.parent.mkdir(parents=True, exist_ok=True)

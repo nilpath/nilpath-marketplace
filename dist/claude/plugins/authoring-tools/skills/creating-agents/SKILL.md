@@ -1,12 +1,15 @@
 ---
 name: creating-agents
-description: Expert guidance for creating Claude Code subagents and multi-agent workflows. Use when designing new subagents, configuring agent tools/permissions, implementing orchestration patterns, or troubleshooting agent delegation.
+description: Expert guidance for creating Claude Code subagents and multi-agent workflows. Invoke explicitly to design new subagents, configure agent tools/permissions, implement orchestration patterns, or troubleshoot agent delegation.
 argument-hint: '[agent description or requirements]'
+disable-model-invocation: true
 ---
 
 # Creating Claude Code Agents
 
 Expert guidance for designing and implementing Claude Code subagents based on Anthropic's official specification and industry best practices.
+
+Invoke explicitly with `/authoring-tools:creating-agents`. Do not load this skill automatically.
 
 ## Core principles
 

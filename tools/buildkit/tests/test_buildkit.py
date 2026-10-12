@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from buildkit.build import BuildResult, _build_skill
 from buildkit.config import load_config
 from buildkit.fm import (
     FrontmatterError,
@@ -13,6 +14,7 @@ from buildkit.fm import (
     split_document,
 )
 from buildkit.toolmap import parse_entry, resolve_model_tier, split_tool_list, translate_tools
+from buildkit.render import make_environment
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
@@ -108,6 +110,15 @@ class TestModels:
 
 
 class TestFrontmatter:
+    @pytest.mark.parametrize("harness_id", ["claude", "copilot"])
+    def test_manual_only_skill_flag_preserved(self, cfg, harness_id):
+        data = {"name": "x", "description": "y", "disable-model-invocation": True}
+        out, warnings = process_frontmatter(
+            data, "skill", cfg.harnesses[harness_id], cfg, "skill/x"
+        )
+        assert out["disable-model-invocation"] is True
+        assert warnings == []
+
     def test_split_document(self):
         data, body = split_document("---\nname: x\ndescription: y\n---\nbody\n")
         assert data == {"name": "x", "description": "y"}
@@ -241,3 +252,56 @@ class TestEmptyPluginTrees:
             (REPO_ROOT / ".claude-plugin/marketplace.json").read_text()
         )
         assert "authoring-tools" in [p["name"] for p in claude_registry["plugins"]]
+
+
+class TestConditionalSupportingFiles:
+    @pytest.mark.parametrize("harness_id", ["claude", "copilot", "codex"])
+    def test_empty_supporting_templates_omitted(self, cfg, tmp_path, harness_id):
+        skill_dir = tmp_path / "src" / "conditional-skill"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md.j2").write_text(
+            "---\nname: conditional-skill\ndescription: Test conditional files.\n"
+            "targets: [claude, copilot, codex]\n---\nBody\n"
+        )
+        (skill_dir / "agents").mkdir()
+        (skill_dir / "agents" / "openai.yaml.j2").write_text(
+            '{% if harness == "codex" %}\n'
+            "policy:\n  allow_implicit_invocation: false\n"
+            "{% endif %}\n"
+        )
+        (skill_dir / "references").mkdir()
+        (skill_dir / "references" / "empty.md.j2").write_text(" \n\t\n")
+        (skill_dir / "references" / "shared.md.j2").write_text("Harness: {{ harness }}\n")
+        (skill_dir / "references" / "empty.txt").write_text("")
+        plugin = next(p for p in cfg.plugins if p.name == "engineering-workflow")
+        harness = cfg.harnesses[harness_id]
+        result = BuildResult()
+        out_root = tmp_path / "out"
+
+        assert _build_skill(
+            make_environment(), skill_dir, harness, plugin, cfg, out_root, result
+        )
+
+        out_dir = out_root / harness.dist_root / "plugins" / plugin.name / "skills" / skill_dir.name
+        assert not (out_dir / "references" / "empty.md").exists()
+        assert (out_dir / "references" / "empty.txt").read_text() == ""
+        assert (out_dir / "references" / "shared.md").read_text() == f"Harness: {harness_id}\n"
+        if harness_id == "codex":
+            assert (out_dir / "agents" / "openai.yaml").read_text() == (
+                "\npolicy:\n  allow_implicit_invocation: false\n\n"
+            )
+        else:
+            assert not (out_dir / "agents").exists()
+        assert all(path.is_file() for path in result.written)
+        assert not any(path.name == "empty.md" for path in result.written)
+
+    def test_empty_skill_entry_point_still_rejected(self, cfg, tmp_path):
+        skill_dir = tmp_path / "empty-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md.j2").write_text(" \n")
+        plugin = next(p for p in cfg.plugins if p.name == "engineering-workflow")
+        with pytest.raises(FrontmatterError, match="frontmatter"):
+            _build_skill(
+                make_environment(), skill_dir, cfg.harnesses["claude"], plugin, cfg,
+                tmp_path / "out", BuildResult(),
+            )

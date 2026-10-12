@@ -12,7 +12,7 @@ frontmatter:
   skill:
     key_for_tools: null  # Copilot skills carry no tool declarations
     required: [name, description]
-    allowed: [name, description, license]
+    allowed: [name, description, license, disable-model-invocation]
     drop: [argument-hint]
   agent:
     key_for_tools: tools

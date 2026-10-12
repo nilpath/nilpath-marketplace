@@ -2,6 +2,14 @@
 
 Quick reference for skill structure. For detailed guidance, use: `/create-skill`
 
+## Authored Sources and Generated Output
+
+Author skills under `src/plugins/<plugin>/skills/<skill>/`. The required `SKILL.md.j2` entry point declares `targets:` and renders to `SKILL.md` in each selected harness's generated tree. Edit sources, not `dist/`; [build.py](../tools/buildkit/src/buildkit/build.py) renders the output using the [Claude](../src/harnesses/claude.yaml), [Copilot](../src/harnesses/copilot.yaml), and [Codex](../src/harnesses/codex.yaml) configurations.
+
+Supporting files with a `.j2` suffix are rendered per harness and lose that suffix in output. If a supporting template renders to empty or whitespace-only content, the build omits it **before creating its output parent directory**. This rule does not skip non-template files (copied verbatim, with their mode preserved) or the required `SKILL.md.j2` entry point.
+
+For example, the researching and planning `agents/openai.yaml.j2` templates render only for Codex. Their generated `agents/openai.yaml` metadata and its parent directory are absent from the Claude and Copilot skill output.
+
 ## Directory Structure
 
 ```mermaid
@@ -61,6 +69,40 @@ flowchart LR
 | References | `*-syntax.md`, `*-patterns.md` | `common-patterns.md` |
 | Workflows | `create-*.md`, `edit-*.md` | `create-new.md` |
 | Scripts | `validate-*.sh` | `validate-diagram.sh` |
+
+## Explicit Invocation Configuration
+
+The selected skills below require explicit user invocation, not automatic model selection. User commands remain enabled by configuration; disabling model invocation is not intended to disable user invocation.
+
+| Skills | Targets | Automatic-invocation control |
+|--------|---------|------------------------------|
+| `creating-agents`, `creating-skills` | Claude only (`targets: [claude]`) | `disable-model-invocation: true` in rendered skill frontmatter |
+| `researching`, `planning` | Claude, Copilot (shared VS Code/CLI output), Codex | Claude/Copilot frontmatter flag; Codex skill-local policy |
+
+Sources: [creating-agents](../src/plugins/authoring-tools/skills/creating-agents/SKILL.md.j2), [creating-skills](../src/plugins/authoring-tools/skills/creating-skills/SKILL.md.j2), [researching](../src/plugins/engineering-workflow/skills/researching/SKILL.md.j2), and [planning](../src/plugins/engineering-workflow/skills/planning/SKILL.md.j2).
+
+For shared templates, emit the frontmatter flag only for Claude and Copilot:
+
+```jinja
+{% if harness in ["claude", "copilot"] %}
+disable-model-invocation: true
+{% endif %}
+```
+
+Both harness configurations allow this skill field. Codex does not; its equivalent control is in the skill-local `agents/openai.yaml`, authored as a supporting template:
+
+```jinja
+{% if harness == "codex" -%}
+policy:
+  allow_implicit_invocation: false
+{% endif -%}
+```
+
+See the [researching metadata template](../src/plugins/engineering-workflow/skills/researching/agents/openai.yaml.j2) and [planning metadata template](../src/plugins/engineering-workflow/skills/planning/agents/openai.yaml.j2). This metadata configures skill invocation; it is not a standalone plugin agent.
+
+Explicit commands are `/authoring-tools:creating-agents` and `/authoring-tools:creating-skills` on Claude. For researching/planning, use `/engineering-workflow:researching` or `/engineering-workflow:planning` on Claude, `/researching` or `/planning` on Copilot, and `$researching` or `$planning` on Codex. Researching shows the planning command at handoff and stops rather than invoking planning automatically.
+
+**Copilot CLI caveat:** The shared Copilot output retains the flag, prioritizing automatic-invocation enforcement over known CLI manual-invocation issues. [github/copilot-cli#4438](https://github.com/github/copilot-cli/issues/4438) reports explicit requests failing with `Skill not found`; [github/copilot-cli#4637](https://github.com/github/copilot-cli/issues/4637) reports slash-command instructions loading while a separate lookup emits that error. These reports describe different runtime paths: the configuration expresses manual-only intent, but does not guarantee successful explicit invocation in every CLI version.
 
 ## See Also
 

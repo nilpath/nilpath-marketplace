@@ -1,6 +1,6 @@
 {
   "name": "authoring-tools",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Guidance for authoring Claude Code extensions — designing and writing skills and subagents.",
   "author": {
     "name": "Christoffer Ahrling",

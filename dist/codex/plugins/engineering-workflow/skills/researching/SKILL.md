@@ -1,14 +1,15 @@
 ---
 name: researching
-description: You MUST use this skill before doing any creative work, including creating features, writing code, adding functionality, or modifying any behavior. This skill is for researching and gathering information about the task at hand. It involves asking questions, seeking clarification, and collecting relevant data to ensure a thorough understanding of the problem before proceeding with any creative work.
+description: Researches a proposed feature or behavior change through clarification, codebase exploration, and design review. Invoke explicitly to produce an approved design specification before implementation.
 ---
 
 # Researching Ideas into Design Specifications
 
 Help researching ideas into complete design specification through exploring the problem space, asking clarifying questions and gathering information.
 
-Do **NOT** invoke any implementation skill, write any code or take any implementation action until you have a complete design specification that you have presented to the user and they have approved. This applies to EVERY task, regardless of how small or simple it may seem. Always start with research and design before any implementation.
+Invoke explicitly with `$researching`. Do not load this skill automatically.
 
+While this skill is active, do **NOT** invoke any implementation skill, write any code or take any implementation action until you have a complete design specification that you have presented to the user and they have approved.
 
 ## Checklist
 
@@ -23,7 +24,7 @@ You **MUST** use the plan tool (`update_plan`) to create a task for each item in
 7. **Spec self-review**: Delegate to the `spec-reviewer` agent (spawn it as a subagent) with the path to the written `design.md`. Edit the spec based on its findings until it is ready for the user.
 8. **User reviews written spec**: Present the design spec to the user for feedback via a direct chat question to the user (wait for their reply before continuing). Edit as needed until the user approves the design spec.
 9. **Commit design spec**: Commit `docs/features/<NNN>-<feature-slug>/design.md` to git using the `git-commits` skill.
-10. **Transition to implementation**: Once the design spec is committed, invoke the `planning` skill to create an implementation plan.
+10. **Planning handoff**: Once the design spec is committed, show the user `$planning docs/features/<NNN>-<feature-slug>` with the actual feature path, then stop. Do not invoke planning automatically.
 
 ## Process Flow
 
@@ -45,7 +46,7 @@ flowchart TD
     L --> M{Approved?}
     M -- Revisions needed --> K
     M -- Approved --> N[Commit design.md]
-    N --> O[Invoke planning skill]
+    N --> O[Show user planning invocation]
     O --> Z([Done])
 ```
 
@@ -135,8 +136,8 @@ Wait for user feedback. If the user requests changes, edit the spec accordingly 
 ### Handoff
 
 - Once the design spec is approved, commit `docs/features/<NNN>-<feature-slug>/design.md` to git using the `git-commits` skill.
-- Then invoke the `planning` skill to create an implementation plan.
-- Do **NOT** invoke any other skill, planning is the next step.
+- Show the user `$planning docs/features/<NNN>-<feature-slug>` with the actual feature path to create an implementation plan.
+- Stop here and wait for explicit user invocation. Do not invoke planning automatically or start implementation.
 
 ## Guidelines
 

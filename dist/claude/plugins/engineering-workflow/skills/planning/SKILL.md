@@ -1,7 +1,8 @@
 ---
 name: planning
-description: Translates an approved design specification into a sequenced list of TDD implementation tasks, each representing 2–5 minutes of work. Use after the researching skill produces an approved design.md, before writing any implementation code.
+description: Translates an approved design specification into a sequenced list of TDD implementation tasks, each representing 2–5 minutes of work. Invoke explicitly after an approved design.md is ready, before writing implementation code.
 argument-hint: '"[feature-path]" (e.g. "docs/features/001-oauth")'
+disable-model-invocation: true
 allowed-tools: AskUserQuestion, Read, Glob, Grep, Write, Edit, Bash, Agent, Skill(git-tools:git-commits), Skill(engineering-principles), TodoWrite
 ---
 
@@ -11,10 +12,12 @@ Translate an approved design specification into a concrete, ordered list of TDD 
 
 Do **NOT** write any implementation code. This skill produces only `plan.md` — the full task list for implementation. Every line of code comes after the plan is approved.
 
+This skill requires explicit user invocation. Do not load it automatically from another skill or agent.
+
 ## Quick Start
 
 1. Have an approved `docs/features/<NNN>-<slug>/design.md` ready
-2. Invoke this skill: `/planning docs/features/<NNN>-<slug>`
+2. Invoke this skill: `/engineering-workflow:planning docs/features/<NNN>-<slug>`
 3. Output: `docs/features/<NNN>-<slug>/plan.md` — an ordered list of TDD tasks
 
 ## Checklist
