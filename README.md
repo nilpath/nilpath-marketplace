@@ -9,15 +9,19 @@ A marketplace for my AI coding-agent extensions — skills and agents authored o
 | **git-tools** | 0.8.0 | 6 git/gh workflow skills | ✅ | ✅ | ✅ |
 | **engineering-workflow** | 0.8.1 | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
 | **documentation** | 0.8.0 | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | ✅¹ | ✅¹ |
-| **authoring-tools** | 0.8.1 | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
+| **authoring-tools** | 0.9.0 | 4 skills: two Claude authoring guides and two portable verification workflows | ✅ | ✅² | ✅² |
 
 ¹ The orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are adapted per harness: subagent dispatch, todo tracking, and user questions render in each harness's native mechanism. They degrade gracefully on Copilot/Codex (chat questions instead of structured question UI, no parallel exploration fan-out).
 
-Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-writer agent from `documentation` — install them together.
+² `authoring-tools` ships `create-verification-skill` and `maintain-verification-skill` on all three harnesses; `creating-skills` and `creating-agents` remain Claude-only.
+
+Total: **17 unique skills and 12 agents**. Claude receives all 17 skills; Copilot and Codex receive 15 each.
+
+Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-writer agent from `documentation` — install them together. `authoring-tools` maintenance also uses `git-tools:git-commits` and authenticated GitHub CLI access to ship verified corrections.
 
 ## Manual-only skills
 
-Four selected skills require explicit user invocation; they must not be loaded automatically by the model or another workflow:
+Six selected skills require explicit user invocation; they must not be loaded automatically by the model or another workflow:
 
 | Skill | Claude Code | Copilot (VS Code and CLI) | Codex |
 | --- | --- | --- | --- |
@@ -25,12 +29,22 @@ Four selected skills require explicit user invocation; they must not be loaded a
 | `planning` | `/engineering-workflow:planning` | `/planning` | `$planning` |
 | `creating-skills` | `/authoring-tools:creating-skills` | Not distributed | Not distributed |
 | `creating-agents` | `/authoring-tools:creating-agents` | Not distributed | Not distributed |
+| `create-verification-skill` | `/authoring-tools:create-verification-skill` | `/authoring-tools:create-verification-skill` (VS Code plugin) | `$create-verification-skill` |
+| `maintain-verification-skill` | `/authoring-tools:maintain-verification-skill` | `/authoring-tools:maintain-verification-skill` (VS Code plugin) | `$maintain-verification-skill` |
 
-`creating-skills` and `creating-agents` remain Claude-only because they teach Claude Code's own authoring formats. `researching` and `planning` ship in all three distributions. Claude and Copilot enforce manual-only selection with `disable-model-invocation: true` in skill frontmatter; Codex uses `policy.allow_implicit_invocation: false` in each skill's `agents/openai.yaml` sidecar.
+`creating-skills` and `creating-agents` remain Claude-only because they teach Claude Code's own authoring formats. `researching`, `planning`, and both verification-authoring workflows ship in all three distributions. Claude and Copilot enforce manual-only selection with `disable-model-invocation: true` in skill frontmatter; Codex uses `policy.allow_implicit_invocation: false` in each skill's `agents/openai.yaml` sidecar.
 
 After the design specification is approved and committed, `researching` shows the user the planning command with the actual feature path, then stops. The user must invoke planning explicitly; researching never invokes it automatically.
 
 **Enforcement takes priority over compatibility.** Copilot VS Code and Copilot CLI use the same generated Copilot output and retain the manual-only flag. CLI runtime support for these flagged skills is not guaranteed: open issues [github/copilot-cli#4438](https://github.com/github/copilot-cli/issues/4438) and [github/copilot-cli#4637](https://github.com/github/copilot-cli/issues/4637) report inconsistent explicit invocation and `Skill not found` errors, including a slash-command path that can load instructions while another lookup reports failure. Do not remove the flag or switch to the Claude distribution as a workaround.
+
+## Project-local verification
+
+`create-verification-skill` investigates an app and generates a verification skill in `.claude/skills/verify-<app>/`, `.github/skills/verify-<app>/`, or `.agents/skills/verify-<app>/` for the active harness. It writes a feature map and must prove one feature through the real app before handover, preserving evidence after cleanup. The generated verification skill is not made manual-only by default.
+
+`maintain-verification-skill` discovers compatible skills across all three locations, checks every mapped feature from source and live behavior, and edits only the selected skill's own instructions/map/harness. Useful source investigations may run in read-only subagents; direct reading is supported. Product regressions are reported, not patched or hidden. Proven corrections are committed, pushed, and shipped in one PR. Clean runs create no PR; blocked runs stop publishing and report any partially completed remote actions.
+
+See the [authoring-tools guide](src/plugins/authoring-tools/README.md) for commands, prerequisites, outcomes, and upstream attribution.
 
 ## Install
 
@@ -56,6 +70,7 @@ copilot plugin marketplace add nilpath/nilpath-marketplace
 copilot plugin install git-tools@nilpath-marketplace
 copilot plugin install documentation@nilpath-marketplace
 copilot plugin install engineering-workflow@nilpath-marketplace
+copilot plugin install authoring-tools@nilpath-marketplace
 ```
 
 Both Copilot clients use `.github/plugin/marketplace.json`, which points to `dist/copilot/plugins/<plugin>/`; there is no separate CLI build. The [official CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference) documents support for this registry location and Agent Plugins 1.0 manifests. The [official CLI skills guide](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills) documents explicit `/skill-name` requests. Installation-format support does not guarantee runtime invocation of the manual-only skills; see the caveat above.

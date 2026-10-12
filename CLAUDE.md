@@ -1,6 +1,6 @@
 # nilpath-marketplace
 
-Tri-client marketplace: **4 plugins** (12 agents, 15 skills) authored once under `src/` and built into per-harness trees under `dist/` for **Claude Code**, **GitHub Copilot (VS Code)**, and **Codex**.
+Tri-client marketplace: **4 plugins** (12 agents, 17 skills) authored once under `src/` and built into per-harness trees under `dist/` for **Claude Code**, **GitHub Copilot (VS Code)**, and **Codex**.
 
 ## Critical rule: src/ is the only editable source
 
@@ -42,9 +42,9 @@ flowchart TD
 | git-tools | git-commits, git-advanced, git-stacked-prs, using-git-worktrees, gh-pr-review, gh-address-comments | — |
 | engineering-workflow | researching, planning, executing-plan, performing-code-review, engineering-principles | task-decomposer; spec/plan/code reviewers; api/architecture/docs researchers; code-debugger; coding/python task agents |
 | documentation | writing-documentation, creating-mermaid-diagrams | doc-writer, doc-auditor |
-| authoring-tools | creating-agents, creating-skills | — |
+| authoring-tools | creating-agents, creating-skills (Claude only); create-verification-skill, maintain-verification-skill (all harnesses) | — |
 
-Cross-plugin references are plugin-qualified (e.g. `Skill(git-tools:git-commits)`, `documentation:implementation:doc-writer`). engineering-workflow depends on git-tools and documentation.
+Cross-plugin references are plugin-qualified (e.g. `Skill(git-tools:git-commits)`, `documentation:implementation:doc-writer`). engineering-workflow depends on git-tools and documentation. authoring-tools maintenance uses git-tools for commits.
 
 ## Authoring conventions
 
@@ -70,7 +70,7 @@ Sources use the **canonical vocabulary** from `src/harnesses/tools.yaml`, never 
 | `{{ todo }}` | "the `TodoWrite` tool" | "the todo list" / "the plan tool (`update_plan`)" |
 | `{{ ask_user }}` | "the `AskUserQuestion` tool" | "a direct chat question to the user (…)" |
 
-A plugin with zero components for a harness is skipped entirely in that harness's `dist/` tree and registry (e.g. authoring-tools exists only under `dist/claude/`).
+A plugin with zero components for a harness is skipped entirely in that harness's `dist/` tree and registry. Targets are per component: authoring-tools ships four skills on Claude and only its two verification-authoring workflows on Copilot/Codex.
 
 ## Common Tasks
 

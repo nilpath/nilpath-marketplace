@@ -9,7 +9,10 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 SELECTED_SKILLS = {
-    "authoring-tools": {"creating-skills", "creating-agents"},
+    "authoring-tools": {
+        "creating-skills", "creating-agents",
+        "create-verification-skill", "maintain-verification-skill",
+    },
     "engineering-workflow": {"planning", "researching"},
 }
 
@@ -43,11 +46,15 @@ def test_invocation_policy_matches_supported_skills(harness):
                 }
             else:
                 assert not sidecar.exists()
-    expected = {"planning", "researching"}
+    expected = {
+        "planning", "researching",
+        "create-verification-skill", "maintain-verification-skill",
+    }
     if harness == "claude":
         expected |= {"creating-skills", "creating-agents"}
     else:
-        assert not (plugins_dir / "authoring-tools").exists()
+        for name in {"creating-skills", "creating-agents"}:
+            assert not (plugins_dir / "authoring-tools" / "skills" / name).exists()
     assert selected == expected
 
 
