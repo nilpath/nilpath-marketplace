@@ -1,4 +1,4 @@
 name: authoring-tools
-version: 0.8.1
-description: Guidance for authoring Claude Code extensions — designing and writing skills and subagents.
-keywords: [claude-code, skills, agents, authoring]
+version: 0.9.0
+description: Skill and subagent authoring guidance, with project-local verification workflows for Claude Code, Copilot, and Codex.
+keywords: [claude-code, copilot, codex, skills, agents, authoring, verification]

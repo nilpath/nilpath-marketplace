@@ -233,25 +233,28 @@ class TestProseHelpers:
             harness.raw["prose"] = saved
 
 
-class TestEmptyPluginTrees:
-    def test_authoring_tools_only_in_claude_tree(self):
+class TestPluginTargets:
+    @pytest.mark.parametrize(
+        ("harness_id", "registry_path"),
+        [
+            ("claude", ".claude-plugin/marketplace.json"),
+            ("copilot", ".github/plugin/marketplace.json"),
+            ("codex", ".agents/plugins/marketplace.json"),
+        ],
+    )
+    def test_authoring_tools_keeps_component_targets(self, harness_id, registry_path):
         import json
 
-        assert (REPO_ROOT / "dist/claude/plugins/authoring-tools/skills").is_dir()
-        assert not (REPO_ROOT / "dist/copilot/plugins/authoring-tools").exists()
-        assert not (REPO_ROOT / "dist/codex/plugins/authoring-tools").exists()
-        codex_registry = json.loads(
-            (REPO_ROOT / ".agents/plugins/marketplace.json").read_text()
-        )
-        assert "authoring-tools" not in [p["name"] for p in codex_registry["plugins"]]
-        copilot_registry = json.loads(
-            (REPO_ROOT / ".github/plugin/marketplace.json").read_text()
-        )
-        assert "authoring-tools" not in [p["name"] for p in copilot_registry["plugins"]]
-        claude_registry = json.loads(
-            (REPO_ROOT / ".claude-plugin/marketplace.json").read_text()
-        )
-        assert "authoring-tools" in [p["name"] for p in claude_registry["plugins"]]
+        skills_dir = REPO_ROOT / "dist" / harness_id / "plugins/authoring-tools/skills"
+        expected = {"create-verification-skill", "maintain-verification-skill"}
+        if harness_id == "claude":
+            expected |= {"creating-skills", "creating-agents"}
+        assert {path.parent.name for path in skills_dir.glob("*/SKILL.md")} == expected
+        for name in {"creating-skills", "creating-agents"}:
+            assert (skills_dir / name).exists() == (harness_id == "claude")
+
+        registry = json.loads((REPO_ROOT / registry_path).read_text())
+        assert "authoring-tools" in [p["name"] for p in registry["plugins"]]
 
 
 class TestConditionalSupportingFiles:

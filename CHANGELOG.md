@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-12
+
+Only **authoring-tools** is bumped to 0.9.0; **engineering-workflow** remains at 0.8.1, **git-tools** and **documentation** remain at 0.8.0, and the marketplace remains at 0.1.0.
+
+### Added
+
+- **create-verification-skill** — generates a project-local verification skill for the active Claude, Copilot, or Codex harness, with repository-grounded launch/doctor/drive/evidence/cleanup instructions and a feature map. Requires an end-to-end proof of one feature with evidence retained after teardown.
+- **maintain-verification-skill** — discovers verification skills across all three project-local locations, checks every mapped feature from source and live behavior, and ships proven skill/map/harness corrections in one PR. Uses read-only subagents where useful with a direct-reading fallback; product code stays outside edit scope.
+- **Upstream examples and attribution** — bundles pstack's feature-map examples and the full MIT copyright/permission notice with the adapted skills.
+- **Cross-harness verification tests** — cover rendered paths, manual-invocation policies, registry membership, version propagation, bundled licenses/references, and verification workflow contracts.
+
+### Changed
+
+- **authoring-tools is available on all three harnesses** — the two verification workflows are included everywhere; `creating-skills` and `creating-agents` remain Claude-only. The marketplace now contains 17 unique skills: 17 on Claude and 15 each on Copilot and Codex.
+- **Six manual-only skills** — both new authoring workflows retain Claude/Copilot frontmatter enforcement and Codex policy sidecars. Generated verification skills are not made manual-only by default.
+
 ## [0.8.1] - 2026-10-12
 
 Only **authoring-tools** and **engineering-workflow** are bumped to 0.8.1; **git-tools** and **documentation** remain at 0.8.0, and the marketplace remains at 0.1.0.
