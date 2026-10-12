@@ -2,6 +2,8 @@
 
 Guidance for authoring Claude Code extensions. Claude-only by nature — the content documents Claude Code's own formats.
 
+Version: **0.8.1**
+
 ## Skills
 
 Both skills target Claude Code only (`targets: [claude]`) and are manual-only: `disable-model-invocation: true` prevents automatic loading. Invoke them explicitly with the commands below.

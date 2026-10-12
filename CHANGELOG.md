@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-12
+
+Only **authoring-tools** and **engineering-workflow** are bumped to 0.8.1; **git-tools** and **documentation** remain at 0.8.0, and the marketplace remains at 0.1.0.
+
 ### Changed
 
 - **Manual-only skill invocation** — researching and planning now require explicit user invocation on Claude Code, Copilot, and Codex; creating-skills and creating-agents require explicit invocation on their supported harness, Claude Code.

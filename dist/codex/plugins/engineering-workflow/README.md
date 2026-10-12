@@ -2,6 +2,8 @@
 
 The research → design → plan → implement → review pipeline: orchestrator skills plus the agents they delegate to, and the engineering principles they apply. Ships with a context7 MCP server for library documentation lookups.
 
+Version: **0.8.1**
+
 ## Skills
 
 | Skill | Purpose |

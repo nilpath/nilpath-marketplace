@@ -4,12 +4,12 @@ A marketplace for my AI coding-agent extensions — skills and agents authored o
 
 ## Plugins
 
-| Plugin | Contents | Claude Code | Copilot | Codex |
-| --- | --- | --- | --- | --- |
-| **git-tools** | 6 git/gh workflow skills | ✅ | ✅ | ✅ |
-| **engineering-workflow** | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
-| **documentation** | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | ✅¹ | ✅¹ |
-| **authoring-tools** | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
+| Plugin | Version | Contents | Claude Code | Copilot | Codex |
+| --- | --- | --- | --- | --- | --- |
+| **git-tools** | 0.8.0 | 6 git/gh workflow skills | ✅ | ✅ | ✅ |
+| **engineering-workflow** | 0.8.1 | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
+| **documentation** | 0.8.0 | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | ✅¹ | ✅¹ |
+| **authoring-tools** | 0.8.1 | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
 
 ¹ The orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are adapted per harness: subagent dispatch, todo tracking, and user questions render in each harness's native mechanism. They degrade gracefully on Copilot/Codex (chat questions instead of structured question UI, no parallel exploration fan-out).
 

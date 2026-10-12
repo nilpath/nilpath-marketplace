@@ -1,6 +1,6 @@
 {
   "name": "engineering-workflow",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Research → design → plan → implement → review pipeline. Orchestrator skills plus the reviewer, researcher, and implementation agents they delegate to, and core engineering principles.",
   "skills": "./skills/",
   "author": {
