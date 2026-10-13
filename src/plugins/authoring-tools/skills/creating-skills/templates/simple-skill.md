@@ -7,11 +7,11 @@ description: What it does and when to use it. Use when [trigger condition].
 
 ## Quick Start
 
-[Immediate actionable example — working code or the first thing Claude should do]
+[Immediate actionable example — working code or the first thing the agent should do]
 
 ## Instructions
 
-[Core guidance Claude follows. Be direct and specific.]
+[Core guidance the agent follows. Be direct and specific.]
 
 1. Step one
 2. Step two

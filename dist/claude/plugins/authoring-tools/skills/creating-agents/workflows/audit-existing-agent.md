@@ -14,7 +14,14 @@ Audit an agent when:
 
 ## Step 1: Locate the Agent File
 
-Find where the agent is defined:
+Establish workspace or personal scope using the `AskUserQuestion` tool if unspecified. Read the existing file without modifying it. Record its path, intended client, and actual format:
+
+- Markdown with YAML frontmatter: inspect native keys and expected client suffix.
+- TOML with `name`, `description`, and `developer_instructions`: Codex custom agent.
+- `.md.j2` with canonical `targets`/tools/model tiers: marketplace source, not native configuration.
+
+Cross-check content and extension; do not trust either alone. A Claude file found while using Copilot is not automatically a Copilot agent. **Report mismatched harnesses, unsupported fields, and permission semantics before proposing changes. Never silently convert a format or drop restrictions.** Confirm any migration or overwrite with the user.
+
 
 ```bash
 # Project agents
@@ -23,11 +30,17 @@ ls .claude/agents/
 # User agents
 ls ~/.claude/agents/
 
-# Check which agents are loaded
+```
+
+Check which agents are loaded in Claude Code:
+```text
 /agents
 ```
 
-## Step 2: Review Frontmatter
+
+See [authoring-targets.md](../references/authoring-targets.md) for the separate opt-in source-authoring path.
+
+## Step 2: Review Native Configuration
 
 ### Check Required Fields
 
@@ -35,6 +48,11 @@ ls ~/.claude/agents/
 | ----- | ----------- | ------------- |
 | `name` | Lowercase, hyphens | Spaces, uppercase, special chars |
 | `description` | Specific, trigger keywords | Vague, missing "when to use" |
+
+
+
+Parse YAML frontmatter and verify fields against the Claude native specification, including tools, model, permission mode, preloaded skills, and hooks.
+
 
 ### Audit Questions
 
@@ -46,20 +64,16 @@ ls ~/.claude/agents/
 ### Description Quality Check
 
 **Red flags:**
-```yaml
-# Too vague
-description: Helps with code
-
-# No trigger keywords
-description: Reviews code
-
-# Too broad
-description: Does everything related to development
-```
+- Too vague: “Helps with code”
+- No trigger keywords: “Reviews code”
+- Too broad: “Does everything related to development”
 
 **Good example:**
+Configuration fragment (not a complete agent):
 ```yaml
+
 description: Reviews code for quality, security, and best practices. Use proactively after code changes or when user mentions review, audit, or code quality.
+
 ```
 
 ## Step 3: Review Tool Access
@@ -69,9 +83,10 @@ description: Reviews code for quality, security, and best practices. Use proacti
 - [ ] Does the agent need all the tools it has?
 - [ ] Is it missing tools it needs?
 - [ ] Are write tools appropriate for this agent's purpose?
-- [ ] Should Bash access be constrained?
+- [ ] Is command execution necessary, and is it independently constrained?
 
 ### Tool Appropriateness Matrix
+
 
 | Agent Type | Should Have | Should NOT Have |
 | ---------- | ----------- | --------------- |
@@ -90,7 +105,12 @@ tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch
 tools: Read, Grep, Glob
 ```
 
-## Step 4: Review System Prompt
+
+## Step 4: Review Role Instructions
+
+
+Read the entire Markdown body after the closing frontmatter marker.
+
 
 ### Structure Check
 
@@ -145,8 +165,8 @@ Review my recent changes
 Check for security issues in the auth module
 ```
 
-**Expected:** Claude automatically delegates to this agent
-**If failing:** Description needs better trigger keywords
+**Expected:** The active host selects this agent when automatic delegation is supported and enabled.
+**If failing:** Check discovery, host capabilities, invocation settings, and description clarity. Do not diagnose every failure as missing keywords.
 
 ### Test Explicit Invocation
 
@@ -157,6 +177,8 @@ Use [agent-name] to [task]
 **Expected:** Agent performs the task correctly
 **If failing:** System prompt needs improvement
 
+
+
 ### Test Tool Access
 
 ```
@@ -164,7 +186,11 @@ Use [agent-name] and tell me what tools you have
 ```
 
 **Expected:** Lists appropriate tools
-**If surprising:** Check frontmatter `tools` and `disallowedTools`
+
+**If surprising:** Check frontmatter `tools` and `disallowedTools`.
+
+
+Never perform a destructive operation just to test a restriction. Use harmless tasks and policy inspection.
 
 ### Test Edge Cases
 
@@ -210,11 +236,13 @@ Review against common anti-patterns:
 
 ### Model Selection
 
+
 | Task Complexity | Recommended Model |
 | --------------- | ----------------- |
 | Simple search/grep | `haiku` |
 | Code review/analysis | `sonnet` |
 | Complex reasoning | `opus` or `inherit` |
+
 
 ## Step 8: Document Improvements
 
@@ -226,28 +254,31 @@ Date: [date]
 
 ### Issues Found
 1. Description too vague - no trigger keywords
-2. Tools over-privileged - had Write but shouldn't modify
+2. Permissions over-privileged for a read-only role
 3. No output format specified
 
 ### Changes Made
 1. Updated description to include "when user mentions review"
-2. Removed Write, Edit from tools
+2. Applied the native read-only configuration and documented any enforcement gaps
 3. Added Output Format section to prompt
 
 ### Testing
-- Automatic delegation: Now works with "review my code"
+- Automatic delegation: [Verified in this host, disabled, or unsupported]
 - Explicit invocation: Works correctly
 - Edge cases: Properly declines to modify files
 ```
 
 ## Audit Checklist Summary
 
-### Frontmatter
+### Native Configuration
 - [ ] Name is specific, lowercase, hyphens only
 - [ ] Description includes what AND when
 - [ ] Description has trigger keywords
 - [ ] Tools are minimal necessary
 - [ ] Model matches task complexity
+- [ ] Actual format matches intended client and location
+- [ ] Unsupported fields or enforcement gaps are reported, not silently dropped
+- [ ] All existing restrictions are preserved or any explicit migration is approved
 
 ### System Prompt
 - [ ] Role is clearly defined
@@ -258,7 +289,7 @@ Date: [date]
 - [ ] Error handling included
 
 ### Testing
-- [ ] Automatic delegation works
+- [ ] Automatic delegation tested when supported and enabled
 - [ ] Explicit invocation works
 - [ ] Tool access is correct
 - [ ] Edge cases handled gracefully
@@ -274,6 +305,7 @@ Date: [date]
 ### Agent Not Triggering
 
 Add trigger keywords to description:
+
 ```yaml
 # Before
 description: Reviews code
@@ -281,6 +313,7 @@ description: Reviews code
 # After
 description: Reviews code for quality and security. Use proactively after code changes or when user mentions review, audit, or check code.
 ```
+
 
 ### Agent Doing Too Much
 

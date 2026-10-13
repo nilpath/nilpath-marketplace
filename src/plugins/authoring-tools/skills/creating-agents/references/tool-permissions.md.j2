@@ -1,0 +1,393 @@
+# Tool Permissions by Role
+
+Guide for selecting appropriate tools for different agent roles. The principle is **minimal necessary access** - grant only what the task requires.
+
+Configuration snippets below are focused edits, not complete agent files. Use a full role template and the [native specification](official-spec.md) for required fields.
+
+{% if harness == "claude" %}
+## Quick Reference
+
+| Role | Tools | Use Case |
+| ---- | ----- | -------- |
+| Reviewer | Read, Grep, Glob | Code review, audits, analysis |
+| Explorer | Read, Grep, Glob; optional Bash with independent controls | Codebase navigation, search |
+| Researcher | Read, Grep, Glob, WebFetch, WebSearch | Documentation, external research |
+| Implementer | Read, Write, Edit, Bash, Glob, Grep | Code changes, feature work |
+| Test Runner | Read, Bash, Glob, Grep | Running and analyzing tests |
+| Full Access | All tools | Complex multi-step tasks |
+
+## Available Tools
+
+### Read-Only Tools
+
+**Read**
+- Read file contents
+- Safe for any agent
+- Use case: Viewing code, configs, docs
+
+**Grep**
+- Search file contents with regex
+- Safe for any agent
+- Use case: Finding patterns, code search
+
+**Glob**
+- Find files by pattern
+- Safe for any agent
+- Use case: File discovery, project navigation
+
+### Write Tools
+
+**Write**
+- Create or overwrite files
+- Risk: Can destroy existing content
+- Use case: Creating new files, generating code
+
+**Edit**
+- Modify existing files
+- Risk: Can corrupt code
+- Use case: Targeted code changes, refactoring
+
+### Execution Tools
+
+**Bash**
+- Execute shell commands
+- Risk: Can run any command, modify system
+- Use case: Running tests, builds, git operations
+
+**Conditional Bash access:**
+```yaml
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "./scripts/validate-command.sh"
+```
+
+### Web Tools
+
+**WebFetch**
+- Fetch web page content
+- Risk: Can access internal URLs if exposed
+- Use case: Documentation lookup, API docs
+
+**WebSearch**
+- Search the web
+- Risk: Minimal (read-only)
+- Use case: Finding examples, research
+
+### Other Tools
+
+**TodoWrite**
+- Manage task lists
+- Risk: Minimal (organizational)
+- Use case: Task tracking
+
+**NotebookEdit**
+- Edit Jupyter notebooks
+- Risk: Similar to Edit
+- Use case: Data science workflows
+
+**Agent**
+- Parent-level delegation; ordinary Claude subagents cannot spawn other subagents
+- Risk: Recursive delegation
+- Use case: Rarely needed for subagents
+
+## Role-Specific Configurations
+
+### Code Reviewer
+
+Read-only analysis with git access for diffs.
+
+```yaml
+name: code-reviewer
+tools: Read, Grep, Glob
+disallowedTools: Write, Edit, Bash
+```
+
+If you need git diff:
+```yaml
+tools: Read, Grep, Glob, Bash
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: |
+            #!/bin/bash
+            INPUT=$(cat)
+            COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+            case "$COMMAND" in
+              "git diff"|"git log -5 --oneline"|"git status --short") exit 0 ;;
+              *) echo "Only approved read-oriented git commands allowed" >&2; exit 2 ;;
+            esac
+```
+
+The optional hook requires `jq`. Git is not inherently read-only; prefix matching would permit writes and shell chaining. Even exact command matching does not replace host policy and review of repository configuration.
+
+### Security Auditor
+
+Focused on security-relevant file access.
+
+```yaml
+name: security-auditor
+tools: Read, Grep, Glob
+```
+
+System prompt should focus on:
+- Environment variables and secrets
+- Authentication logic
+- Input validation
+- SQL/command injection risks
+
+### Documentation Researcher
+
+Web and file access, no code modification.
+
+```yaml
+name: doc-researcher
+tools: Read, Grep, Glob, WebFetch, WebSearch
+```
+
+### Test Runner
+
+Needs Bash for running tests, but constrained.
+
+```yaml
+name: test-runner
+tools: Read, Bash, Glob, Grep
+```
+
+Consider constraining Bash to test commands only via hooks.
+
+### Bug Fixer
+
+Full code access to diagnose and fix.
+
+```yaml
+name: bug-fixer
+tools: Read, Write, Edit, Bash, Glob, Grep
+```
+
+### Database Query Agent
+
+Bash for queries, but read-only validation.
+
+```yaml
+name: db-reader
+tools: Bash
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "./scripts/validate-readonly-query.sh"
+```
+
+Illustrative keyword filter (not a read-only security boundary):
+```bash
+#!/bin/bash
+INPUT=$(cat)
+COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+
+# Block write operations
+if echo "$COMMAND" | grep -iE '\b(INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE)\b' > /dev/null; then
+  echo "Blocked: Write operations not allowed" >&2
+  exit 2
+fi
+
+exit 0
+```
+
+SQL can mutate through functions, procedures, and other constructs this regex misses. Require read-only database credentials/transactions and a tested query gateway before execution. A local shell restriction cannot enforce remote database permissions.
+
+## Inheritance vs Explicit
+
+### Inheriting Tools (Omit `tools` field)
+
+```yaml
+name: general-helper
+description: General purpose helper
+# No tools field - inherits all from main conversation
+```
+
+**When to inherit:**
+- Agent needs the same capabilities as main conversation
+- You want MCP tools included
+- Task requirements may vary
+
+### Explicit Tool List
+
+```yaml
+name: focused-agent
+tools: Read, Grep, Glob
+```
+
+**When to be explicit:**
+- Security-sensitive tasks
+- Read-only agents
+- Specialized roles with clear boundaries
+
+## Tool Combinations
+
+### Minimal Read-Only
+```yaml
+tools: Read, Grep, Glob
+```
+For: Reviewers, auditors, analyzers
+
+### Read + Bash (Constrained)
+```yaml
+tools: Read, Grep, Glob, Bash
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "./scripts/validate-bash.sh"
+```
+For: Test runners, git operations, build verification
+
+### Read + Web
+```yaml
+tools: Read, Grep, Glob, WebFetch, WebSearch
+```
+For: Documentation researchers, external info gathering
+
+### Full Write Access
+```yaml
+tools: Read, Write, Edit, Bash, Glob, Grep
+```
+For: Implementers, fixers, generators
+
+### Everything
+```yaml
+# Omit tools field to inherit all
+# Or explicitly list all tools
+tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch, TodoWrite
+```
+For: General-purpose agents handling varied tasks
+
+## Using disallowedTools
+
+Deny specific tools while inheriting the rest:
+
+```yaml
+# Inherit all tools except destructive ones
+disallowedTools: Write, Edit, Bash
+```
+
+Useful when:
+- You want most capabilities but need to block specific tools
+- MCP tools should be available except for certain operations
+- Creating a "safe mode" variant of a full-access agent
+
+## Best Practices
+
+1. **Default to minimal** - Start with read-only, add as needed
+2. **Consider the attack surface** - What could go wrong with each tool?
+3. **Use hooks for nuance** - When you need Bash but only certain commands
+4. **Test permissions** - Verify agent can't access what it shouldn't
+5. **Document choices** - Explain why specific tools are included/excluded
+{% elif harness == "copilot" %}
+## Quick Reference
+
+| Role | Native `tools` | Boundary |
+| ---- | -------------- | -------- |
+| Reviewer/auditor/explorer | `[read, search]` | No editing or general commands |
+| Researcher | `[read, search, web]` | Web destinations still need host policy |
+| Implementer/bug fixer | `[read, search, edit, execute]` | Writes and verification commands are intentional |
+| Test runner | `[read, search, execute]` | Tests and commands may write artifacts |
+| Documentation writer | `[read, search, edit]` | Parent must run any executable validation |
+
+These are active-host tool aliases, not marketplace canonical names. Confirm them in VS Code's tool picker and inspect their resolved capabilities. Installed tools and host policies can differ.
+
+## Read-Only Roles
+
+```yaml
+tools: [read, search]
+```
+
+Use for review, auditing, and code analysis. Return recommendations instead of applying changes. Ask the parent/user for a diff when no dedicated approved diff tool is available. Do not add `execute` merely because the prompt says “run git diff.”
+
+## Research Roles
+
+```yaml
+tools: [read, search, web]
+```
+
+Web access does not mean arbitrary external actions are permitted. Require source attribution, bounded searches, no local modifications, and no execution of downloaded examples. If the host lacks web tools, report unavailable access.
+
+## Writing and Verification Roles
+
+```yaml
+tools: [read, search, edit, execute]
+```
+
+`edit` changes files. `execute` can also write files, modify repositories, contact services, or run programs with side effects. Scope the task and host permissions before granting it. A test runner with no `edit` tool is still not read-only.
+
+## Inheritance Versus Explicit Tools
+
+An omitted `tools` list does not establish a restricted agent. Use explicit lists for bounded roles and verify effective access in the host. Do not substitute Claude `disallowedTools`, `permissionMode`, or hook blocks for native enforcement.
+
+## Nuanced Restrictions
+
+- **Git access**: use a supplied diff by default. If command execution is required, use supported host enforcement and tested command validation; a “git only” prompt is not enforcement.
+- **Database reads**: require a vetted gateway with read-only credentials and bounded queries. `execute` plus a keyword filter cannot establish database safety.
+- **Network restrictions**: use host/network policy for destination restrictions. `web` itself is not a domain allowlist.
+- **Delegation**: add the `agent` tool only for an intentional orchestrator supported by the active host, not every worker.
+
+## Verification Checklist
+
+1. Start with read/search only; justify each added capability.
+2. Inspect resolved tools in the active host.
+3. Test expected access and safe refusal without attempting destructive operations.
+4. Document prompt intent separately from enforced controls.
+5. If a required restriction cannot be represented/enforced, report it instead of silently broadening access.
+{% else %}
+## Quick Reference
+
+| Role | Native configuration | Important limitation |
+| ---- | -------------------- | -------------------- |
+| Reviewer/auditor/explorer | `sandbox_mode = "read-only"` | Does not remove command or remote tools |
+| Researcher | `sandbox_mode = "read-only"` | Web availability/restrictions come from host policy |
+| Advisory domain expert | `sandbox_mode = "read-only"` | Return advice; do not apply changes |
+| Implementer/bug fixer | Inherit session policy; verify authorized writes | Do not override a restricted session to make a task work |
+| Test runner | Inherit approved session policy | Tests often write artifacts; not a read-only role |
+
+## No Native Tool Allowlist
+
+Do not emit `tools`, `disallowedTools`, `permissionMode`, or Claude hooks in Codex agent TOML. Codex sandbox settings and Claude/Copilot allowlists are not equivalent. A migrated allowlist's loss must be reported, not described as identical protection.
+
+## Read-Only Local Work
+
+```toml
+sandbox_mode = "read-only"
+```
+
+Combine this with complete role instructions prohibiting local changes, unapproved commands, test/build execution, and external changes. The sandbox restricts local writes; the prompt states intent. Neither implies that every exposed remote tool is read-only.
+
+For git review, prefer supplied diffs or permitted read-oriented commands. Never loosen the sandbox when access is denied. Do not infer that all `git` commands are safe: many write, and configurations/aliases can execute external helpers.
+
+## Research and Network Access
+
+Use only web/search tools that the active client makes available under its network and approval policies. An agent TOML sandbox setting does not enable web search or impose a domain allowlist.
+
+For codebase-only research, prohibit external research in `developer_instructions` and enforce no-network requirements through the host. If the enforcement is unavailable, state that limitation rather than promising isolation.
+
+## Writing and Verification
+
+Writer examples omit sandbox overrides to inherit the parent session's policy. Verify permission for both file changes and test/build commands. Report denied operations and incomplete verification honestly. Do not add unrestricted sandbox modes or authorization-bypass instructions.
+
+## Remote Database Work
+
+Read-only local sandboxing does not make SQL read-only. Require database-side read-only credentials/transactions and a vetted query gateway. A keyword denylist misses functions, procedures, and other side effects. Do not expose credentials or perform live queries merely to test an agent configuration.
+
+## Validation
+
+1. Parse native TOML and verify required `name`, `description`, and complete `developer_instructions`.
+2. Confirm read-only roles have `sandbox_mode = "read-only"`.
+3. Inspect the effective host policy and allowed remote capabilities separately.
+4. Exercise safe, bounded tasks and refusal behavior.
+5. Report unsupported restrictions and host limitations before any migration.
+{% endif -%}

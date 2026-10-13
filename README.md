@@ -9,11 +9,13 @@ A marketplace for my AI coding-agent extensions — skills and agents authored o
 | **git-tools** | 0.8.0 | 6 git/gh workflow skills | ✅ | ✅ | ✅ |
 | **engineering-workflow** | 0.8.1 | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
 | **documentation** | 0.8.0 | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | ✅¹ | ✅¹ |
-| **authoring-tools** | 0.8.1 | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
+| **authoring-tools** | 0.9.0 | creating-skills, creating-agents (native formats for the active harness) | ✅ | ✅ | ✅ |
 
 ¹ The orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are adapted per harness: subagent dispatch, todo tracking, and user questions render in each harness's native mechanism. They degrade gracefully on Copilot/Codex (chat questions instead of structured question UI, no parallel exploration fan-out).
 
 Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-writer agent from `documentation` — install them together.
+
+All four plugins, 15 skills, and 12 agents ship in each harness distribution. Authoring-tools creates native client files by default; marketplace source authoring is a separate, explicitly selected workflow.
 
 ## Manual-only skills
 
@@ -23,10 +25,10 @@ Four selected skills require explicit user invocation; they must not be loaded a
 | --- | --- | --- | --- |
 | `researching` | `/engineering-workflow:researching` | `/researching` | `$researching` |
 | `planning` | `/engineering-workflow:planning` | `/planning` | `$planning` |
-| `creating-skills` | `/authoring-tools:creating-skills` | Not distributed | Not distributed |
-| `creating-agents` | `/authoring-tools:creating-agents` | Not distributed | Not distributed |
+| `creating-skills` | `/authoring-tools:creating-skills` | `/authoring-tools:creating-skills` (VS Code plugin) | `$creating-skills` |
+| `creating-agents` | `/authoring-tools:creating-agents` | `/authoring-tools:creating-agents` (VS Code plugin) | `$creating-agents` |
 
-`creating-skills` and `creating-agents` remain Claude-only because they teach Claude Code's own authoring formats. `researching` and `planning` ship in all three distributions. Claude and Copilot enforce manual-only selection with `disable-model-invocation: true` in skill frontmatter; Codex uses `policy.allow_implicit_invocation: false` in each skill's `agents/openai.yaml` sidecar.
+All four selected skills ship in all three distributions. Claude and Copilot enforce manual-only selection with `disable-model-invocation: true` in skill frontmatter; Codex uses `policy.allow_implicit_invocation: false` in each skill's `agents/openai.yaml` sidecar. Standalone Copilot authoring skills use `/creating-skills` and `/creating-agents`; installed VS Code plugin skills use the plugin prefix. Skill names in frontmatter remain unprefixed.
 
 After the design specification is approved and committed, `researching` shows the user the planning command with the actual feature path, then stops. The user must invoke planning explicitly; researching never invokes it automatically.
 
@@ -66,6 +68,8 @@ Both Copilot clients use `.github/plugin/marketplace.json`, which points to `dis
 codex plugin marketplace add git@github.com:nilpath/nilpath-marketplace.git
 codex plugin install git-tools
 ```
+
+Codex plugins are supported in the CLI and desktop app, not the IDE extension. For native local skill discovery, use `.agents/skills/`; native custom agents use `.codex/agents/*.toml`. See [authoring-tools](src/plugins/authoring-tools/README.md) for format and invocation differences.
 
 ## How it works
 

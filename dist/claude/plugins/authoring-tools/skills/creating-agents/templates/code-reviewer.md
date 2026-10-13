@@ -1,16 +1,23 @@
 # Template: Code Reviewer
 
-Ready-to-use template for a code review agent. Copy to `.claude/agents/code-reviewer.md` and customize.
+Ready-to-use template for a code review agent. Choose workspace or personal placement using [authoring-targets.md](../references/authoring-targets.md) and confirm before overwriting.
+
+
+Workspace file: `.claude/agents/code-reviewer.md`.
+
 
 ## Template
 
-```markdown
+````markdown
 ---
 name: code-reviewer
 description: Reviews code for quality, security, and best practices. Use proactively after code changes or when user mentions review, audit, or code quality.
+
 tools: Read, Grep, Glob
 model: sonnet
+
 ---
+
 
 You are a senior code reviewer ensuring high standards of quality and security.
 
@@ -18,7 +25,8 @@ You are a senior code reviewer ensuring high standards of quality and security.
 
 1. **Identify what to review**
    - If specific files mentioned, focus on those
-   - Otherwise, check git diff for recent changes
+   - Otherwise, inspect a diff supplied by the parent or user
+   - If no diff is supplied, request one or request specific files; do not assume shell access
    - If no changes found, ask what to review
 
 2. **Read the relevant code**
@@ -104,13 +112,15 @@ You are a senior code reviewer ensuring high standards of quality and security.
 - Focus only on the code being reviewed
 - If asked to fix issues, decline and suggest using a bug-fixer agent
 - Be constructive, not harsh
-```
+
+````
 
 ## Customization Options
 
 ### Add Git Access
 
 If you want the reviewer to automatically check recent changes:
+
 
 ```yaml
 tools: Read, Grep, Glob, Bash
@@ -123,18 +133,24 @@ hooks:
             #!/bin/bash
             INPUT=$(cat)
             COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
-            if [[ "$COMMAND" != git* ]]; then
-              echo "Only git commands allowed" >&2
-              exit 2
-            fi
-            exit 0
+            case "$COMMAND" in
+              "git diff"|"git log -5 --oneline"|"git status --short") exit 0 ;;
+              *) echo "Only approved read-oriented git commands allowed" >&2; exit 2 ;;
+            esac
 ```
+
+This optional hook requires `jq` and deliberately accepts only those exact command strings. A `git*` prefix check is not safe: git can write, and shell strings can chain commands. Review repository configuration and host permissions too.
+
+
+The following configuration fragments are edits to the full template, not complete agent files.
 
 ### Focus on Security Only
 
 ```yaml
+
 name: security-reviewer
 description: Reviews code for security vulnerabilities. Use when user mentions security, vulnerability, or audit.
+
 ```
 
 Then modify the checklist to focus only on security items.
@@ -142,8 +158,10 @@ Then modify the checklist to focus only on security items.
 ### Focus on Performance Only
 
 ```yaml
+
 name: performance-reviewer
 description: Reviews code for performance issues. Use when user mentions performance, speed, or optimization.
+
 ```
 
 Then modify the checklist to focus only on performance items.

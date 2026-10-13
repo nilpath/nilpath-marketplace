@@ -12,8 +12,8 @@
     {
       "name": "authoring-tools",
       "source": "./dist/claude/plugins/authoring-tools",
-      "description": "Guidance for authoring Claude Code extensions — designing and writing skills and subagents.",
-      "version": "0.8.1",
+      "description": "Guidance for authoring native skills and agents for Claude Code, Copilot, and Codex.",
+      "version": "0.9.0",
       "author": {
         "name": "Christoffer Ahrling",
         "url": "https://github.com/nilpath"
@@ -21,6 +21,8 @@
       "homepage": "https://github.com/nilpath/nilpath-marketplace",
       "tags": [
         "claude-code",
+        "copilot",
+        "codex",
         "skills",
         "agents",
         "authoring"

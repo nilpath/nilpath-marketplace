@@ -17,9 +17,9 @@ description: What it does and when to use it (third person, specific triggers)
 
 Validation rules:
 - Lowercase letters, numbers, hyphens only (max 64 characters)
-- No reserved words: "anthropic", "claude"
+- No invocation sigils, plugin prefixes, or path separators
 - Must match directory name exactly
-- Becomes the `/slash-command`
+- Used for the active client's invocation syntax (see [official-spec.md](official-spec.md))
 
 Examples:
 - `process-pdfs` ✓
@@ -27,7 +27,7 @@ Examples:
 - `creating-agents` ✓
 - `PDF_Processor` ✗ (uppercase)
 - `helper` ✗ (vague)
-- `claude-helper` ✗ (reserved word)
+- `plugin:helper` ✗ (plugin prefix does not belong in the name)
 
 ### Description field
 
@@ -35,7 +35,7 @@ Validation rules:
 - Non-empty (our convention: required)
 - Third person — never first or second person
 - Include what it does AND when to use it
-- Combined with `when_to_use`, truncated at 1,536 chars in the skill listing
+- At most 1,024 characters; put discovery triggers in this field
 
 Third person rule:
 - `Processes Excel files and generates reports` ✓
@@ -56,7 +56,7 @@ description: Processes data
 
 ### All frontmatter fields
 
-See [official-spec.md](official-spec.md) for the full table of fields including `disable-model-invocation`, `arguments`, `context`, `agent`, and others.
+See [official-spec.md](official-spec.md) for the active client's supported metadata and invocation policy. Do not copy source-only `targets`, canonical tools, or Jinja into a native `SKILL.md`. Optional fields supported by one client are not automatically portable.
 
 ## Markdown Body Structure
 
@@ -69,7 +69,7 @@ The body is standard markdown. Use headings to organize content — no XML tags.
 Fastest path to value — working example first.
 
 ## Instructions
-Core step-by-step guidance Claude follows.
+Core step-by-step guidance the agent follows.
 
 ## Examples
 Input/output pairs showing expected behavior.
@@ -108,7 +108,7 @@ Use **verb-noun convention** for skill names:
 Avoid:
 - Vague: `helper`, `utils`, `tools`
 - Generic: `documents`, `data`, `files`
-- Reserved words: `anthropic-helper`, `claude-tools`
+- Client-reserved words where applicable (check the active client's specification)
 - Mismatch: directory `facebook-ads` but name `facebook-ads-manager`
 
 ## Progressive Disclosure
@@ -119,7 +119,7 @@ Keep `SKILL.md` under 500 lines. Move detailed content to separate files.
 
 Quick start in `SKILL.md`, details in reference files:
 
-```markdown
+````markdown
 ---
 name: pdf-processing
 description: Extracts text and tables from PDF files, fills forms, merges documents.
@@ -141,9 +141,9 @@ with pdfplumber.open("file.pdf") as pdf:
 
 **Form filling**: See [forms.md](forms.md)
 **API reference**: See [reference.md](reference.md)
-```
+````
 
-Claude reads `forms.md` or `reference.md` only when needed.
+The agent reads `forms.md` or `reference.md` only when needed.
 
 ### Domain organization pattern
 
@@ -159,11 +159,11 @@ bigquery-skill/
     └── marketing.md (campaigns, attribution)
 ```
 
-When the user asks about revenue, Claude reads only `finance.md`.
+When the user asks about revenue, the agent reads only `finance.md`.
 
 ### Critical rules
 
-- **One level deep**: all reference files link directly from `SKILL.md`. Avoid `SKILL.md → advanced.md → details.md` — Claude may only partially read deeply nested files.
+- **One level deep**: all reference files link directly from `SKILL.md`. Avoid `SKILL.md → advanced.md → details.md` — the agent may only partially read deeply nested files.
 - **Table of contents**: for reference files over 100 lines, include a ToC at the top.
 - **Forward slashes**: always use `scripts/helper.py` not `scripts\helper.py`.
 
@@ -175,7 +175,7 @@ skill-name/
 ├── references/           # Domain knowledge, loaded on demand
 │   ├── guide-1.md
 │   └── examples.md
-├── templates/            # Output structures for Claude to fill in
+├── templates/            # Output structures for the agent to fill in
 │   └── report.md
 ├── workflows/            # Step-by-step procedures
 │   └── create.md
@@ -183,7 +183,7 @@ skill-name/
     └── validate.sh
 ```
 
-Files in `scripts/` are executed by Claude — they are not loaded into context as text. Name them descriptively: `form_validation_rules.md` not `doc2.md`. Use forward slashes for paths.
+Files in `scripts/` are executed through the client's tools when instructed; execution alone does not load their source into context. Read source when needed for review or debugging. Resolve resources relative to the selected skill directory and honor normal approval rules. Name files descriptively: `form_validation_rules.md` not `doc2.md`. Use forward slashes for paths.
 
 ## Validation Checklist
 
@@ -192,7 +192,9 @@ Before finalizing a skill:
 - [ ] YAML frontmatter valid (`name` matches directory, `description` in third person)
 - [ ] `name` and `description` present (our required convention)
 - [ ] Body uses markdown headings — no XML tags
-- [ ] `disable-model-invocation: true` set if skill has side effects
+- [ ] Invocation policy matches the user's chosen automatic or explicit-only mode
+- [ ] Workspace versus personal scope and one discovery directory selected
+- [ ] Name is unprefixed and at most 64 characters; description is at most 1,024 characters
 - [ ] Progressive disclosure applied (`SKILL.md` < 500 lines)
 - [ ] Reference files linked from `SKILL.md` with descriptions
 - [ ] All references one level deep

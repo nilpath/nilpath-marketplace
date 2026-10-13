@@ -76,7 +76,7 @@ The selected skills below require explicit user invocation, not automatic model 
 
 | Skills | Targets | Automatic-invocation control |
 |--------|---------|------------------------------|
-| `creating-agents`, `creating-skills` | Claude only (`targets: [claude]`) | `disable-model-invocation: true` in rendered skill frontmatter |
+| `creating-agents`, `creating-skills` | Claude, Copilot (shared VS Code/CLI output), Codex | Claude/Copilot frontmatter flag; Codex skill-local policy |
 | `researching`, `planning` | Claude, Copilot (shared VS Code/CLI output), Codex | Claude/Copilot frontmatter flag; Codex skill-local policy |
 
 Sources: [creating-agents](../src/plugins/authoring-tools/skills/creating-agents/SKILL.md.j2), [creating-skills](../src/plugins/authoring-tools/skills/creating-skills/SKILL.md.j2), [researching](../src/plugins/engineering-workflow/skills/researching/SKILL.md.j2), and [planning](../src/plugins/engineering-workflow/skills/planning/SKILL.md.j2).
@@ -100,7 +100,9 @@ policy:
 
 See the [researching metadata template](../src/plugins/engineering-workflow/skills/researching/agents/openai.yaml.j2) and [planning metadata template](../src/plugins/engineering-workflow/skills/planning/agents/openai.yaml.j2). This metadata configures skill invocation; it is not a standalone plugin agent.
 
-Explicit commands are `/authoring-tools:creating-agents` and `/authoring-tools:creating-skills` on Claude. For researching/planning, use `/engineering-workflow:researching` or `/engineering-workflow:planning` on Claude, `/researching` or `/planning` on Copilot, and `$researching` or `$planning` on Codex. Researching shows the planning command at handoff and stops rather than invoking planning automatically.
+Explicit authoring commands are `/authoring-tools:creating-agents` and `/authoring-tools:creating-skills` on Claude and for installed VS Code plugins. Standalone Copilot skills use `/creating-agents` and `/creating-skills`; Codex uses `$creating-agents` and `$creating-skills`. Plugin command prefixes do not belong in the skill's `name` field. For researching/planning, use `/engineering-workflow:researching` or `/engineering-workflow:planning` on Claude, `/researching` or `/planning` on Copilot, and `$researching` or `$planning` on Codex. Researching shows the planning command at handoff and stops rather than invoking planning automatically.
+
+Authoring-tools defaults to creating native files for the active harness. Its separate marketplace-source path uses this repository's canonical metadata and build process. Supporting `.j2` references, workflows, and examples render as text: unlike the entry point, embedded example frontmatter is not translated automatically. Native example schemas must therefore be rendered explicitly per harness, while generic guidance stays shared.
 
 **Copilot CLI caveat:** The shared Copilot output retains the flag, prioritizing automatic-invocation enforcement over known CLI manual-invocation issues. [github/copilot-cli#4438](https://github.com/github/copilot-cli/issues/4438) reports explicit requests failing with `Skill not found`; [github/copilot-cli#4637](https://github.com/github/copilot-cli/issues/4637) reports slash-command instructions loading while a separate lookup emits that error. These reports describe different runtime paths: the configuration expresses manual-only intent, but does not guarantee successful explicit invocation in every CLI version.
 

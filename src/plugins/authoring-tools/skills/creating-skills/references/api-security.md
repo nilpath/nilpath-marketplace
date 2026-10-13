@@ -3,34 +3,34 @@ When building skills that make API calls requiring credentials (API keys, tokens
 </overview>
 
 <the_problem>
-Raw curl commands with environment variables expose credentials:
+Commands containing literal credentials, shell tracing, verbose HTTP logs, or echoed expanded values can expose credentials:
 
 ```bash
 # ❌ BAD - API key visible in chat
 curl -H "Authorization: Bearer $API_KEY" https://api.example.com/data
 ```
 
-When Claude executes this, the full command with expanded `$API_KEY` appears in the conversation.
+Do not print credential values in commands, diagnostics, or chat. Environment-variable expansion alone does not necessarily expose a value in chat, but tracing and command logging can.
 </the_problem>
 
 <the_solution>
-Use `~/.claude/scripts/secure-api.sh` - a wrapper that loads credentials internally.
+Use an existing approved wrapper or bundle `scripts/secure-api.sh` with the skill. Verify it exists and review its behavior; no client installs this wrapper automatically. Resolve `SKILL_DIR` from the selected skill and choose credential storage separately with the user.
 
 <for_supported_services>
 ```bash
 # ✅ GOOD - No credentials visible
-~/.claude/scripts/secure-api.sh <service> <operation> [args]
+"$SKILL_DIR/scripts/secure-api.sh" <service> <operation> [args]
 
 # Examples:
-~/.claude/scripts/secure-api.sh facebook list-campaigns
-~/.claude/scripts/secure-api.sh ghl search-contact "email@example.com"
+"$SKILL_DIR/scripts/secure-api.sh" facebook list-campaigns
+"$SKILL_DIR/scripts/secure-api.sh" ghl search-contact "email@example.com"
 ```
 </for_supported_services>
 
 <adding_new_services>
 When building a new skill that requires API calls:
 
-1. **Add operations to the wrapper** (`~/.claude/scripts/secure-api.sh`):
+1. **Add operations to the selected wrapper** (`scripts/secure-api.sh` in this example), confirming before changing existing files:
 
 ```bash
 case "$SERVICE" in
@@ -59,22 +59,36 @@ esac
 2. **Add profile support to the wrapper** (if service needs multiple accounts):
 
 ```bash
-# In secure-api.sh, add to profile remapping section:
-yourservice)
-    SERVICE_UPPER="YOURSERVICE"
-    YOURSERVICE_API_KEY=$(eval echo \$${SERVICE_UPPER}_${PROFILE_UPPER}_API_KEY)
-    YOURSERVICE_ACCOUNT_ID=$(eval echo \$${SERVICE_UPPER}_${PROFILE_UPPER}_ACCOUNT_ID)
-    ;;
+# Explicitly allow known profiles; never evaluate user-provided variable names.
+case "$PROFILE" in
+    main)
+        YOURSERVICE_API_KEY="${YOURSERVICE_MAIN_API_KEY:?Main API key missing}"
+        YOURSERVICE_ACCOUNT_ID="${YOURSERVICE_MAIN_ACCOUNT_ID:?Main account ID missing}"
+        ;;
+    clienta)
+        YOURSERVICE_API_KEY="${YOURSERVICE_CLIENTA_API_KEY:?Client A API key missing}"
+        YOURSERVICE_ACCOUNT_ID="${YOURSERVICE_CLIENTA_ACCOUNT_ID:?Client A account ID missing}"
+        ;;
+    *)
+        echo "Unknown profile" >&2
+        exit 1
+        ;;
+esac
 ```
 
-3. **Add credential placeholders to `~/.claude/.env`** using profile naming:
+3. **Choose credential storage with the user**: an approved secret manager, existing environment variables, or a user-owned file outside version control. Do not read or copy secret values into chat or a skill.
+
+If a local environment file is requested, assign its confirmed absolute path to `CREDENTIAL_FILE`. With approval, add empty placeholders without overwriting existing values:
 
 ```bash
 # Check if entries already exist
-grep -q "YOURSERVICE_MAIN_API_KEY=" ~/.claude/.env 2>/dev/null || \
-  echo -e "\n# Your Service - Main profile\nYOURSERVICE_MAIN_API_KEY=\nYOURSERVICE_MAIN_ACCOUNT_ID=" >> ~/.claude/.env
+umask 077
+grep -q "^YOURSERVICE_MAIN_API_KEY=" "$CREDENTIAL_FILE" 2>/dev/null || \
+  printf '\nYOURSERVICE_MAIN_API_KEY=\n' >> "$CREDENTIAL_FILE"
+grep -q "^YOURSERVICE_MAIN_ACCOUNT_ID=" "$CREDENTIAL_FILE" 2>/dev/null || \
+  printf 'YOURSERVICE_MAIN_ACCOUNT_ID=\n' >> "$CREDENTIAL_FILE"
 
-echo "Added credential placeholders to ~/.claude/.env - user needs to fill them in"
+echo "Credential placeholders prepared; fill them in outside chat"
 ```
 
 4. **Document profile workflow in your SKILL.md**:
@@ -84,16 +98,18 @@ echo "Added credential placeholders to ~/.claude/.env - user needs to fill them 
 
 **CRITICAL:** Always use profile selection to prevent using wrong account credentials.
 
+The helper names below are examples, not built-ins. Bundle and validate them if needed, or use an existing approved profile mechanism. Resolve all paths from the selected skill directory.
+
 ### When user requests YourService operation:
 
 1. **Check for saved profile:**
    ```bash
-   ~/.claude/scripts/profile-state get yourservice
+   "$SKILL_DIR/scripts/profile-state" get yourservice
    ```
 
 2. **If no profile saved, discover available profiles:**
    ```bash
-   ~/.claude/scripts/list-profiles yourservice
+   "$SKILL_DIR/scripts/list-profiles" yourservice
    ```
 
 3. **If only ONE profile:** Use it automatically and announce:
@@ -108,7 +124,7 @@ echo "Added credential placeholders to ~/.claude/.env - user needs to fill them 
 
 5. **Save user's selection:**
    ```bash
-   ~/.claude/scripts/profile-state set yourservice <selected_profile>
+   "$SKILL_DIR/scripts/profile-state" set yourservice <selected_profile>
    ```
 
 6. **Always announce which profile before calling API:**
@@ -118,7 +134,7 @@ echo "Added credential placeholders to ~/.claude/.env - user needs to fill them 
 
 7. **Make API call with profile:**
    ```bash
-   ~/.claude/scripts/secure-api.sh yourservice:<profile> list-items
+   "$SKILL_DIR/scripts/secure-api.sh" yourservice:<profile> list-items
    ```
 
 ## Secure API Calls
@@ -126,11 +142,11 @@ echo "Added credential placeholders to ~/.claude/.env - user needs to fill them 
 All API calls use profile syntax:
 
 ```bash
-~/.claude/scripts/secure-api.sh yourservice:<profile> <operation> [args]
+"$SKILL_DIR/scripts/secure-api.sh" yourservice:<profile> <operation> [args]
 
 # Examples:
-~/.claude/scripts/secure-api.sh yourservice:main list-items
-~/.claude/scripts/secure-api.sh yourservice:main get-item <ITEM_ID>
+"$SKILL_DIR/scripts/secure-api.sh" yourservice:main list-items
+"$SKILL_DIR/scripts/secure-api.sh" yourservice:main get-item <ITEM_ID>
 ```
 
 **Profile persists for session:** Once selected, use same profile for subsequent operations unless user explicitly changes it.
@@ -159,7 +175,7 @@ curl -s -X POST \
 
 Usage:
 ```bash
-echo '{"name":"value"}' | ~/.claude/scripts/secure-api.sh service create-item
+echo '{"name":"value"}' | "$SKILL_DIR/scripts/secure-api.sh" service create-item
 ```
 </post_with_json_body>
 
@@ -175,32 +191,33 @@ curl -s -X POST \
 </pattern_guidelines>
 
 <credential_storage>
-**Location:** `~/.claude/.env` (global for all skills, accessible from any directory)
+**Location:** The user-approved secret store or user-owned environment file, kept outside version control. Do not assume a client-specific global `.env` location.
 
 **Format:**
 ```bash
 # Service credentials
-SERVICE_API_KEY=your-key-here
-SERVICE_ACCOUNT_ID=account-id-here
+SERVICE_API_KEY=
+SERVICE_ACCOUNT_ID=
 
 # Another service
-OTHER_API_TOKEN=token-here
+OTHER_API_TOKEN=
 OTHER_BASE_URL=https://api.other.com
 ```
 
 **Loading in script:**
 ```bash
 set -a
-source ~/.claude/.env 2>/dev/null || { echo "Error: ~/.claude/.env not found" >&2; exit 1; }
+source "$CREDENTIAL_FILE" || { echo "Error: credential file unavailable" >&2; exit 1; }
 set +a
 ```
+Source only a trusted, user-owned shell-format file; sourcing executes its contents. Prefer an existing secret-management mechanism where available. Do not enable shell tracing or log request headers or tokens.
 </credential_storage>
 
 <best_practices>
-1. **Never use raw curl with `$VARIABLE` in skill examples** - always use the wrapper
-2. **Add all operations to the wrapper** - don't make users figure out curl syntax
-3. **Auto-create credential placeholders** - add empty fields to `~/.claude/.env` immediately when creating the skill
-4. **Keep credentials in `~/.claude/.env`** - one central location, works everywhere
+1. **Keep authenticated curl inside the reviewed wrapper** - user-facing commands pass only non-secret inputs
+2. **Document supported wrapper operations** - don't assume undocumented helpers exist
+3. **Confirm before creating credential placeholders** - never overwrite existing values
+4. **Keep credentials outside the skill and version control** - use the approved storage mechanism
 5. **Document each operation** - show examples in SKILL.md
 6. **Handle errors gracefully** - check for missing env vars, show helpful error messages
 </best_practices>
@@ -210,17 +227,18 @@ Test the wrapper without exposing credentials:
 
 ```bash
 # This command appears in chat
-~/.claude/scripts/secure-api.sh facebook list-campaigns
+"$SKILL_DIR/scripts/secure-api.sh" facebook list-campaigns
 
-# But API keys never appear - they're loaded inside the script
+# Ensure the wrapper redacts diagnostics and does not trace or print secrets
 ```
 
 Verify credentials are loaded:
 ```bash
 # Check .env exists
-ls -la ~/.claude/.env
+test -f "$CREDENTIAL_FILE" && echo "Credential file exists"
 
 # Check specific variables (without showing values)
-grep -q "YOUR_API_KEY=" ~/.claude/.env && echo "API key configured" || echo "API key missing"
+grep -q "^YOUR_API_KEY=" "$CREDENTIAL_FILE" && echo "API key field exists" || echo "API key field missing"
 ```
+A field's presence does not prove it is non-empty or valid. Have the wrapper validate required values internally and report only success or a redacted error.
 </testing>

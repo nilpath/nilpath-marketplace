@@ -1,7 +1,7 @@
 # Using Scripts in Skills
 
 <purpose>
-Scripts are executable code that Claude runs as-is rather than regenerating each time. They ensure reliable, error-free execution of repeated operations.
+Scripts are executable code the agent runs rather than regenerating each time. They improve consistency for repeated operations, but still need validation and normal tool approval.
 </purpose>
 
 <when_to_use>
@@ -74,18 +74,24 @@ echo "Deployment complete."
 <workflow_integration>
 Workflows reference scripts like this:
 
-```xml
-<process>
+```markdown
 ## Step 5: Deploy
 
 1. Ensure all tests pass
-2. Run `scripts/deploy.sh production`
+2. Resolve `scripts/deploy.sh` from the selected skill directory and run it with the confirmed environment through the available shell tool
 3. Verify deployment succeeded
 4. Update user with deployment URL
-</process>
 ```
 
-The workflow tells Claude WHEN to run the script. The script handles HOW the operation executes.
+The workflow tells the agent WHEN to run the script. The script handles HOW the operation executes.
+
+Resolve the absolute skill root from the discovered `SKILL.md`. Do not assume the current working directory is the skill folder or assume a client-specific substitution exists. For example, after explicitly assigning `SKILL_DIR` to the selected absolute path:
+
+```bash
+bash "$SKILL_DIR/scripts/deploy.sh" preview
+```
+
+Keep the project working directory unchanged if the script acts on project files. Obtain the target from the ordinary user prompt, validate it, and honor approval requirements. Choosing automatic versus explicit-only invocation does not itself grant execution permission.
 </workflow_integration>
 
 <best_practices>

@@ -2,15 +2,19 @@
 
 Common mistakes when creating subagents and how to fix them.
 
+Configuration snippets are fragments to merge into a complete native agent, not standalone files. See [official-spec.md](official-spec.md) for required fields.
+
 ## Anti-Pattern 1: Vague Description
 
 ### The Problem
 
 ```yaml
+
 description: Helps with code
+
 ```
 
-Claude doesn't know when to delegate because "helps with code" could mean anything.
+The parent doesn't know when to delegate because "helps with code" could mean anything.
 
 ### Why It Fails
 
@@ -21,7 +25,9 @@ Claude doesn't know when to delegate because "helps with code" could mean anythi
 ### The Fix
 
 ```yaml
+
 description: Reviews code for quality, security, and best practices. Use proactively after code changes or when user mentions review, audit, or code quality.
+
 ```
 
 Include:
@@ -33,12 +39,14 @@ Include:
 
 ### The Problem
 
+
 ```yaml
 name: code-reviewer
 tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch
 ```
 
 A code reviewer doesn't need Write, Edit, Bash, or web tools.
+
 
 ### Why It Fails
 
@@ -49,11 +57,14 @@ A code reviewer doesn't need Write, Edit, Bash, or web tools.
 ### The Fix
 
 ```yaml
+
 name: code-reviewer
 tools: Read, Grep, Glob
+
 ```
 
 Grant only what the task requires. If the reviewer needs `git diff`:
+
 
 ```yaml
 tools: Read, Grep, Glob, Bash
@@ -64,6 +75,8 @@ hooks:
         - type: command
           command: "./scripts/allow-git-only.sh"
 ```
+Implement and test the referenced validator first. A `git*` prefix check is not a restriction to read-only operations.
+
 
 ## Anti-Pattern 3: No Verification Strategy
 
@@ -125,12 +138,7 @@ Start with a single well-designed agent. Add more only when you hit clear limita
 
 ### The Problem
 
-```yaml
-name: helper
-name: assistant
-name: utility
-name: code-agent
-```
+Names such as `helper`, `assistant`, `utility`, and `code-agent` obscure the role.
 
 ### Why It Fails
 
@@ -171,7 +179,7 @@ You are a code reviewer. Review code.
 You are a code reviewer ensuring high standards of quality and security.
 
 When invoked:
-1. Run `git diff` to see recent changes
+1. Inspect the supplied diff or specified files; ask for scope if missing
 2. Focus on modified files
 3. Begin review immediately
 
@@ -211,7 +219,7 @@ An agent that can spawn more agents without limits, or that retries indefinitely
 
 ### The Fix
 
-1. **Don't give Task tool to subagents** (they can't spawn others by default anyway)
+1. **Keep workers non-delegating**; only enable delegation for an intentional orchestrator when the active host supports it
 2. **Set clear termination conditions** in the prompt
 3. **Limit retries** explicitly
 
@@ -225,7 +233,7 @@ Never spawn additional subagents - complete the task yourself or report what you
 
 ### The Problem
 
-Using Opus (most expensive) for simple file searches, or Haiku for complex reasoning.
+Using an unnecessarily expensive model for simple file searches, or an insufficiently capable model for complex reasoning.
 
 ### Why It Fails
 
@@ -237,6 +245,7 @@ Using Opus (most expensive) for simple file searches, or Haiku for complex reaso
 
 Match model to task:
 
+
 | Task | Model | Why |
 | ---- | ----- | --- |
 | File search, simple grep | haiku | Fast, cheap, sufficient |
@@ -244,16 +253,21 @@ Match model to task:
 | Complex reasoning, architecture | opus | Needs capability |
 | Varies by invocation | inherit | Flexibility |
 
+Separate configuration choices:
+
 ```yaml
 # Fast exploration agent
 model: haiku
-
+```
+```yaml
 # Complex reasoning agent
 model: opus
-
+```
+```yaml
 # General-purpose agent
 model: inherit
 ```
+
 
 ## Anti-Pattern 9: Assuming User Context
 
@@ -265,7 +279,7 @@ Continue working on the authentication feature we discussed.
 
 ### Why It Fails
 
-Subagents don't inherit the main conversation context. They only receive their system prompt plus the task description from the orchestrator.
+Context transfer varies by host; never assume the worker receives every relevant part of the parent conversation. Supply the necessary task context explicitly.
 
 ### The Fix
 

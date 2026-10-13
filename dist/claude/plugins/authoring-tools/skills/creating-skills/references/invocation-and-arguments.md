@@ -1,4 +1,9 @@
-# Invocation Control, Arguments, and Shell Injection
+# Invocation Control and Inputs
+
+Choose the output skill's invocation mode with the user. This authoring skill is explicit-only, but the skills it creates may be automatically discoverable. Scope and placement are resolved separately in [authoring-targets.md](authoring-targets.md).
+
+
+The following argument substitution, shell injection, and forked-context features are Claude Code-specific.
 
 ## Invocation Control
 
@@ -60,7 +65,7 @@ The simplest way to pass arguments — everything after the skill name is availa
 name: fix-issue
 description: Fix a GitHub issue
 disable-model-invocation: true
-argument-hint: [issue-number]
+argument-hint: "[issue-number]"
 ---
 
 Fix GitHub issue $ARGUMENTS following our coding standards.
@@ -81,7 +86,7 @@ Access specific arguments by 0-based index:
 ---
 name: migrate-component
 description: Migrate a component from one framework to another
-argument-hint: [component] [from-framework] [to-framework]
+argument-hint: "[component] [from-framework] [to-framework]"
 ---
 
 Migrate the $ARGUMENTS[0] component from $ARGUMENTS[1] to $ARGUMENTS[2].
@@ -101,7 +106,7 @@ Declare named positional arguments for readable substitution:
 name: migrate-component
 description: Migrate a component from one framework to another
 arguments: [component, from, to]
-argument-hint: [component] [from-framework] [to-framework]
+argument-hint: "[component] [from-framework] [to-framework]"
 ---
 
 Migrate the $component component from $from to $to.
@@ -120,7 +125,7 @@ Names map to positions in order: `$component` = first arg, `$from` = second, `$t
 
 **Example using `${CLAUDE_SKILL_DIR}`:**
 
-```yaml
+````markdown
 ---
 name: validate-schema
 description: Validate JSON files against this project's schema
@@ -130,9 +135,9 @@ allowed-tools: Bash(python *)
 Run the schema validator:
 
 ```bash
-python ${CLAUDE_SKILL_DIR}/scripts/validate.py $ARGUMENTS
+python "${CLAUDE_SKILL_DIR}/scripts/validate.py" $ARGUMENTS
 ```
-```
+````
 
 ## Shell Injection
 

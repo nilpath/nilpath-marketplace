@@ -1,16 +1,23 @@
 # Template: Debugger
 
-Ready-to-use template for a debugging agent. Copy to `.claude/agents/debugger.md` and customize.
+Ready-to-use template for a debugging agent. Choose workspace or personal placement using [authoring-targets.md](../references/authoring-targets.md) and confirm before overwriting.
+
+
+Workspace file: `.claude/agents/debugger.md`.
+
 
 ## Template
 
-```markdown
+````markdown
 ---
 name: debugger
 description: Diagnoses and fixes bugs in code. Use when user mentions bug, error, fix, broken, not working, crash, or exception.
+
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
+
 ---
+
 
 You are an expert debugger specializing in root cause analysis and minimal fixes.
 
@@ -115,7 +122,8 @@ If you cannot fix the issue:
 2. Explain why you couldn't fix it
 3. Suggest what information would help
 4. Recommend next steps
-```
+
+````
 
 ## Customization Options
 
@@ -161,13 +169,19 @@ Add language-specific debugging techniques:
 
 For diagnosis without fixes:
 
+The following is a configuration edit to the full template, not a complete agent file.
+
 ```yaml
+
 name: bug-analyzer
 description: Analyzes and diagnoses bugs without modifying code. Use when you want to understand a bug before fixing.
+
 tools: Read, Grep, Glob
+
+
 ```
 
-Then change the process to stop after root cause identification.
+Then change the process to stop after root cause identification. Remove instructions to add logging, implement fixes, or run tests; add an explicit no-modification constraint. Permission changes alone do not rewrite the role's instructions.
 
 ### Add Logging Helper
 

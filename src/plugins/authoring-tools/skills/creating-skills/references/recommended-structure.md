@@ -6,7 +6,7 @@ The optimal structure for complex skills separates routing, workflows, and knowl
 
 ```
 skill-name/
-├── SKILL.md              # Router + essential principles (always loaded)
+├── SKILL.md              # Router + principles (loaded when skill is invoked)
 ├── workflows/            # Step-by-step procedures
 │   ├── workflow-a.md
 │   └── workflow-b.md
@@ -18,8 +18,8 @@ skill-name/
 ## Why This Works
 
 **Problem 1: Context gets skipped**
-When important principles are in a separate file, Claude may not read them.
-**Solution:** Put essential principles directly in `SKILL.md`. They load automatically.
+When important principles are in a separate file, the agent may not read them.
+**Solution:** Put essential principles directly in `SKILL.md`. They load when the skill is invoked.
 
 **Problem 2: Wrong context loaded**
 A "build" task loads debugging references. A "debug" task loads build references.
@@ -60,7 +60,7 @@ Brief explanation.
 3. [Option C]
 4. Something else
 
-**Wait for response before proceeding.**
+**Use the user's request to select a workflow when clear; otherwise ask and wait for a response.**
 
 ## Routing
 
@@ -134,7 +134,7 @@ This workflow is complete when:
 
 ## The Key Insight
 
-**`SKILL.md` is always loaded. Use this guarantee.**
+**`SKILL.md` is loaded when the skill is invoked. Put essential rules there rather than in optional resources.**
 
 Put unavoidable content in `SKILL.md`:
 - Essential principles

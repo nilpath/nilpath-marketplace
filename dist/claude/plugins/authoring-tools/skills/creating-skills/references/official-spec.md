@@ -1,4 +1,11 @@
-# Anthropic Official Skill Specification
+# Native Skill Specification
+
+This reference describes native output for the active client. For scope selection, safe edits, and the separate opt-in marketplace-source format, read [authoring-targets.md](authoring-targets.md).
+
+Use an unprefixed `name` matching the folder, at most 64 lowercase letters, numbers, and hyphens. Use a non-empty `description` of at most 1,024 characters. These examples are native files, not canonical marketplace YAML.
+
+
+## Claude Code
 
 Source: [code.claude.com/docs/en/skills](https://code.claude.com/docs/en/skills)
 
@@ -53,8 +60,8 @@ Existing `.claude/commands/` files keep working. If a skill and command share th
 | Field | Required | Description |
 |-------|----------|-------------|
 | `name` | Our convention: required | Lowercase letters, numbers, hyphens only (max 64 chars). Becomes the `/slash-command`. Defaults to directory name if omitted. |
-| `description` | Our convention: required | What it does and when to use it (third person). Combined with `when_to_use`, truncated at 1,536 chars in the skill listing. Defaults to first paragraph if omitted. |
-| `when_to_use` | No | Extra trigger phrases appended to `description` in the skill listing. Counts toward the 1,536-char cap. |
+| `description` | Our convention: required | What it does and when to use it (third person; at most 1,024 characters). Defaults to first paragraph if omitted. |
+| `when_to_use` | No | Extra trigger phrases appended to `description` in the skill listing. Prefer keeping discovery triggers in `description`. |
 | `argument-hint` | No | Hint shown during autocomplete. Example: `[issue-number]` or `[filename] [format]`. |
 | `arguments` | No | Named positional args for `$name` substitution. Space-separated string or YAML list. |
 | `disable-model-invocation` | No | `true` prevents Claude from auto-loading this skill. Description is excluded from context. Use for side-effect workflows. |
@@ -114,7 +121,7 @@ Running `/migrate-component SearchBar React Vue` replaces `$component` with `Sea
 name: fix-issue
 description: Fix a GitHub issue
 disable-model-invocation: true
-argument-hint: [issue-number]
+argument-hint: "[issue-number]"
 ---
 
 Fix GitHub issue $ARGUMENTS following our coding standards.

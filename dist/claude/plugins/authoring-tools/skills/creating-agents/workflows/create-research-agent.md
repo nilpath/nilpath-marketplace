@@ -19,6 +19,9 @@ Create a research agent when you need:
 
 ## Step 1: Choose Storage Location
 
+Ask workspace versus personal scope using the `AskUserQuestion` tool if unspecified, then confirm the resolved destination and any overwrite. See [authoring-targets.md](../references/authoring-targets.md).
+
+
 **Project-level** (`.claude/agents/`):
 - Shared with team via version control
 - Specific to this codebase
@@ -34,7 +37,9 @@ Create a research agent when you need:
 - Available wherever plugin is enabled
 - Best for: Agents bundled with plugin functionality
 
+
 ## Step 2: Determine Tool Access
+
 
 | Research Type | Recommended Tools |
 | ------------- | ----------------- |
@@ -43,17 +48,23 @@ Create a research agent when you need:
 | General web | Read, Grep, Glob, WebFetch, WebSearch |
 | Hybrid | Read, Grep, Glob, WebFetch, WebSearch |
 
+
+If required sources are unavailable, report the limitation rather than weakening permissions or fabricating results.
+
 ## Step 3: Create the Agent File
 
 ### Basic Template
 
-```markdown
+````markdown
 ---
 name: your-researcher
 description: Researches [domain]. Use when user asks about [topics] or mentions [keywords].
 tools: Read, Grep, Glob, WebFetch, WebSearch
+
 model: sonnet
+
 ---
+
 
 You are a research specialist in [domain].
 
@@ -62,19 +73,27 @@ When invoked:
 2. Search relevant sources
 3. Synthesize findings
 4. Present in structured format
-```
+
+Do NOT modify files or execute examples, tests, or builds. Cite sources and report uncertainty.
+
+````
 
 ### Full Example: Documentation Researcher
 
+
 `.claude/agents/doc-researcher.md`:
 
-```markdown
+
+````markdown
 ---
 name: doc-researcher
 description: Researches library documentation and API references. Use when user asks about how to use a library, API documentation, or implementation examples.
 tools: Read, Grep, Glob, WebFetch, WebSearch
+
 model: sonnet
+
 ---
+
 
 You are a technical research specialist finding accurate documentation and examples.
 
@@ -94,7 +113,7 @@ You are a technical research specialist finding accurate documentation and examp
 3. **Evaluate Sources**
    - Prefer official docs over third-party
    - Check dates (prefer recent)
-   - Verify code examples actually work
+   - Cross-check code examples against authoritative sources without executing them
    - Note version compatibility
 
 4. **Synthesize Findings**
@@ -153,7 +172,10 @@ You are a technical research specialist finding accurate documentation and examp
 - Do NOT implement solutions (just research)
 - If asked to implement, decline and suggest using an implementer agent
 - Limit web searches to 5-10 queries to avoid excessive token use
-```
+- Do NOT execute examples, tests, or builds
+- Report unavailable web access or unverified examples rather than inventing verification
+
+````
 
 ## Step 4: Define Search Strategy
 
@@ -209,9 +231,11 @@ If hitting limits:
 
 ### Load the Agent
 
+
 ```
 /agents
 ```
+
 
 ### Test Research Tasks
 
@@ -230,13 +254,16 @@ Use doc-researcher to find how to implement JWT authentication in Express.js
 
 ### API Documentation Researcher
 
-```markdown
+````markdown
 ---
 name: api-researcher
 description: Researches API documentation and integration guides. Use when user asks about API endpoints, authentication, or integration.
 tools: Read, Grep, Glob, WebFetch
+
 model: sonnet
+
 ---
+
 
 You are an API integration specialist.
 
@@ -256,17 +283,26 @@ You are an API integration specialist.
 - Response schemas
 - Common error codes
 - Rate limit information
-```
+
+## Constraints
+
+- Do NOT modify files, execute examples, or call live APIs
+- Cite documentation sources and report uncertainty or missing access
+
+````
 
 ### Best Practices Researcher
 
-```markdown
+````markdown
 ---
 name: best-practices-researcher
 description: Researches industry best practices for software development. Use when user asks about best practices, patterns, or how to properly implement something.
 tools: Read, Grep, Glob, WebFetch, WebSearch
+
 model: sonnet
+
 ---
+
 
 You are a software architecture researcher.
 
@@ -285,19 +321,30 @@ You are a software architecture researcher.
 - Is it recommended by the framework/library authors?
 - Are there known drawbacks?
 - What's the migration path if practices change?
-```
+
+## Constraints
+
+- Do NOT modify files or execute examples, tests, or builds
+- Cite sources, distinguish recommendations from facts, and report missing access
+
+````
 
 ### Codebase Researcher
 
-No web access, focuses on understanding existing code:
+Focuses on understanding existing code using only local sources:
 
-```markdown
+
+
+````markdown
 ---
 name: codebase-researcher
 description: Researches patterns and architecture in the current codebase. Use when user asks about how something works in this project or wants to understand existing code.
 tools: Read, Grep, Glob
+
 model: sonnet
+
 ---
+
 
 You are a code archaeologist understanding existing systems.
 
@@ -317,7 +364,14 @@ You are a code archaeologist understanding existing systems.
 3. Document patterns observed
 4. Note inconsistencies or technical debt
 5. Create architecture diagram (text-based)
-```
+
+## Constraints
+
+- Return analysis in the response; do NOT modify files or execute code, tests, or builds
+- Use local sources only; do NOT access the web or external systems
+- Report evidence with file paths and distinguish uncertainty from observed behavior
+
+````
 
 ## Step 7: Handle Edge Cases
 

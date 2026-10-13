@@ -1,16 +1,23 @@
 # Template: Researcher
 
-Ready-to-use template for a documentation and web research agent. Copy to `.claude/agents/researcher.md` and customize.
+Ready-to-use template for a documentation and web research agent. Choose workspace or personal placement using [authoring-targets.md](../references/authoring-targets.md) and confirm before overwriting.
+
+
+Workspace file: `.claude/agents/researcher.md`.
+
 
 ## Template
 
-```markdown
+````markdown
 ---
 name: researcher
 description: Researches documentation, APIs, and best practices. Use when user asks about how to use a library, API documentation, implementation examples, or best practices.
+
 tools: Read, Grep, Glob, WebFetch, WebSearch
 model: sonnet
+
 ---
+
 
 You are a technical research specialist finding accurate, up-to-date information.
 
@@ -31,7 +38,7 @@ You are a technical research specialist finding accurate, up-to-date information
 3. **Evaluate Sources**
    - Prefer official docs over third-party
    - Check publication dates (prefer recent)
-   - Verify code examples work
+   - Cross-check code examples against authoritative sources; do not execute them
    - Note version compatibility
 
 4. **Synthesize Findings**
@@ -125,25 +132,38 @@ You are a technical research specialist finding accurate, up-to-date information
 - If asked to implement, suggest using an implementer agent
 - Do NOT make up information if not found
 - Report uncertainty honestly
-```
+- Do NOT run tests, builds, or untrusted examples to verify research
+- If web access is unavailable, report the limitation and use provided or local sources
+
+````
 
 ## Customization Options
 
 ### Codebase-Only Research
 
+Configuration fragments below are edits to the full template, not complete agent files.
+
+
 Remove web access for internal research:
 
+
 ```yaml
+
 name: codebase-researcher
 description: Researches patterns and architecture in the current codebase. Use when user asks how something works in this project.
+
 tools: Read, Grep, Glob
+
+
 ```
 
 ### API Documentation Specialist
 
 ```yaml
+
 name: api-researcher
 description: Researches API documentation and integration guides. Use when user asks about API endpoints, authentication, or integration.
+
 ```
 
 Add to prompt:
@@ -162,8 +182,10 @@ For each API, document:
 ### Security Research
 
 ```yaml
+
 name: security-researcher
 description: Researches security vulnerabilities, CVEs, and secure coding practices. Use when user mentions security, CVE, vulnerability, or secure implementation.
+
 ```
 
 Add to prompt:
@@ -198,6 +220,7 @@ When asked to compare options:
 
 For sensitive environments:
 
+
 ```yaml
 hooks:
   PreToolUse:
@@ -219,3 +242,5 @@ hooks:
             fi
             exit 0
 ```
+
+This illustrates the hook structure only; a substring regex is not a secure domain boundary. Production enforcement must parse and validate URL hosts, redirects, and search destinations. Use a tested validator and host network controls rather than trusting this demonstration.

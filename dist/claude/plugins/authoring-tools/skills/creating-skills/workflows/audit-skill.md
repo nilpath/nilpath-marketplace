@@ -6,18 +6,16 @@ Read these reference files before starting:
 1. references/recommended-structure.md
 2. references/skill-structure.md
 3. references/core-principles.md
+4. references/authoring-targets.md
+5. references/official-spec.md
 
 ## Process
 
 ### Step 1: List Available Skills
 
-**DO NOT use AskUserQuestion** — there may be many skills.
+Use the supplied skill path when provided. Otherwise ask whether to inspect workspace or personal skills; follow `references/authoring-targets.md` for the active client's discovery roots. Enumerate only the selected scope and show full paths if names collide.
 
-Enumerate skills in chat as numbered list:
-
-```bash
-ls ~/.claude/skills/
-```
+Present skills as a numbered list in chat rather than a fixed-choice dialog that may truncate a long list. Record the selected absolute path as `SKILL_DIR`; audit in place without creating duplicate copies.
 
 Present as:
 ```
@@ -36,13 +34,15 @@ After user selects, read the full skill structure:
 
 ```bash
 # Read main file
-cat ~/.claude/skills/{skill-name}/SKILL.md
+cat "$SKILL_DIR/SKILL.md"
 
 # Check for workflows and references
-ls ~/.claude/skills/{skill-name}/
-ls ~/.claude/skills/{skill-name}/workflows/ 2>/dev/null
-ls ~/.claude/skills/{skill-name}/references/ 2>/dev/null
+ls "$SKILL_DIR"
+ls "$SKILL_DIR/workflows" 2>/dev/null
+ls "$SKILL_DIR/references" 2>/dev/null
 ```
+
+Also read templates, scripts, and any invocation-policy sidecar. For explicitly selected marketplace sources, inspect `SKILL.md.j2` and render each requested target before applying native checks.
 
 ### Step 3: Run Audit Checklist
 
@@ -51,11 +51,14 @@ Evaluate against each criterion:
 #### YAML Frontmatter
 
 - [ ] Has `name:` field (lowercase-with-hyphens, max 64 chars)
-- [ ] Name matches directory name
+- [ ] Unprefixed name matches directory name
 - [ ] Has `description:` field
 - [ ] Description says what it does AND when to use it
 - [ ] Description is third person (not "I can..." or "You can...")
-- [ ] `disable-model-invocation: true` set if skill has side effects (deploy, commit, send)
+- [ ] Description is non-empty and at most 1,024 characters
+- [ ] Invocation policy matches the user's intent using the active client's supported mechanism
+- [ ] Explicit-only authoring tools have not made every output skill explicit-only by accident
+- [ ] Native metadata contains no canonical source fields or unsupported client fields
 
 #### Structure
 
@@ -85,7 +88,9 @@ Evaluate against each criterion:
 - [ ] Steps are specific (not "do the thing")
 - [ ] Success criteria are verifiable
 - [ ] No redundant content across files
-- [ ] No `.claude/commands/` file created separately (skill name IS the slash command)
+- [ ] No duplicate discovery copies or unnecessary command/prompt files
+- [ ] Inputs and resource execution use the active client's mechanism, not another client's substitutions
+- [ ] Scripts resolve from the selected skill folder and honor ordinary tool approvals
 
 ### Step 4: Generate Report
 
@@ -118,6 +123,7 @@ Options:
 3. **Just the report** — No changes needed
 
 If fixing:
+- Confirm the selected paths and requested changes before overwriting existing files
 - Make each change
 - Verify file validity after each change
 - Report what was fixed
@@ -133,14 +139,16 @@ If fixing:
 - **Missing routing** — Complex skill without intake/routing
 - **Broken references** — Files mentioned but don't exist
 - **Redundant content** — Same information in multiple places
-- **Separate command file** — A `.claude/commands/{name}.md` created alongside the skill
-- **Side-effect skill without invocation control** — Deploy/commit/send skills without `disable-model-invocation: true`
+- **Duplicate entrypoints** — A redundant command/prompt file or second discovery copy of the same skill
+- **Incorrect invocation control** — An output intended to be explicit-only still auto-loads, or an output intended for discovery is unnecessarily restricted
+- **Source/native confusion** — Native SKILL.md containing `targets`, canonical tools, or unrendered Jinja
 
 ## Success Criteria
 
 Audit is complete when:
 - [ ] Skill fully read and analyzed
 - [ ] All checklist items evaluated
+- [ ] Active-client invocation mode, metadata, and resource paths verified
 - [ ] Report presented to user
 - [ ] Fixes applied (if requested)
 - [ ] User has clear picture of skill health

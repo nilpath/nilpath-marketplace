@@ -4,6 +4,7 @@
 **Read these reference files NOW:**
 1. references/core-principles.md
 2. references/recommended-structure.md
+3. references/authoring-targets.md
 </required_reading>
 
 <process>
@@ -13,6 +14,8 @@ Ask the user:
 - What task or domain are you trying to support?
 - Is this something you do repeatedly?
 - What makes it complex enough to need a skill?
+- Is the desired output a native skill for the active client (default), or explicitly a marketplace source?
+- Should it be workspace-scoped or personal, and automatically discoverable or explicit-only?
 
 ## Step 2: Determine If a Skill Is Right
 
@@ -26,7 +29,7 @@ Ask the user:
 - One-off task (just do it directly)
 - Changes constantly (will be outdated quickly)
 - Too simple (overhead isn't worth it)
-- Better as a slash command (user-triggered, no context needed)
+- Better as a one-off prompt or an always-on instruction rather than a reusable workflow
 
 Share this assessment with user.
 
@@ -77,7 +80,7 @@ skill-name/
 
 Ask: "What rules should ALWAYS apply, no matter which workflow?"
 
-These become `<essential_principles>` in SKILL.md.
+These become `## Essential Principles` in SKILL.md.
 
 Examples:
 - "Always verify before reporting success"
@@ -91,6 +94,7 @@ Summarize:
 - List of workflows
 - List of references
 - Essential principles
+- Native placement and invocation policy, following the existing project convention without duplicate copies
 
 Ask: "Does this structure make sense? Ready to build it?"
 
@@ -106,7 +110,8 @@ If no → clarify and iterate
 | Single task, repeat often | Simple skill |
 | Multiple related tasks | Router + workflows |
 | Complex domain, many patterns | Router + workflows + references |
-| User-triggered, fresh context | Slash command, not skill |
+| Reusable, user-triggered task | Explicit-only skill using the active client's invocation policy |
+| Always-on conventions | Client instruction file rather than a relevance-loaded skill |
 | One-off task | No skill needed |
 </decision_framework>
 

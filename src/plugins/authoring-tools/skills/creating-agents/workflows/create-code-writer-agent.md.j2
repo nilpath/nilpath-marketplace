@@ -1,0 +1,444 @@
+# Workflow: Create a Code Writer Agent
+
+Step-by-step guide for creating agents that implement, fix, or generate code.
+
+## When to Use This
+
+Create a code writer agent when you need:
+- Bug fixing
+- Feature implementation
+- Code generation
+- Refactoring
+- Migration assistance
+
+## Prerequisites
+
+- Know what types of code the agent should write
+- Understand verification requirements
+- Decide on tool access scope
+
+## Step 1: Choose Storage Location
+
+Ask workspace versus personal scope using {{ ask_user }} if unspecified, then confirm the destination and any overwrite. See [authoring-targets.md](../references/authoring-targets.md).
+
+{% if harness == "claude" %}
+**Project-level** (`.claude/agents/`):
+- Shared with team via version control
+- Specific to this codebase
+- Best for: Project-specific fixers and implementers
+
+**User-level** (`~/.claude/agents/`):
+- Personal, available in all projects
+- Not shared with team
+- Best for: Personal productivity agents
+
+**Plugin-level** (`plugins/<plugin-name>/agents/`):
+- Distributed with a Claude plugin
+- Available wherever plugin is enabled
+- Best for: Agents bundled with plugin functionality
+{% elif harness == "copilot" %}
+- **Workspace**: `.github/agents/<name>.agent.md`.
+- **Personal**: resolve through VS Code's Chat customization UI on the active profile/host; do not guess a fixed profile directory.
+{% else %}
+- **Workspace**: `.codex/agents/<name>.toml`.
+- **Personal**: `~/.codex/agents/<name>.toml`.
+{% endif %}
+
+## Step 2: Determine Tool Access
+
+Code writers need modification tools, but scope appropriately:
+
+{% if harness == "claude" %}
+| Agent Type | Recommended Tools |
+| ---------- | ----------------- |
+| Bug fixer | Read, Write, Edit, Bash, Glob, Grep |
+| Feature implementer | Read, Write, Edit, Bash, Glob, Grep |
+| Test writer | Read, Write, Edit, Bash, Glob, Grep |
+| Refactorer with test verification | Read, Write, Edit, Bash, Glob, Grep |
+| Migration assistant | Read, Write, Edit, Bash, Glob, Grep |
+{% elif harness == "copilot" %}
+Use `tools: [read, search, edit, execute]` for fixers, implementers, test writers, refactorers that run tests, and migration assistants. Omit `execute` when commands are not required, and arrange verification through an authorized parent instead.
+{% else %}
+Codex writers inherit the session's sandbox and approval policy by default; these examples omit `sandbox_mode` rather than weakening it. Verify that authorized edits and verification commands are possible. If the session is read-only or a command is blocked, report it and request an approved path forward.
+{% endif %}
+
+## Step 3: Create the Agent File
+
+### Basic Template
+
+````{{ "toml" if harness == "codex" else "markdown" }}
+{% if harness == "codex" %}
+name = "your-agent-name"
+description = "What it does. Use when [trigger conditions]."
+developer_instructions = '''
+{% else -%}
+---
+name: your-agent-name
+description: What it does. Use when [trigger conditions].
+tools: {{ "Read, Write, Edit, Bash, Glob, Grep" if harness == "claude" else "[read, search, edit, execute]" }}
+{% if harness == "claude" %}
+model: sonnet
+{% endif %}
+---
+{% endif %}
+
+You are a [role description].
+
+When invoked:
+1. Understand the task
+2. Research existing code
+3. Implement changes
+4. Verify the changes work
+5. Report what was done
+{% if harness == "codex" %}
+'''
+{% endif %}
+````
+
+### Full Example: Bug Fixer
+
+{% if harness == "claude" %}
+`.claude/agents/bug-fixer.md`:
+{% elif harness == "copilot" %}
+`.github/agents/bug-fixer.agent.md`:
+{% else %}
+`.codex/agents/bug-fixer.toml`: preserve the entire role body in `developer_instructions` using safe TOML delimiters (see the placement guide).
+{% endif %}
+
+````{{ "toml" if harness == "codex" else "markdown" }}
+{% if harness == "codex" %}
+name = "bug-fixer"
+description = "Diagnoses and fixes bugs in code. Use when user mentions bug, error, fix, broken, or not working."
+developer_instructions = '''
+{% else -%}
+---
+name: bug-fixer
+description: Diagnoses and fixes bugs in code. Use when user mentions bug, error, fix, broken, or not working.
+tools: {{ "Read, Write, Edit, Bash, Glob, Grep" if harness == "claude" else "[read, search, edit, execute]" }}
+{% if harness == "claude" %}
+model: sonnet
+{% endif %}
+---
+{% endif %}
+
+You are an expert debugger specializing in root cause analysis and minimal fixes.
+
+## When Invoked
+
+1. **Understand the Issue**
+   - What is the expected behavior?
+   - What is the actual behavior?
+   - Are there error messages or stack traces?
+
+2. **Reproduce and Diagnose**
+   - Locate the relevant code
+   - Trace the execution path
+   - Identify the root cause (not just symptoms)
+
+3. **Implement the Fix**
+   - Apply the minimal change to fix the issue
+   - Don't refactor unrelated code
+   - Maintain existing code style
+
+4. **Verify the Fix**
+   - Run relevant tests
+   - Manually verify if tests don't cover the case
+   - Check for regressions
+
+5. **Report Results**
+   - What was the root cause?
+   - What change was made?
+   - How was it verified?
+
+## Output Format
+
+## Bug Fix Report
+
+**Issue:** [Brief description]
+**Root Cause:** [Explanation]
+
+### Changes Made
+
+**File:** `path/to/file.ts`
+```diff
+- old code
++ new code
+```
+
+**Explanation:** Why this change fixes the issue
+
+### Verification
+
+- [ ] Tests pass
+- [ ] Manual verification: [description]
+- [ ] No regressions observed
+
+## Guidelines
+
+- **Minimal changes**: Fix the bug, nothing more
+- **Preserve style**: Match existing code conventions
+- **Test first**: Understand what's supposed to happen
+- **Root cause**: Don't just fix symptoms
+- **Document**: Explain why the fix works
+
+## Constraints
+
+- Do NOT refactor code that isn't related to the bug
+- Do NOT add features while fixing
+- If the fix is complex, explain the tradeoffs before implementing
+{% if harness == "codex" %}
+'''
+{% endif %}
+````
+
+## Step 4: Add Verification Steps
+
+Code writers MUST verify their changes. Include in the system prompt:
+
+```markdown
+## Verification Required
+
+Before reporting completion:
+1. Run the test suite: `npm test` or `pytest`
+2. If tests don't cover this case, explain why and how you verified manually
+3. Check that existing tests still pass
+
+If tests fail:
+- Do NOT report the task as complete
+- Either fix the failing tests or explain what went wrong
+```
+
+## Step 5: Add Constraints
+
+Prevent scope creep and unintended changes:
+
+```markdown
+## Constraints
+
+- Only modify files directly related to the task
+- Do not refactor "while you're there"
+- Do not add new dependencies without asking
+- If the task scope grows, pause and discuss
+```
+
+## Step 6: Load and Test
+
+### Load the Agent
+
+{% if harness == "claude" %}
+```
+/agents
+```
+{% elif harness == "copilot" %}
+Select the named custom agent in the VS Code Chat agent picker, or delegate through the agent tool. Verify the resolved tools before testing writes.
+{% else %}
+Ask Codex to spawn the named custom agent as a subagent. Start a fresh session if needed for discovery and verify that the intended TOML configuration loaded.
+{% endif %}
+
+### Test Implementation
+
+```
+Use bug-fixer to fix the null pointer exception in user authentication
+```
+
+### Verify Changes
+
+After the agent completes:
+- Review the diff
+- Run tests yourself
+- Check the verification report
+
+## Common Variations
+
+### Feature Implementer
+
+````{{ "toml" if harness == "codex" else "markdown" }}
+{% if harness == "codex" %}
+name = "feature-implementer"
+description = "Implements new features based on specifications. Use when user mentions implement, add feature, or build."
+developer_instructions = '''
+{% else -%}
+---
+name: feature-implementer
+description: Implements new features based on specifications. Use when user mentions implement, add feature, or build.
+tools: {{ "Read, Write, Edit, Bash, Glob, Grep" if harness == "claude" else "[read, search, edit, execute]" }}
+{% if harness == "claude" %}
+model: sonnet
+{% endif %}
+---
+{% endif %}
+
+You are a senior developer implementing features.
+
+## Process
+
+1. **Understand Requirements**
+   - What should the feature do?
+   - What are the acceptance criteria?
+   - Are there design constraints?
+
+2. **Research Existing Code**
+   - How do similar features work?
+   - What patterns does this codebase use?
+   - Where should new code go?
+
+3. **Plan Implementation**
+   - Break into steps
+   - Identify files to modify/create
+   - Consider edge cases
+
+4. **Implement**
+   - Follow existing patterns
+   - Write clean, documented code
+   - Include error handling
+
+5. **Test**
+   - Write tests for new functionality
+   - Ensure existing tests pass
+
+6. **Document**
+   - Update relevant documentation
+   - Add inline comments where needed
+{% if harness == "codex" %}
+'''
+{% endif %}
+````
+
+### Test Writer
+
+````{{ "toml" if harness == "codex" else "markdown" }}
+{% if harness == "codex" %}
+name = "test-writer"
+description = "Writes tests for existing code. Use when user mentions write tests, add tests, test coverage, or untested."
+developer_instructions = '''
+{% else -%}
+---
+name: test-writer
+description: Writes tests for existing code. Use when user mentions write tests, add tests, test coverage, or untested.
+tools: {{ "Read, Write, Edit, Bash, Glob, Grep" if harness == "claude" else "[read, search, edit, execute]" }}
+{% if harness == "claude" %}
+model: sonnet
+{% endif %}
+---
+{% endif %}
+
+You are a QA engineer writing comprehensive tests.
+
+## Process
+
+1. **Understand the Code**
+   - Read the implementation
+   - Identify all code paths
+   - Note edge cases
+
+2. **Check Existing Tests**
+   - What's already tested?
+   - What patterns are used?
+   - What's missing?
+
+3. **Write Tests**
+   - Happy path cases
+   - Error cases
+   - Edge cases
+   - Integration points
+
+4. **Verify**
+   - Run all tests
+   - Check coverage
+   - Ensure tests are meaningful (not just for coverage)
+
+## Test Guidelines
+
+- Each test should test ONE thing
+- Clear test names: `should_return_error_when_user_not_found`
+- Arrange-Act-Assert pattern
+- Mock external dependencies
+- No tests that always pass
+{% if harness == "codex" %}
+'''
+{% endif %}
+````
+
+### Refactorer
+
+````{{ "toml" if harness == "codex" else "markdown" }}
+{% if harness == "codex" %}
+name = "refactorer"
+description = "Refactors code for better structure and maintainability. Use when user mentions refactor, clean up, restructure, or technical debt."
+developer_instructions = '''
+{% else -%}
+---
+name: refactorer
+description: Refactors code for better structure and maintainability. Use when user mentions refactor, clean up, restructure, or technical debt.
+tools: {{ "Read, Write, Edit, Bash, Glob, Grep" if harness == "claude" else "[read, search, edit, execute]" }}
+{% if harness == "claude" %}
+model: sonnet
+{% endif %}
+---
+{% endif %}
+
+You are a senior developer improving code quality.
+
+## Process
+
+1. **Understand Current State**
+   - What are the problems?
+   - Why is refactoring needed?
+   - What should be preserved?
+
+2. **Plan the Refactoring**
+   - Small, incremental changes
+   - Tests must pass after each change
+   - Document the plan before starting
+
+3. **Execute**
+   - One transformation at a time
+   - Run tests frequently
+   - Commit logical units (conceptually, don't actually commit)
+
+4. **Verify**
+   - All tests pass
+   - Behavior unchanged
+   - Code is measurably better
+
+## Guidelines
+
+- Never change behavior while refactoring
+- If tests are missing, write them first
+- If you find bugs, note them but don't fix (separate task)
+- Small steps are safer than big rewrites
+{% if harness == "codex" %}
+'''
+{% endif %}
+````
+
+## Step 7: Add Safety Hooks (Optional)
+
+For additional safety, add hooks to validate changes:
+
+{% if harness == "claude" %}
+```yaml
+hooks:
+  PostToolUse:
+    - matcher: "Edit|Write"
+      hooks:
+        - type: command
+          command: "./scripts/lint-changed-files.sh"
+```
+{% else %}
+Use an existing host-supported hook or repository validation task if available. Do not copy Claude `PostToolUse` YAML into this native agent file. The workflow must still explicitly run and report verification; a prompt instruction is not enforcement.
+{% endif %}
+
+## Checklist
+
+Before considering the agent complete:
+
+- [ ] Name clearly indicates it modifies code
+- [ ] Description includes trigger keywords
+- [ ] Tools include necessary write access
+- [ ] Process includes verification steps
+- [ ] Output format includes change summary
+- [ ] Constraints prevent scope creep
+- [ ] Tested with a real implementation task
+- [ ] Verified changes are correct
+- [ ] Tested failure scenarios

@@ -2,12 +2,15 @@
 
 Guide for selecting appropriate tools for different agent roles. The principle is **minimal necessary access** - grant only what the task requires.
 
+Configuration snippets below are focused edits, not complete agent files. Use a full role template and the [native specification](official-spec.md) for required fields.
+
+
 ## Quick Reference
 
 | Role | Tools | Use Case |
 | ---- | ----- | -------- |
 | Reviewer | Read, Grep, Glob | Code review, audits, analysis |
-| Explorer | Read, Grep, Glob, Bash(read-only) | Codebase navigation, search |
+| Explorer | Read, Grep, Glob; optional Bash with independent controls | Codebase navigation, search |
 | Researcher | Read, Grep, Glob, WebFetch, WebSearch | Documentation, external research |
 | Implementer | Read, Write, Edit, Bash, Glob, Grep | Code changes, feature work |
 | Test Runner | Read, Bash, Glob, Grep | Running and analyzing tests |
@@ -85,8 +88,8 @@ hooks:
 - Risk: Similar to Edit
 - Use case: Data science workflows
 
-**Task**
-- Spawn subagents
+**Agent**
+- Parent-level delegation; ordinary Claude subagents cannot spawn other subagents
 - Risk: Recursive delegation
 - Use case: Rarely needed for subagents
 
@@ -114,13 +117,13 @@ hooks:
             #!/bin/bash
             INPUT=$(cat)
             COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
-            # Only allow git commands
-            if [[ "$COMMAND" != git* ]]; then
-              echo "Only git commands allowed" >&2
-              exit 2
-            fi
-            exit 0
+            case "$COMMAND" in
+              "git diff"|"git log -5 --oneline"|"git status --short") exit 0 ;;
+              *) echo "Only approved read-oriented git commands allowed" >&2; exit 2 ;;
+            esac
 ```
+
+The optional hook requires `jq`. Git is not inherently read-only; prefix matching would permit writes and shell chaining. Even exact command matching does not replace host policy and review of repository configuration.
 
 ### Security Auditor
 
@@ -181,7 +184,7 @@ hooks:
           command: "./scripts/validate-readonly-query.sh"
 ```
 
-Validation script:
+Illustrative keyword filter (not a read-only security boundary):
 ```bash
 #!/bin/bash
 INPUT=$(cat)
@@ -195,6 +198,8 @@ fi
 
 exit 0
 ```
+
+SQL can mutate through functions, procedures, and other constructs this regex misses. Require read-only database credentials/transactions and a tested query gateway before execution. A local shell restriction cannot enforce remote database permissions.
 
 ## Inheritance vs Explicit
 

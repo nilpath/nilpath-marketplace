@@ -1,10 +1,12 @@
 """Unit tests for the buildkit translation core."""
 
+import json
+import shutil
 from pathlib import Path
 
 import pytest
 
-from buildkit.build import BuildResult, _build_skill
+from buildkit.build import BuildResult, _build_skill, build
 from buildkit.config import load_config
 from buildkit.fm import (
     FrontmatterError,
@@ -234,27 +236,82 @@ class TestProseHelpers:
 
 
 class TestEmptyPluginTrees:
-    def test_authoring_tools_only_in_claude_tree(self):
-        import json
+    @pytest.mark.parametrize(
+        "component_path", ["skills/example/SKILL.md.j2", "agents/review/example.md.j2"]
+    )
+    def test_claude_only_plugin_omitted_from_other_targets(self, tmp_path, component_path):
+        shutil.copytree(REPO_ROOT / "src/harnesses", tmp_path / "src/harnesses")
+        shutil.copyfile(REPO_ROOT / "src/marketplace.yaml", tmp_path / "src/marketplace.yaml")
+        plugin_dir = tmp_path / "src/plugins/claude-only"
+        component = plugin_dir / component_path
+        component.parent.mkdir(parents=True)
+        (plugin_dir / "plugin.yaml").write_text(
+            "name: claude-only\nversion: 1.0.0\ndescription: A single-target fixture.\n"
+        )
+        (plugin_dir / "README.md").write_text("# Claude-only fixture\n")
+        component.write_text(
+            "---\nname: example\ndescription: A single-target component.\n"
+            "targets: [claude]\n---\nRead the supplied files and report findings.\n"
+        )
 
-        assert (REPO_ROOT / "dist/claude/plugins/authoring-tools/skills").is_dir()
-        assert not (REPO_ROOT / "dist/copilot/plugins/authoring-tools").exists()
-        assert not (REPO_ROOT / "dist/codex/plugins/authoring-tools").exists()
-        codex_registry = json.loads(
-            (REPO_ROOT / ".agents/plugins/marketplace.json").read_text()
-        )
-        assert "authoring-tools" not in [p["name"] for p in codex_registry["plugins"]]
-        copilot_registry = json.loads(
-            (REPO_ROOT / ".github/plugin/marketplace.json").read_text()
-        )
-        assert "authoring-tools" not in [p["name"] for p in copilot_registry["plugins"]]
-        claude_registry = json.loads(
-            (REPO_ROOT / ".claude-plugin/marketplace.json").read_text()
-        )
-        assert "authoring-tools" in [p["name"] for p in claude_registry["plugins"]]
+        result = build(tmp_path)
+
+        assert result.warnings == []
+        assert all(path.is_file() for path in result.written)
+        output = tmp_path / "dist/claude/plugins/claude-only"
+        assert (output / component_path.removesuffix(".j2")).is_file()
+        assert (tmp_path / "dist/claude/plugins/claude-only/README.md").is_file()
+        for harness, registry_path in [
+            ("claude", ".claude-plugin/marketplace.json"),
+            ("copilot", ".github/plugin/marketplace.json"),
+            ("codex", ".agents/plugins/marketplace.json"),
+        ]:
+            registry = json.loads((tmp_path / registry_path).read_text())
+            assert [p["name"] for p in registry["plugins"]] == (
+                ["claude-only"] if harness == "claude" else []
+            )
+            if harness != "claude":
+                assert not (tmp_path / f"dist/{harness}/plugins/claude-only").exists()
 
 
 class TestConditionalSupportingFiles:
+    @pytest.mark.parametrize("harness_id", ["claude", "copilot", "codex"])
+    def test_supporting_templates_render_text_without_mapping_metadata(self, cfg, tmp_path, harness_id):
+        skill_dir = tmp_path / "example-skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md.j2").write_text(
+            "---\nname: example-skill\ndescription: A supporting-template fixture.\n"
+            "targets: [claude, copilot, codex]\n---\nRead templates/native.md.\n"
+        )
+        (skill_dir / "templates").mkdir()
+        (skill_dir / "templates/native.md.j2").write_text(
+            "---\nname: native-example\ndescription: Native metadata, not canonical source.\n"
+            "tools: [read, search]\nuser-invocable: true\n---\n"
+            "Active harness: {{ harness }}.\n"
+            "{% raw %}Source example: {{ todo }}.{% endraw %}\n"
+        )
+        plugin = next(p for p in cfg.plugins if p.name == "engineering-workflow")
+        harness = cfg.harnesses[harness_id]
+        result = BuildResult()
+        out_root = tmp_path / "out"
+
+        assert _build_skill(
+            make_environment(), skill_dir, harness, plugin, cfg, out_root, result
+        )
+
+        output = (
+            out_root / harness.dist_root / "plugins" / plugin.name / "skills"
+            / skill_dir.name / "templates/native.md"
+        )
+        assert output.read_text() == (
+            "---\nname: native-example\ndescription: Native metadata, not canonical source.\n"
+            "tools: [read, search]\nuser-invocable: true\n---\n"
+            f"Active harness: {harness_id}.\n"
+            "Source example: {{ todo }}.\n"
+        )
+        assert result.warnings == []
+        assert not output.with_suffix(".md.j2").exists()
+
     @pytest.mark.parametrize("harness_id", ["claude", "copilot", "codex"])
     def test_empty_supporting_templates_omitted(self, cfg, tmp_path, harness_id):
         skill_dir = tmp_path / "src" / "conditional-skill"

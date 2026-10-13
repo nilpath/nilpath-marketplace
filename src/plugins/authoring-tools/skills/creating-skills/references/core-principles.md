@@ -28,7 +28,7 @@ Keep markdown formatting within content (bold, italic, lists, code blocks, links
 
 **Why not XML?**
 
-The official Claude Code spec explicitly says to use markdown headings. XML tags in skill bodies are non-standard and create confusion when new contributors read or update skills. Standard markdown is readable by humans and Claude alike.
+This guide uses Markdown headings as its authoring convention. They make instructions readable by humans and agents without requiring a custom tag vocabulary.
 
 **Common body sections** (use what fits your skill):
 
@@ -45,16 +45,16 @@ The official Claude Code spec explicitly says to use markdown headings. XML tags
 
 The context window is shared. Your skill shares it with the system prompt, conversation history, other skills' metadata, and the actual request.
 
-Only add context Claude doesn't already have. Challenge each piece of information:
-- "Does Claude really need this explanation?"
-- "Can I assume Claude knows this?"
+Only add context the agent doesn't already have. Challenge each piece of information:
+- "Does the agent really need this explanation?"
+- "Can I assume the model knows this?"
 - "Does this paragraph justify its token cost?"
 
-Assume Claude is smart. Don't explain obvious concepts.
+Assume the model is capable. Don't explain obvious concepts.
 
 **Concise** (~50 tokens):
 
-```markdown
+````markdown
 ## Quick Start
 
 Extract PDF text with pdfplumber:
@@ -64,7 +64,7 @@ import pdfplumber
 with pdfplumber.open("file.pdf") as pdf:
     text = pdf.pages[0].extract_text()
 ```
-```
+````
 
 **Verbose** (~150 tokens, same information):
 
@@ -77,7 +77,7 @@ library, then open the PDF file using the open method, and finally extract the
 text from each page. Here's how to do it: ...
 ```
 
-The concise version assumes Claude knows what PDFs are, understands Python imports, and can read code. All correct assumptions.
+The concise version assumes the model knows what PDFs are, understands Python imports, and can read code. All reasonable assumptions for a coding agent.
 
 **When to elaborate:** domain-specific concepts, non-obvious patterns, subtle invariants, workarounds for specific bugs. Not for common programming knowledge, standard library usage, or well-known tools.
 
@@ -98,7 +98,7 @@ Match specificity to task fragility and variability.
 
 **Low freedom** — fragile operations where deviation causes failures:
 
-```markdown
+````markdown
 ## Instructions
 
 Run exactly this script:
@@ -108,7 +108,7 @@ python scripts/migrate.py --verify --backup
 ```
 
 Do not modify the command or add flags.
-```
+````
 
 Mismatched specificity causes problems:
 - Too much freedom on fragile tasks → errors and failures
@@ -116,17 +116,19 @@ Mismatched specificity causes problems:
 
 ## Model Testing Principle
 
-Skills act as additions to models. What works for Opus might need more detail for Haiku.
+Skills act as additions to models. What works for a high-reasoning model might need more detail for a smaller model.
 
 Test your skill with all models you plan to use:
 
-- **Haiku** — Does the skill provide enough guidance? Are examples complete?
-- **Sonnet** — Is the skill clear and efficient? Does progressive disclosure work?
-- **Opus** — Does the skill avoid over-explaining? Can Opus infer obvious steps?
+- **Small/fast model** — Does the skill provide enough guidance? Are examples complete?
+- **Balanced model** — Is the skill clear and efficient? Does progressive disclosure work?
+- **High-reasoning model** — Does the skill avoid over-explaining? Can it infer obvious steps?
+
+For Claude deployments these may be Haiku, Sonnet, and Opus. For other clients, use the models actually available and intended for the skill; do not hardcode a model choice into native skill metadata.
 
 Aim for instructions that work well across all target models:
 
-```markdown
+````markdown
 ## Quick Start
 
 Use pdfplumber for text extraction:
@@ -138,13 +140,13 @@ with pdfplumber.open("file.pdf") as pdf:
 ```
 
 For scanned PDFs requiring OCR, use pdf2image with pytesseract instead.
-```
+````
 
-This works for all models: Haiku gets a complete working example, Sonnet gets a clear default with an escape hatch, Opus gets enough context without over-explanation.
+This supports different model capabilities: smaller models get a complete working example, balanced models get a clear default with an escape hatch, and stronger models get enough context without over-explanation.
 
 ## Progressive Disclosure Principle
 
-`SKILL.md` serves as an overview. Reference files contain details. Claude loads reference files only when needed.
+`SKILL.md` serves as an overview. Reference files contain details. The agent loads reference files only when needed.
 
 - Keep `SKILL.md` under 500 lines
 - Split detailed content into reference files
@@ -155,7 +157,7 @@ See [skill-structure.md](skill-structure.md) for progressive disclosure patterns
 
 ## Validation Principle
 
-Validation scripts are force multipliers. They catch errors Claude might miss and provide actionable feedback.
+Validation scripts are force multipliers. They catch errors the agent might miss and provide actionable feedback.
 
 Good validation scripts:
 - Provide verbose, specific error messages

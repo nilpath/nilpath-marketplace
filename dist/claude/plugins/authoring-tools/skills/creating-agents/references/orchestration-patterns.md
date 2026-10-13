@@ -2,6 +2,16 @@
 
 Multi-agent orchestration patterns for complex workflows. Based on Anthropic's research system and industry best practices.
 
+## Native Invocation
+
+Configure and validate each worker before invoking it; the examples below do not register agents automatically. Once configured, delegate to `Agent(subagent_type="code-reviewer")` or the corresponding named worker. Confirm the named agent and delegation tool are available rather than falling back silently to an unrestricted generic worker.
+
+
+Use `/agents` to inspect agents. Keep orchestration in the parent; ordinary Claude subagents cannot spawn further subagents.
+
+
+Track dependent work using the `TodoWrite` tool. Resolve ambiguous scope or permissions using the `AskUserQuestion` tool. To design an orchestrator's repeatable workflow, consult the `authoring-tools:creating-skills` skill when explicitly requested.
+
 ## When to Use Multi-Agent
 
 **Single agent is sufficient when:**
@@ -112,13 +122,14 @@ First use code-reviewer to find issues, then use debugger to fix the critical on
 ### Example Pipeline: Review → Fix → Test
 
 **Stage 1: Reviewer**
-```yaml
+````markdown
+---
 name: pipeline-reviewer
 description: First stage of review pipeline
 tools: Read, Grep, Glob
-```
+---
 
-```markdown
+
 Review code and output a structured list of issues:
 
 ## Issues Found
@@ -128,35 +139,47 @@ Review code and output a structured list of issues:
 
 ### Warning
 - [file:line] Description of issue
-```
+
+Do NOT modify files or run tests/builds. Use supplied diffs or specified files and request missing scope. Do not spawn further agents.
+
+````
 
 **Stage 2: Fixer**
-```yaml
+````markdown
+---
 name: pipeline-fixer
 description: Second stage of review pipeline
 tools: Read, Write, Edit, Bash
-```
+---
 
-```markdown
+
 Fix issues from the review stage. For each issue:
 1. Navigate to the file and line
 2. Apply the fix
 3. Document what was changed
-```
+4. Verify the targeted fix and report any blocked validation
+
+Only fix the approved findings; do not spawn further agents.
+
+````
 
 **Stage 3: Verifier**
-```yaml
+````markdown
+---
 name: pipeline-verifier
 description: Final stage of review pipeline
 tools: Read, Bash
-```
+---
 
-```markdown
+
 Verify fixes were applied correctly:
 1. Run tests
 2. Check each fixed location
 3. Confirm no regressions
-```
+
+Do not edit implementation files or spawn further agents. Tests can write artifacts: use only approved commands and report failures without hiding them.
+
+````
 
 ### Benefits
 
@@ -245,13 +268,14 @@ After all tasks complete:
 
 Workers should be specialized and focused:
 
-```yaml
+````markdown
+---
 name: auth-implementer
 description: Implements authentication components. Use when orchestrator needs auth work.
 tools: Read, Write, Edit, Bash, Glob, Grep
-```
+---
 
-```markdown
+
 You are an authentication specialist.
 
 When delegated a task:
@@ -260,7 +284,11 @@ When delegated a task:
 3. Implement following established conventions
 4. Document your changes
 5. Return a summary of what was implemented
-```
+6. Include verification results and any blockers
+
+Stay within the assigned files and constraints. Do not spawn further agents.
+
+````
 
 ### Benefits
 

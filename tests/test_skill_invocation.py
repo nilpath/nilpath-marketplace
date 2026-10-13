@@ -43,19 +43,15 @@ def test_invocation_policy_matches_supported_skills(harness):
                 }
             else:
                 assert not sidecar.exists()
-    expected = {"planning", "researching"}
-    if harness == "claude":
-        expected |= {"creating-skills", "creating-agents"}
-    else:
-        assert not (plugins_dir / "authoring-tools").exists()
-    assert selected == expected
+    assert selected == {"planning", "researching", "creating-skills", "creating-agents"}
 
 
-def test_shared_copilot_registry_routes_to_flagged_skills():
+@pytest.mark.parametrize("plugin_name", sorted(SELECTED_SKILLS))
+def test_shared_copilot_registry_routes_to_flagged_skills(plugin_name):
     registry = json.loads((ROOT / ".github/plugin/marketplace.json").read_text())
-    plugin = next(p for p in registry["plugins"] if p["name"] == "engineering-workflow")
-    assert plugin["source"] == "dist/copilot/plugins/engineering-workflow"
-    for name in {"researching", "planning"}:
+    plugin = next(p for p in registry["plugins"] if p["name"] == plugin_name)
+    assert plugin["source"] == f"dist/copilot/plugins/{plugin_name}"
+    for name in SELECTED_SKILLS[plugin_name]:
         skill_md = ROOT / plugin["source"] / "skills" / name / "SKILL.md"
         assert frontmatter.load(str(skill_md)).metadata["disable-model-invocation"] is True
 

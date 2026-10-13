@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-13
+
+Only **authoring-tools** is bumped to 0.9.0; **engineering-workflow** remains at 0.8.1, **git-tools** and **documentation** remain at 0.8.0, and the marketplace remains at 0.1.0.
+
+### Added
+
+- **Copilot and Codex authoring tools** — creating-skills and creating-agents now ship on all three harnesses, with shared workflows and harness-native references, examples, and templates. All four plugins and all 15 skills are available in every distribution.
+- **Native agent authoring** — Copilot guidance uses Markdown/YAML custom agents; Codex guidance uses TOML custom agents, including explicit sandbox limitations rather than assuming Claude tool permissions are interchangeable.
+
+### Changed
+
+- **Manual-only authoring across harnesses** — both skills retain explicit-invocation controls on Claude and Copilot and use Codex skill-local invocation-policy sidecars.
+- **Native versus marketplace authoring** — native files for the active harness are the default; canonical metadata and Jinja source authoring remain a separate marketplace workflow. Guidance covers placement, existing-file handling, and client-specific availability.
+
 ## [0.8.1] - 2026-10-12
 
 Only **authoring-tools** and **engineering-workflow** are bumped to 0.8.1; **git-tools** and **documentation** remain at 0.8.0, and the marketplace remains at 0.1.0.
