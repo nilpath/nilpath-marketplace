@@ -1,18 +1,34 @@
 ---
 name: creating-agents
-description: Expert guidance for creating Claude Code subagents and multi-agent workflows. Invoke explicitly to design new subagents, configure agent tools/permissions, implement orchestration patterns, or troubleshoot agent delegation.
-targets: [claude]
-argument-hint: "[agent description or requirements]"
+description: Expert guidance for creating custom agents and multi-agent workflows for the active client. Invoke explicitly to design new agents, configure permissions, implement orchestration patterns, or troubleshoot delegation.
+targets: [claude, copilot, codex]
 {% if harness == "claude" %}
+argument-hint: "[agent description or requirements]"
+{% endif %}
+{% if harness in ["claude", "copilot"] %}
 disable-model-invocation: true
 {% endif %}
 ---
 
-# Creating Claude Code Agents
+# Creating Custom Agents
 
-Expert guidance for designing and implementing Claude Code subagents based on Anthropic's official specification and industry best practices.
+Expert guidance for designing custom agents for the active client, with focused responsibilities, explicit permissions, and verifiable results.
 
+{% if harness == "codex" %}
+Invoke explicitly with `$creating-agents`. Do not load this skill automatically.
+{% else %}
 Invoke explicitly with `/authoring-tools:creating-agents`. Do not load this skill automatically.
+{% endif %}
+
+## Authoring Target and Placement
+
+**Default: native output for the active client.** Read [authoring-targets.md](references/authoring-targets.md) before creating or editing an agent.
+
+- Ask whether placement is **workspace** or **personal** using {{ ask_user }} when unspecified.
+- Resolve the actual destination before writing; read an existing file and confirm before overwriting it.
+- For audits, identify the file's actual format and intended client. Report mismatched harnesses and unsupported configuration; never silently convert or discard restrictions.
+- The examples in this skill are native configurations, not marketplace source metadata. Use the separate opt-in source-authoring path only when requested.
+- This authoring skill is manual-only. Choose discovery and invocation behavior of the agents it creates independently.
 
 ## Core principles
 
@@ -33,7 +49,7 @@ Launch multiple subagents simultaneously for independent tasks:
 Research the authentication, database, and API modules in parallel using separate subagents
 ```
 
-Each explores its area independently, then Claude synthesizes findings.
+Each explores its area independently, then the parent agent synthesizes findings.
 
 ### 3. Specialization
 
@@ -41,20 +57,35 @@ A single agent handling everything becomes a "jack of all trades, master of none
 
 ## How Delegation Works
 
-Claude automatically delegates based on each subagent's `description` field. Write clear descriptions that include:
+{% if harness == "claude" %}
+Claude can automatically delegate based on each subagent's `description` field.
+{% elif harness == "copilot" %}
+Select a custom agent from the VS Code Chat agent picker, or delegate to it through the agent tool when available. Its `description` helps the parent choose a specialist; description text alone does not guarantee delegation.
+{% else %}
+Explicitly ask Codex to spawn the named agent as a subagent. Its `description` helps selection; do not use skill syntax (`$name`) to invoke an agent.
+{% endif %}
+Write clear descriptions that include:
 
 - **What it does**: "Reviews code for quality and security"
 - **When to use it**: "Use proactively after code changes"
 - **Trigger keywords**: Include terms users might say
 
 **Good description:**
-```yaml
+```{{ "toml" if harness == "codex" else "yaml" }}
+{% if harness == "codex" %}
+description = "Reviews code for quality, security, and best practices. Use after code changes or when user mentions review, audit, or code quality."
+{% else %}
 description: Reviews code for quality, security, and best practices. Use proactively after code changes or when user mentions review, audit, or code quality.
+{% endif %}
 ```
 
 **Bad description:**
-```yaml
+```{{ "toml" if harness == "codex" else "yaml" }}
+{% if harness == "codex" %}
+description = "Helps with code"
+{% else %}
 description: Helps with code
+{% endif %}
 ```
 
 ## Agent Design Principles
@@ -68,20 +99,44 @@ Each subagent should excel at ONE specific task. Don't create a "helper" agent t
 
 ### 2. Minimal Tool Access
 
-Grant only the tools necessary for the task:
+Grant only the capabilities necessary for the task:
 
+{% if harness == "claude" %}
 | Role | Recommended Tools |
 | ---- | ----------------- |
 | Reviewer/Auditor | Read, Grep, Glob |
 | Researcher | Read, Grep, Glob, WebFetch, WebSearch |
 | Implementer | Read, Write, Edit, Bash, Glob, Grep |
 | Domain Expert | Read, Grep, Glob + domain-specific |
+{% elif harness == "copilot" %}
+| Role | Native `tools` |
+| ---- | -------------- |
+| Reviewer/Auditor | `[read, search]` |
+| Researcher | `[read, search, web]` |
+| Implementer | `[read, search, edit, execute]` |
+| Domain Expert | `[read, search]`, add only required capabilities |
+
+Verify aliases against the active host's tool picker. Do not add `execute` merely to obtain diffs: it permits commands that can write.
+{% else %}
+| Role | Native configuration and intent |
+| ---- | ------------------------------- |
+| Reviewer/Auditor | `sandbox_mode = "read-only"`; no modifications or execution of tests |
+| Researcher | `sandbox_mode = "read-only"`; use web only if available under host policy |
+| Implementer | Inherit the session's sandbox/approval policy; verify authorized write access |
+| Domain Expert | `sandbox_mode = "read-only"`; return advice rather than applying changes |
+
+Codex custom-agent TOML has no Claude/Copilot-style tool allowlist. Read-only sandboxing restricts local writes; it is not a per-tool restriction or a guarantee against remote side effects.
+{% endif %}
 
 See [references/tool-permissions.md](references/tool-permissions.md) for detailed guidance.
 
 ### 3. Clear System Prompts
 
-The markdown body becomes the subagent's system prompt. Be specific about:
+{% if harness == "codex" %}
+The complete role body belongs in `developer_instructions` in TOML. Be specific about:
+{% else %}
+The Markdown body supplies the agent's instructions. Be specific about:
+{% endif %}
 
 - When to use which approach
 - Output format expectations
@@ -89,13 +144,20 @@ The markdown body becomes the subagent's system prompt. Be specific about:
 
 ### 4. Model Selection
 
+{% if harness == "claude" %}
 - **haiku**: Fast, cheap - ideal for read-only exploration
 - **sonnet**: Balanced - good for most tasks
 - **opus**: Most capable - use for complex reasoning
 - **inherit**: Uses main conversation model (default)
+{% elif harness == "copilot" %}
+Omit `model` to use the current selection. If pinning is needed, select an exact model name supported by the active VS Code model picker. Do not copy Claude aliases or marketplace tiers into native files.
+{% else %}
+Omit `model` and `model_reasoning_effort` to inherit the session's settings. Pin only a model ID and reasoning value verified for the installed Codex client and account. Do not invent model identifiers or copy marketplace tiers.
+{% endif %}
 
-## YAML Frontmatter Reference
+## Native Configuration Reference
 
+{% if harness == "claude" %}
 | Field | Required | Description |
 | ----- | -------- | ----------- |
 | `name` | Yes | Unique identifier (lowercase, hyphens) |
@@ -106,6 +168,33 @@ The markdown body becomes the subagent's system prompt. Be specific about:
 | `permissionMode` | No | Permission handling mode |
 | `skills` | No | Skills to preload into context |
 | `hooks` | No | Lifecycle hooks for this agent |
+{% elif harness == "copilot" %}
+Use `.github/agents/<name>.agent.md` with YAML frontmatter and a Markdown body:
+
+| Field | Purpose |
+| ----- | ------- |
+| `name` | Clear agent name (included in all examples) |
+| `description` | What the agent does and when to select it |
+| `tools` | Explicit list of active-host tool names/aliases |
+| `model` | Optional verified model selection; omitted by default |
+| `user-invocable` | Whether it appears for direct user selection |
+| `disable-model-invocation` | Whether automatic model invocation is disabled |
+
+Do not copy Claude `permissionMode`, `disallowedTools`, or `skills` into this schema.
+{% else %}
+Use `.codex/agents/<name>.toml`:
+
+| Field | Required | Purpose |
+| ----- | -------- | ------- |
+| `name` | Yes | Unique agent name |
+| `description` | Yes | What it does and when to delegate |
+| `developer_instructions` | Yes | Complete role, process, output contract, and constraints |
+| `sandbox_mode` | No | Set `"read-only"` for research/review roles |
+| `model` | No | Verified model ID; otherwise inherit |
+| `model_reasoning_effort` | No | Verified setting supported by the selected model |
+
+Do not emit YAML frontmatter, `tools`, `permissionMode`, or `disallowedTools` in native TOML.
+{% endif %}
 
 See [references/official-spec.md](references/official-spec.md) for complete specification.
 
@@ -149,7 +238,7 @@ Avoid these mistakes when creating agents:
 
 | Anti-Pattern | Problem | Solution |
 | ------------ | ------- | -------- |
-| Vague description | Claude doesn't know when to delegate | Include specific trigger keywords |
+| Vague description | Parent doesn't know when to delegate | Include specific trigger keywords |
 | Over-broad tools | Security risk, unfocused behavior | Grant minimal necessary permissions |
 | No verification | Can't tell if agent succeeded | Include verification steps in prompt |
 | Premature complexity | Multi-agent when single suffices | Start simple, add agents as needed |
@@ -205,6 +294,8 @@ Use the [agent-name] to [task description]
 [Task that should trigger the agent]
 ```
 
+Automatic delegation tests apply only when the active host supports and enables it. Inspect the actual selected agent rather than treating a matching answer as proof.
+
 ### 2. Verify Tool Access
 
 Check the agent has exactly the tools it needs, no more:
@@ -215,10 +306,14 @@ Use [agent-name] to describe what tools you have access to
 
 ### 3. Test with Different Models
 
+{% if harness == "claude" %}
 If you set `model: haiku` for speed, ensure instructions are clear enough:
 
 - Haiku needs explicit, step-by-step instructions
 - Sonnet/Opus can infer more from context
+{% else %}
+Begin with the inherited model. Test any explicitly selected, available model against representative tasks before relying on it. Smaller models often need more explicit process and output instructions.
+{% endif %}
 
 ### 4. Check Edge Cases
 
@@ -228,6 +323,7 @@ If you set `model: haiku` for speed, ensure instructions are clear enough:
 
 ## Storage Locations
 
+{% if harness == "claude" %}
 | Location | Scope | Use Case |
 | -------- | ----- | -------- |
 | `.claude/agents/` | Current project | Team-shared, version-controlled |
@@ -236,6 +332,19 @@ If you set `model: haiku` for speed, ensure instructions are clear enough:
 | Plugin `agents/` | Where plugin enabled | Distributed via plugin |
 
 Higher-priority locations override lower when names conflict.
+{% elif harness == "copilot" %}
+| Location | Scope |
+| -------- | ----- |
+| `.github/agents/*.agent.md` | Workspace/team |
+| Personal agent location resolved through VS Code's agent customization UI | Personal, active profile/host |
+
+Do not hard-code a local user-profile directory: remote hosts and profiles can use different paths.
+{% else %}
+| Location | Scope |
+| -------- | ----- |
+| `.codex/agents/*.toml` | Project/team |
+| `~/.codex/agents/*.toml` | Personal, across projects |
+{% endif %}
 
 ## Real-World Examples
 
@@ -256,11 +365,11 @@ A well-designed agent:
 - [ ] Uses **minimal tool access** appropriate for its role
 - [ ] Includes **verification steps** in its system prompt
 - [ ] **Handles failures gracefully** with useful error messages
-- [ ] Has been **tested** with explicit invocation and automatic delegation
+- [ ] Has been **tested** with explicit invocation and, when supported and enabled, automatic delegation
 
 ## References
 
-- [Official YAML specification](references/official-spec.md)
+- [Native configuration specification](references/official-spec.md)
 - [Orchestration patterns](references/orchestration-patterns.md)
 - [Tool permissions by role](references/tool-permissions.md)
 - [Anti-patterns to avoid](references/anti-patterns.md)
@@ -273,3 +382,5 @@ Research for this skill was conducted from multiple authoritative sources:
 - [Anthropic Engineering: Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system)
 - [Claude Agent SDK Blog](https://claude.com/blog/building-agents-with-the-claude-agent-sdk)
 - [VoltAgent Subagent Collection](https://github.com/VoltAgent/awesome-claude-code-subagents)
+- [VS Code custom agents](https://code.visualstudio.com/docs/agent-customization/custom-agents)
+- [Codex subagents](https://developers.openai.com/codex/subagents/)

@@ -1,0 +1,380 @@
+# Workflow: Create a Read-Only Agent
+
+Step-by-step guide for creating reviewers, analyzers, and auditors that examine code without modifying it.
+
+## When to Use This
+
+Create a read-only agent when you need:
+- Code review without modification
+- Security audits
+- Performance analysis
+- Documentation review
+- Codebase exploration
+
+## Prerequisites
+
+- Know what the agent should analyze
+- Understand the output format you want
+- Decide where to store the agent (project or user level)
+
+## Step 1: Choose Storage Location
+
+Ask workspace versus personal scope using {{ ask_user }} if unspecified, then confirm the resolved destination and any overwrite. See [authoring-targets.md](../references/authoring-targets.md).
+
+{% if harness == "claude" %}
+**Project-level** (`.claude/agents/`):
+- Shared with team via version control
+- Specific to this codebase
+- Best for: Project-specific reviewers
+
+**User-level** (`~/.claude/agents/`):
+- Personal, available in all projects
+- Not shared with team
+- Best for: Personal productivity agents
+
+**Plugin-level** (`plugins/<plugin-name>/agents/`):
+- Distributed with a Claude plugin
+- Available wherever plugin is enabled
+- Best for: Agents bundled with plugin functionality
+{% elif harness == "copilot" %}
+- **Workspace**: `.github/agents/<name>.agent.md`, shared through version control.
+- **Personal**: resolve through the VS Code Chat customization UI on the active profile/host; do not assume a fixed profile path.
+{% else %}
+- **Workspace**: `.codex/agents/<name>.toml`, shared through version control.
+- **Personal**: `~/.codex/agents/<name>.toml`.
+{% endif %}
+
+## Step 2: Create the File
+
+{% if harness == "codex" %}
+Create TOML with `name`, `description`, and the complete `developer_instructions` body. Set `sandbox_mode = "read-only"`. The sandbox is not a tool allowlist and does not enforce restrictions on remote systems. Use safe multiline delimiters as described in the placement guide.
+{% else %}
+Create the agent file with YAML frontmatter and Markdown instructions. Explicitly restrict tools to read/search capabilities.
+{% endif %}
+
+### Minimal Template
+
+````{{ "toml" if harness == "codex" else "markdown" }}
+{% if harness == "codex" %}
+name = "your-agent-name"
+description = "What it analyzes. Use when [trigger conditions]."
+sandbox_mode = "read-only"
+developer_instructions = '''
+{% else -%}
+---
+name: your-agent-name
+description: What it analyzes. Use when [trigger conditions].
+tools: {{ "Read, Grep, Glob" if harness == "claude" else "[read, search]" }}
+---
+{% endif %}
+
+You are a [role description].
+
+When invoked:
+1. [First step]
+2. [Second step]
+3. [Output results]
+
+Do NOT modify files, run tests or builds, or change external systems.
+{% if harness == "codex" %}
+'''
+{% endif %}
+````
+
+### Full Example: Code Reviewer
+
+{% if harness == "claude" %}
+`.claude/agents/code-reviewer.md`:
+{% elif harness == "copilot" %}
+`.github/agents/code-reviewer.agent.md`:
+{% else %}
+`.codex/agents/code-reviewer.toml`:
+{% endif %}
+
+````{{ "toml" if harness == "codex" else "markdown" }}
+{% if harness == "codex" %}
+name = "code-reviewer"
+description = "Reviews code for quality, security, and best practices. Use after code changes or when user mentions review, audit, or code quality."
+sandbox_mode = "read-only"
+developer_instructions = '''
+{% else -%}
+---
+name: code-reviewer
+description: Reviews code for quality, security, and best practices. Use proactively after code changes or when user mentions review, audit, or code quality.
+tools: {{ "Read, Grep, Glob" if harness == "claude" else "[read, search]" }}
+{% if harness == "claude" %}
+model: sonnet
+{% endif %}
+---
+{% endif %}
+
+You are a senior code reviewer ensuring high standards of quality and security.
+
+When invoked:
+1. Identify what to review:
+   - If specific files mentioned, focus on those
+   - Otherwise, use a diff supplied by the parent or user
+   - If neither files nor a diff are supplied, request the review scope; do not assume shell access
+2. Read the relevant code
+3. Analyze against the checklist below
+4. Output findings in the specified format
+
+## Review Checklist
+
+### Code Quality
+- Clear, readable code
+- Meaningful variable and function names
+- Appropriate comments (not obvious, explains why not what)
+- No unnecessary complexity
+
+### Error Handling
+- Errors are caught and handled appropriately
+- Error messages are helpful
+- No silent failures
+
+### Security
+- No exposed secrets or API keys
+- Input validation on user data
+- No SQL injection vulnerabilities
+- No command injection vulnerabilities
+
+### Performance
+- No obvious N+1 queries
+- No unnecessary loops or iterations
+- Appropriate data structures
+
+## Output Format
+
+## Review Summary
+
+**Files Reviewed:** [list of files]
+**Overall Assessment:** [Good/Needs Work/Critical Issues]
+
+## Critical Issues (must fix)
+
+- **[file:line]** - Description of issue
+  - Why it matters: [explanation]
+  - Suggested fix: [fix]
+
+## Warnings (should fix)
+
+- **[file:line]** - Description of issue
+  - Suggested fix: [fix]
+
+## Suggestions (consider)
+
+- **[file:line]** - Description of suggestion
+
+## What's Good
+
+- [Positive observations]
+
+## Constraints
+
+- Do NOT modify any files
+- Do NOT run tests or builds
+- Focus only on the code being reviewed
+- If asked to fix, decline and suggest using a different agent
+{% if harness == "codex" %}
+'''
+{% endif %}
+````
+
+## Step 3: Add Git Access (Optional)
+
+If your reviewer needs `git diff` or `git log`:
+
+{% if harness == "claude" %}
+```yaml
+tools: Read, Grep, Glob, Bash
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: |
+            #!/bin/bash
+            INPUT=$(cat)
+            COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+            case "$COMMAND" in
+              "git diff"|"git log -5 --oneline"|"git status --short") exit 0 ;;
+              *) echo "Only approved read-oriented git commands allowed" >&2; exit 2 ;;
+            esac
+```
+
+This optional hook requires `jq`. Do not replace exact command matching with a `git*` prefix: git has write operations and shell strings can chain commands. Review repository configuration and host permissions too.
+{% elif harness == "copilot" %}
+Prefer a parent-supplied diff. Adding `execute` enables arbitrary commands, including writes. Do not claim that `[read, search, execute]` is read-only. If command access is indispensable, verify separate host enforcement before broadening tools.
+{% else %}
+Keep `sandbox_mode = "read-only"` and use only permitted read-oriented commands. Host policy may still deny them. Never weaken the sandbox to get a diff; request a supplied diff instead. Sandbox mode does not provide command-level or remote-side-effect restrictions.
+{% endif %}
+
+## Step 4: Load the Agent
+
+{% if harness == "claude" %}
+Option A: Use `/agents` command
+```
+/agents
+```
+Then select your agent to verify it loaded.
+
+Option B: Restart Claude Code session
+{% elif harness == "copilot" %}
+Open the VS Code Chat agent picker and verify the new agent is listed. Check the chosen personal profile/host or workspace path if it is missing; refresh the chat session if needed.
+{% else %}
+Start a fresh Codex session in the selected project if necessary and ask it to spawn the named custom agent. Verify it loaded the intended TOML file rather than using a generic agent.
+{% endif %}
+
+## Step 5: Test the Agent
+
+### Test Explicit Invocation
+
+```
+Use code-reviewer to review the authentication module
+```
+
+### Test Automatic Delegation
+
+If your description includes "use proactively":
+
+```
+Review my recent changes
+```
+
+Check automatic delegation only when the active host supports and enables it. A description is a selection hint, not proof that delegation occurred.
+
+### Verify Tool Access
+
+```
+Use code-reviewer and tell me what tools you have access to
+```
+
+{% if harness == "claude" %}
+Should list only: Read, Grep, Glob (and Bash if added with hooks).
+{% elif harness == "copilot" %}
+Should expose only `read` and `search`; verify the resolved tool list in the host, not just the agent's self-report.
+{% else %}
+Verify the effective read-only sandbox independently of the agent's self-report. Codex may still expose shell or remote tools: a sandbox is not an allowlist.
+{% endif %}
+
+### Test Edge Cases
+
+```
+Use code-reviewer to fix the bug in auth.ts
+```
+
+Agent should decline since it's read-only.
+
+## Common Variations
+
+### Security Auditor
+
+Focus the checklist on security concerns:
+
+````{{ "toml" if harness == "codex" else "markdown" }}
+{% if harness == "codex" %}
+name = "security-auditor"
+description = "Audits code for security vulnerabilities. Use when user mentions security, audit, vulnerability, or penetration testing."
+sandbox_mode = "read-only"
+developer_instructions = '''
+{% else -%}
+---
+name: security-auditor
+description: Audits code for security vulnerabilities. Use when user mentions security, audit, vulnerability, or penetration testing.
+tools: {{ "Read, Grep, Glob" if harness == "claude" else "[read, search]" }}
+---
+{% endif %}
+
+You are a security specialist performing security audits.
+
+Focus areas:
+- Authentication and authorization flaws
+- Injection vulnerabilities (SQL, command, XSS)
+- Secrets exposure
+- Insecure dependencies
+- Missing input validation
+
+Do NOT modify files, run tests, attempt exploitation, or access external systems. Report findings with evidence and uncertainty.
+{% if harness == "codex" %}
+'''
+{% endif %}
+````
+
+### Performance Analyzer
+
+Focus on performance patterns:
+
+````{{ "toml" if harness == "codex" else "markdown" }}
+{% if harness == "codex" %}
+name = "performance-analyzer"
+description = "Analyzes code for performance issues. Use when user mentions performance, speed, optimization, or slow."
+sandbox_mode = "read-only"
+developer_instructions = '''
+{% else -%}
+---
+name: performance-analyzer
+description: Analyzes code for performance issues. Use when user mentions performance, speed, optimization, or slow.
+tools: {{ "Read, Grep, Glob" if harness == "claude" else "[read, search]" }}
+---
+{% endif %}
+
+You are a performance engineer identifying bottlenecks.
+
+Focus areas:
+- N+1 query patterns
+- Unnecessary iterations
+- Memory leaks
+- Missing caching opportunities
+- Inefficient algorithms
+
+Do NOT modify files or run profilers, tests, or builds. Analyze supplied measurements and code; label unmeasured hypotheses.
+{% if harness == "codex" %}
+'''
+{% endif %}
+````
+
+### Documentation Reviewer
+
+Review documentation quality:
+
+````{{ "toml" if harness == "codex" else "markdown" }}
+{% if harness == "codex" %}
+name = "doc-reviewer"
+description = "Reviews documentation for completeness and accuracy. Use when user mentions documentation review or docs audit."
+sandbox_mode = "read-only"
+developer_instructions = '''
+{% else -%}
+---
+name: doc-reviewer
+description: Reviews documentation for completeness and accuracy. Use when user mentions documentation review or docs audit.
+tools: {{ "Read, Grep, Glob" if harness == "claude" else "[read, search]" }}
+---
+{% endif %}
+
+You are a technical writer reviewing documentation.
+
+Focus areas:
+- Accuracy (does code match docs?)
+- Completeness (all features documented?)
+- Clarity (understandable by target audience?)
+- Examples (working and relevant?)
+
+Do NOT modify files or execute examples. Cross-check against code and report any verification that requires a separate authorized task.
+{% if harness == "codex" %}
+'''
+{% endif %}
+````
+
+## Checklist
+
+Before considering the agent complete:
+
+- [ ] Name is specific and task-focused
+- [ ] Description includes trigger keywords
+- [ ] Native read-only tool configuration or sandbox is present and limitations are documented
+- [ ] System prompt includes clear process
+- [ ] Output format is specified
+- [ ] Constraints prevent modification
+- [ ] Tested with explicit invocation
+- [ ] Tested automatic delegation when supported and enabled
+- [ ] Verified tool access is correct

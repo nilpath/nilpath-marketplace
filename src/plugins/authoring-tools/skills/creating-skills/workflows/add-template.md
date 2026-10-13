@@ -3,6 +3,7 @@
 <required_reading>
 **Read these reference files NOW:**
 1. references/using-templates.md
+2. references/authoring-targets.md
 </required_reading>
 
 <process>
@@ -11,6 +12,8 @@
 Ask (if not already provided):
 - Which skill needs a template?
 - What output does this template structure?
+
+Use the supplied path or ask for workspace versus personal scope, then select one active-client location using `references/authoring-targets.md`. Record the absolute path as `SKILL_DIR` and edit in place without duplicating the skill.
 
 ## Step 2: Analyze Template Need
 
@@ -24,7 +27,7 @@ If not a good fit, suggest alternatives (workflow guidance, reference examples).
 ## Step 3: Create Templates Directory
 
 ```bash
-mkdir -p ~/.claude/skills/{skill-name}/templates
+mkdir -p "$SKILL_DIR/templates"
 ```
 
 ## Step 4: Design Template Structure
@@ -36,7 +39,9 @@ Gather requirements:
 
 ## Step 5: Write Template File
 
-Create `templates/{template-name}.md` with:
+Create `templates/{template-name}.md` under `SKILL_DIR`, confirming before overwriting existing resources or workflows. Preserve the skill's invocation policy. In opt-in marketplace-source mode, protect literal template placeholders with raw guards if this file itself needs Jinja rendering; otherwise keep it a verbatim `.md`.
+
+Include:
 - Clear section markers
 - `{{PLACEHOLDER}}` syntax for variable content
 - Brief inline guidance where helpful
@@ -45,14 +50,13 @@ Create `templates/{template-name}.md` with:
 ## Step 6: Update Workflow to Use Template
 
 Find the workflow that produces this output. Add:
-```xml
-<process>
+```markdown
+## Process
 ...
-N. Read `templates/{template-name}.md`
+N. Resolve and read `templates/{template-name}.md` from this skill directory.
 N+1. Copy template structure
 N+2. Fill each placeholder based on gathered context
 ...
-</process>
 ```
 
 ## Step 7: Test
@@ -62,6 +66,7 @@ Invoke the skill workflow and verify:
 - All placeholders get filled appropriately
 - Output structure matches template
 - No placeholders left unfilled
+- All resource links resolve from the selected skill directory
 </process>
 
 <success_criteria>

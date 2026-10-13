@@ -1,7 +1,7 @@
 # Using Templates in Skills
 
 <purpose>
-Templates are reusable output structures that Claude copies and fills in. They ensure consistent, high-quality outputs without regenerating structure each time.
+Templates are reusable output structures the agent copies and fills in. They ensure consistent outputs without regenerating structure each time.
 </purpose>
 
 <when_to_use>
@@ -83,18 +83,18 @@ A template file contains:
 <workflow_integration>
 Workflows reference templates like this:
 
-```xml
-<process>
+```markdown
 ## Step 3: Generate Plan
 
 1. Read `templates/plan-template.md`
 2. Copy the template structure
 3. Fill each placeholder based on gathered requirements
 4. Review for completeness
-</process>
 ```
 
-The workflow tells Claude WHEN to use the template. The template provides WHAT structure to produce.
+The workflow tells the agent WHEN to use the template. The template provides WHAT structure to produce.
+
+Resolve templates relative to the selected skill directory, not the project working directory. These `{{placeholder}}` markers are instructions for the agent to fill, not automatic client interpolation. Keep native template files as ordinary Markdown. In opt-in marketplace-source `.j2` files, protect literal placeholders with Jinja raw guards; files without rendering needs should remain verbatim `.md`.
 </workflow_integration>
 
 <best_practices>

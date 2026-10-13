@@ -3,6 +3,8 @@
 <required_reading>
 **Read these reference files NOW:**
 1. references/using-scripts.md
+2. references/authoring-targets.md
+3. references/invocation-and-arguments.md
 </required_reading>
 
 <process>
@@ -11,6 +13,8 @@
 Ask (if not already provided):
 - Which skill needs a script?
 - What operation should the script perform?
+
+Use the supplied path or resolve workspace versus personal scope and one active-client discovery location via `references/authoring-targets.md`. Set the selected absolute directory as `SKILL_DIR`. Preserve the existing skill's invocation mode and do not create a duplicate.
 
 ## Step 2: Analyze Script Need
 
@@ -24,7 +28,7 @@ If not a good fit, suggest alternatives (inline code in workflow, reference exam
 ## Step 3: Create Scripts Directory
 
 ```bash
-mkdir -p ~/.claude/skills/{skill-name}/scripts
+mkdir -p "$SKILL_DIR/scripts"
 ```
 
 ## Step 4: Design Script
@@ -42,7 +46,9 @@ Choose language:
 
 ## Step 5: Write Script File
 
-Create `scripts/{script-name}.{ext}` with:
+Create `scripts/{script-name}.{ext}` within `SKILL_DIR`, confirming before overwriting any existing script or workflow. For explicitly selected marketplace sources, follow `authoring-targets.md`; otherwise create ordinary native files.
+
+Include:
 - Purpose comment at top
 - Usage instructions
 - Input validation
@@ -58,20 +64,22 @@ set -euo pipefail
 ## Step 6: Make Executable (if bash)
 
 ```bash
-chmod +x ~/.claude/skills/{skill-name}/scripts/{script-name}.sh
+chmod +x "$SKILL_DIR/scripts/{script-name}.sh"
 ```
 
 ## Step 7: Update Workflow to Use Script
 
 Find the workflow that needs this operation. Add:
-```xml
-<process>
+```markdown
+## Process
 ...
-N. Run `scripts/{script-name}.sh [arguments]`
+N. Resolve `scripts/{script-name}.sh` from this skill's directory.
+N. Run the resolved script through the shell tool with validated inputs and normal approvals.
 N+1. Verify operation succeeded
 ...
-</process>
 ```
+
+Do not assume the working directory is the skill directory. Preserve project-relative input/output paths. A skill's metadata does not preapprove arbitrary commands; follow the active client's invocation and execution reference.
 
 ## Step 8: Test
 
@@ -80,6 +88,7 @@ Invoke the skill workflow and verify:
 - Inputs are passed correctly
 - Errors are handled gracefully
 - Output matches expectations
+- Paths work when invoked from a different project working directory
 </process>
 
 <success_criteria>

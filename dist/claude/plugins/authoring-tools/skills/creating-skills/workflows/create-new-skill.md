@@ -6,6 +6,8 @@ Read these reference files before starting:
 1. references/recommended-structure.md
 2. references/skill-structure.md
 3. references/core-principles.md
+4. references/authoring-targets.md
+5. references/invocation-and-arguments.md
 
 ## Process
 
@@ -18,7 +20,11 @@ Read these reference files before starting:
 **If user just invoked skill without context:**
 → Ask what they want to build
 
-#### Using AskUserQuestion
+#### Resolve Scope and Requirements
+
+Default to native output for the active client. Ask **workspace or personal?** when unspecified, using the `AskUserQuestion` tool. Follow an existing project discovery convention, confirm one destination, and record its absolute path as `SKILL_DIR`. Never create duplicate copies in alternate discovery roots. Confirm before overwriting any existing skill or resource.
+
+Use marketplace-source mode only if explicitly requested; follow its separate instructions in `references/authoring-targets.md`. Native templates must not contain canonical source fields or Jinja.
 
 Ask 2-4 domain-specific questions based on actual gaps. Each question should:
 - Have specific options with descriptions
@@ -29,7 +35,7 @@ Example questions:
 - "What specific operations should this skill handle?" (with options based on domain)
 - "Should this also handle [related thing] or stay focused on [core thing]?"
 - "What should the user see when successful?"
-- "Should Claude invoke this automatically, or should you trigger it manually?" (→ determines `disable-model-invocation`)
+- "Should the agent invoke this automatically, or should you trigger it manually?" (→ determines the output skill's invocation policy)
 
 #### Decision Gate
 
@@ -43,7 +49,7 @@ Options:
 
 ### Step 2: Research Trigger (If External API)
 
-**When external service detected**, ask using AskUserQuestion:
+**When external service detected**, ask using the `AskUserQuestion` tool:
 "This involves [service name] API. Would you like me to research current endpoints and patterns before building?"
 
 Options:
@@ -51,20 +57,24 @@ Options:
 2. **No, proceed with general patterns** - Use common patterns without specific API research
 
 If research requested:
-- Use Context7 MCP to fetch current library documentation
-- Or use WebSearch for recent API documentation
-- Focus on 2024-2026 sources
+- Use an available documentation integration to fetch current library documentation
+- Or use web search/fetch tools for official API documentation
+- Check the current version and publication date rather than relying on a fixed year range
 - Store findings for use in content generation
 
 ### Step 3: Choose Invocation Mode
 
-Ask whether Claude should be able to invoke this skill automatically:
+Ask whether the agent should be able to invoke this output skill automatically. Do not inherit the authoring tool's explicit-only policy by default.
+
 
 **Claude-invoked (default):** Claude loads the skill when relevant. Use for reference content, guidelines, domain knowledge.
 
 **Manual-only** (`disable-model-invocation: true`): Only you trigger it with `/skill-name`. Use for side-effect workflows (deploy, commit, send messages, destructive operations).
 
-**Background-only** (`user-invocable: false`): Claude applies it automatically but it's hidden from the `/` menu. Use for always-on conventions and style guides.
+**Background-only** (`user-invocable: false`): Claude applies it when relevant but it's hidden from the `/` menu. This is not an always-on instruction.
+
+
+Choose explicit-only for side-effect workflows the user wants to control. Normal tool approvals and confirmation for sensitive operations still apply in either mode.
 
 ### Step 4: Decide Structure
 
@@ -101,19 +111,22 @@ See references/recommended-structure.md for templates.
 
 ### Step 5: Create Directory
 
+Use the previously confirmed `SKILL_DIR`, explicitly assigned in the shell. Do not silently switch scope:
+
 ```bash
-mkdir -p ~/.claude/skills/{skill-name}
+mkdir -p "$SKILL_DIR"
 # If complex:
-mkdir -p ~/.claude/skills/{skill-name}/workflows
-mkdir -p ~/.claude/skills/{skill-name}/references
+mkdir -p "$SKILL_DIR/workflows" "$SKILL_DIR/references"
 # If needed:
-mkdir -p ~/.claude/skills/{skill-name}/templates
-mkdir -p ~/.claude/skills/{skill-name}/scripts
+mkdir -p "$SKILL_DIR/templates" "$SKILL_DIR/scripts"
 ```
 
 ### Step 6: Write SKILL.md
 
 Use the template from [templates/simple-skill.md](../templates/simple-skill.md) or [templates/router-skill.md](../templates/router-skill.md).
+
+Both templates are native, automatically discoverable defaults. Keep `name` unprefixed and matching the folder, at most 64 lowercase letters, numbers, and hyphens; keep `description` non-empty and at most 1,024 characters. Apply the chosen invocation policy from Step 3 separately.
+
 
 **Simple skill:** Write complete skill file with:
 - YAML frontmatter (`name`, `description`, and any invocation control fields)
@@ -169,13 +182,15 @@ Domain knowledge that:
 
 Check:
 - [ ] YAML frontmatter valid
-- [ ] `name` matches directory (lowercase-with-hyphens)
-- [ ] `description` says what it does AND when to use it (third person)
+- [ ] `name` matches directory (unprefixed, at most 64 lowercase letters/numbers/hyphens)
+- [ ] `description` says what it does AND when to use it (third person, at most 1,024 characters)
 - [ ] Body uses markdown headings — no XML tags
-- [ ] `disable-model-invocation: true` set if skill has side effects
+- [ ] Invocation policy matches the user's choice using supported metadata or sidecar
 - [ ] All referenced files exist
 - [ ] `SKILL.md` under 500 lines
-- [ ] No separate `.claude/commands/` file created (the skill name IS the slash command)
+- [ ] Only one agreed discovery location; no unnecessary command/prompt file
+- [ ] Resources resolve from the selected skill directory; scripts use normal execution/approval rules
+- [ ] Native output contains no source-only `targets`, canonical tools, or unresolved Jinja
 
 ### Step 10: Test
 
@@ -186,13 +201,16 @@ Invoke the skill and observe:
 - Does the workflow load the right references?
 - Does output match expectations?
 
+Test a relevant ordinary prompt and an unrelated prompt as well as explicit invocation. Explicit-only skills must not auto-load; discoverable skills should load only when relevant. Record which tests were actually run and which still require the user's client.
+
 Iterate based on real usage, not assumptions.
 
 ## Success Criteria
 
 Skill is complete when:
 - [ ] Requirements gathered with appropriate questions
-- [ ] Invocation mode chosen (`disable-model-invocation`, `user-invocable`, or default)
+- [ ] Native versus marketplace-source mode and workspace versus personal scope resolved
+- [ ] Invocation mode chosen independently for the output skill
 - [ ] API research done if external service involved
 - [ ] Directory structure correct
 - [ ] `SKILL.md` has valid frontmatter

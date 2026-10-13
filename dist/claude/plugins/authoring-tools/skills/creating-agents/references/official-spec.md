@@ -1,5 +1,8 @@
 # Official Subagent Specification
 
+These are **native** agent schemas. For optional marketplace source authoring, see [authoring-targets.md](authoring-targets.md); canonical `targets`, tool names, and model tiers are not native fields.
+
+
 Complete reference for Claude Code subagent YAML frontmatter and configuration.
 
 ## File Format
@@ -72,7 +75,7 @@ Specifies which tools the agent can use. If omitted, inherits all tools from mai
 | WebFetch | Fetch web page content |
 | WebSearch | Search the web |
 | TodoWrite | Manage task lists |
-| Task | Spawn subagents (rarely used) |
+| Agent | Delegate from the parent conversation; ordinary subagents cannot spawn nested agents |
 | NotebookEdit | Edit Jupyter notebooks |
 
 **Format options:**
@@ -88,11 +91,7 @@ tools:
   - Glob
 ```
 
-**Tool aliases:**
-
-| Alias | Expands to |
-| ----- | ---------- |
-| `Read-only tools` | Read, Grep, Glob |
+“Read-only tools” is descriptive shorthand, not a literal tool identifier; explicitly list `Read`, `Grep`, and `Glob`.
 
 ### disallowedTools
 
@@ -109,9 +108,9 @@ Which model the agent uses.
 
 | Value | Description |
 | ----- | ----------- |
-| `haiku` | Fast, low-cost (Claude 3.5 Haiku) |
-| `sonnet` | Balanced capability/speed (Claude 3.5/4 Sonnet) |
-| `opus` | Most capable (Claude Opus 4.5) |
+| `haiku` | Fast, low-cost alias; resolved version depends on the host |
+| `sonnet` | Balanced capability/speed alias |
+| `opus` | Most capable alias |
 | `inherit` | Use main conversation model (default) |
 
 **Selection guidance:**
@@ -208,7 +207,7 @@ The markdown body becomes the agent's system prompt.
 You are a code reviewer ensuring high standards of quality and security.
 
 When invoked:
-1. Run `git diff` to see recent changes
+1. Inspect a supplied diff or specified files; request scope if absent
 2. Focus on modified files
 3. Begin review immediately
 
@@ -271,7 +270,7 @@ Prevent Claude from using specific agents in settings:
 ```json
 {
   "permissions": {
-    "deny": ["Task(Explore)", "Task(my-custom-agent)"]
+    "deny": ["Agent(Explore)", "Agent(my-custom-agent)"]
   }
 }
 ```
@@ -279,5 +278,5 @@ Prevent Claude from using specific agents in settings:
 Or via CLI:
 
 ```bash
-claude --disallowedTools "Task(Explore)"
+claude --disallowedTools "Agent(Explore)"
 ```

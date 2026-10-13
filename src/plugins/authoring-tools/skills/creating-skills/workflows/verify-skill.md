@@ -3,6 +3,8 @@
 <required_reading>
 **Read these reference files NOW:**
 1. references/skill-structure.md
+2. references/authoring-targets.md
+3. references/official-spec.md
 </required_reading>
 
 <purpose>
@@ -14,29 +16,29 @@ Skills contain claims about external things: APIs, CLI tools, frameworks, servic
 <process>
 ## Step 1: Select the Skill
 
-```bash
-ls ~/.claude/skills/
-```
+Use a supplied path, or ask whether to enumerate workspace or personal skills using the active client's locations in `references/authoring-targets.md`. Follow the existing convention and show full paths for duplicate names.
 
-Present numbered list, ask: "Which skill should I verify for accuracy?"
+Present a numbered list, ask: "Which skill should I verify for accuracy?" Record its absolute path as `SKILL_DIR`; verify that skill in place.
 
 ## Step 2: Read and Categorize
 
 Read the entire skill (SKILL.md + workflows/ + references/):
 ```bash
-cat ~/.claude/skills/{skill-name}/SKILL.md
-cat ~/.claude/skills/{skill-name}/workflows/*.md 2>/dev/null
-cat ~/.claude/skills/{skill-name}/references/*.md 2>/dev/null
+cat "$SKILL_DIR/SKILL.md"
+cat "$SKILL_DIR"/workflows/*.md 2>/dev/null
+cat "$SKILL_DIR"/references/*.md 2>/dev/null
 ```
+
+Read scripts, templates, and any invocation-policy file too. Verify metadata and discovery claims against the active client's specification: folder/name match, 64-character name limit, 1,024-character description limit, invocation controls, input handling, and resource execution. Do not assume another client's substitution or permission behavior. In opt-in marketplace-source mode, read `.j2` sources and validate rendered files for each target instead.
 
 Categorize by primary dependency type:
 
 | Type | Examples | Verification Method |
 |------|----------|---------------------|
-| **API/Service** | manage-stripe, manage-gohighlevel | Context7 + WebSearch |
+| **API/Service** | manage-stripe, manage-gohighlevel | Available documentation tools + web search |
 | **CLI Tools** | build-macos-apps (xcodebuild, swift) | Run commands |
-| **Framework** | build-iphone-apps (SwiftUI, UIKit) | Context7 for docs |
-| **Integration** | setup-stripe-payments | WebFetch + Context7 |
+| **Framework** | build-iphone-apps (SwiftUI, UIKit) | Official framework documentation |
+| **Integration** | setup-stripe-payments | Web fetch + available documentation tools |
 | **Pure Process** | create-agent-skills | No external deps |
 
 Report: "This skill is primarily [type]-based. I'll verify using [method]."
@@ -82,11 +84,7 @@ which {tool-name}
 ```
 
 ### For API/Service Skills
-Use Context7 to fetch current documentation:
-```
-mcp__context7__resolve-library-id: {service-name}
-mcp__context7__get-library-docs: {library-id}, topic: {relevant-topic}
-```
+Use an available documentation integration (such as Context7) or fetch official documentation. Discover the actual tool names exposed by the client instead of copying another client's MCP spelling.
 
 Compare skill's documented patterns against current docs:
 - Are endpoints still valid?
@@ -94,11 +92,7 @@ Compare skill's documented patterns against current docs:
 - Are there deprecated methods being used?
 
 ### For Framework Skills
-Use Context7:
-```
-mcp__context7__resolve-library-id: {framework-name}
-mcp__context7__get-library-docs: {library-id}, topic: {specific-api}
-```
+Fetch current official framework documentation using the available documentation integration or web tools.
 
 Check:
 - Are documented APIs still current?
@@ -106,17 +100,17 @@ Check:
 - Are there newer recommended approaches?
 
 ### For Integration Skills
-WebSearch for recent changes:
+Search the web for recent changes:
 ```
-"[service name] API changes 2026"
+"[service name] API changes [current year]"
 "[service name] breaking changes"
 "[service name] deprecated endpoints"
 ```
 
-Then Context7 for current SDK patterns.
+Then check official SDK documentation for current patterns.
 
 ### For Services with Status Pages
-WebFetch official docs/changelog if available.
+Fetch official docs/changelog if available.
 
 ## Step 5: Generate Freshness Report
 
@@ -155,6 +149,7 @@ If issues found:
 3. **Just the report** - No changes
 
 If updating:
+- Confirm before replacing selected existing files; do not relocate the skill or duplicate it
 - Make changes based on verified current information
 - Add verification date comment if appropriate
 - Report what was updated
@@ -187,16 +182,17 @@ which {tool} && {tool} --version
 2. get-library-docs: "{id}", topic: "{specific-feature}"
 ```
 
-**WebSearch patterns:**
-- Breaking changes: "{service} breaking changes 2026"
+**Web search patterns:**
+- Breaking changes: "{service} breaking changes {current year}"
 - Deprecations: "{service} deprecated API"
-- Current best practices: "{framework} best practices 2026"
+- Current best practices: "{framework} best practices {current year}"
 </verification_shortcuts>
 
 <success_criteria>
 Verification is complete when:
 - [ ] Skill categorized by dependency type
 - [ ] Verifiable claims extracted
+- [ ] Active-client metadata, invocation, placement, and execution claims checked
 - [ ] Each claim checked with appropriate method
 - [ ] Freshness report generated
 - [ ] Updates applied (if requested)

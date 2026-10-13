@@ -1,0 +1,223 @@
+# Workflow: Create a New Skill
+
+## Required Reading
+
+Read these reference files before starting:
+1. references/recommended-structure.md
+2. references/skill-structure.md
+3. references/core-principles.md
+4. references/authoring-targets.md
+5. references/invocation-and-arguments.md
+
+## Process
+
+### Step 1: Adaptive Requirements Gathering
+
+**If user provided context** (e.g., "build a skill for X"):
+→ Analyze what's stated, what can be inferred, what's unclear
+→ Skip to asking about genuine gaps only
+
+**If user just invoked skill without context:**
+→ Ask what they want to build
+
+#### Resolve Scope and Requirements
+
+Default to native output for the active client. Ask **workspace or personal?** when unspecified, using a direct chat question to the user (wait for their reply before continuing). Follow an existing project discovery convention, confirm one destination, and record its absolute path as `SKILL_DIR`. Never create duplicate copies in alternate discovery roots. Confirm before overwriting any existing skill or resource.
+
+Use marketplace-source mode only if explicitly requested; follow its separate instructions in `references/authoring-targets.md`. Native templates must not contain canonical source fields or Jinja.
+
+Ask 2-4 domain-specific questions based on actual gaps. Each question should:
+- Have specific options with descriptions
+- Focus on scope, complexity, outputs, boundaries
+- NOT ask things obvious from context
+
+Example questions:
+- "What specific operations should this skill handle?" (with options based on domain)
+- "Should this also handle [related thing] or stay focused on [core thing]?"
+- "What should the user see when successful?"
+- "Should the agent invoke this automatically, or should you trigger it manually?" (→ determines the output skill's invocation policy)
+
+#### Decision Gate
+
+After initial questions, ask:
+"Ready to proceed with building, or would you like me to ask more questions?"
+
+Options:
+1. **Proceed to building** - I have enough context
+2. **Ask more questions** - There are more details to clarify
+3. **Let me add details** - I want to provide additional context
+
+### Step 2: Research Trigger (If External API)
+
+**When external service detected**, ask using a direct chat question to the user (wait for their reply before continuing):
+"This involves [service name] API. Would you like me to research current endpoints and patterns before building?"
+
+Options:
+1. **Yes, research first** - Fetch current documentation for accurate implementation
+2. **No, proceed with general patterns** - Use common patterns without specific API research
+
+If research requested:
+- Use an available documentation integration to fetch current library documentation
+- Or use web search/fetch tools for official API documentation
+- Check the current version and publication date rather than relying on a fixed year range
+- Store findings for use in content generation
+
+### Step 3: Choose Invocation Mode
+
+Ask whether the agent should be able to invoke this output skill automatically. Do not inherit the authoring tool's explicit-only policy by default.
+
+
+**Automatically discoverable (default):** Omit invocation restrictions. The agent loads the skill when relevant; the user can also invoke `/skill-name`.
+
+**Explicit-only:** Add `disable-model-invocation: true` to native `SKILL.md`. Plugin-qualified slash commands such as `/authoring-tools:creating-skills` are valid.
+
+**Background-only:** Use `user-invocable: false` when the user wants relevant automatic loading without a slash-menu entry. This is not an always-on instruction.
+
+
+Choose explicit-only for side-effect workflows the user wants to control. Normal tool approvals and confirmation for sensitive operations still apply in either mode.
+
+### Step 4: Decide Structure
+
+**Simple skill (single workflow, <200 lines):**
+→ Single `SKILL.md` file with all content
+
+**Complex skill (multiple workflows OR domain knowledge):**
+→ Router pattern:
+
+```
+skill-name/
+├── SKILL.md (router + principles)
+├── workflows/ (procedures — follow these)
+├── references/ (knowledge — read when needed)
+├── templates/ (output structures — copy and fill)
+└── scripts/ (reusable code — execute)
+```
+
+Factors favoring router pattern:
+- Multiple distinct user intents (create vs debug vs ship)
+- Shared domain knowledge across workflows
+- Essential principles that must not be skipped
+- Skill likely to grow over time
+
+**Consider `templates/` when:**
+- Skill produces consistent output structures (plans, specs, reports)
+- Structure matters more than creative generation
+
+**Consider `scripts/` when:**
+- Same code runs across invocations (deploy, setup, API calls)
+- Operations are error-prone when rewritten each time
+
+See references/recommended-structure.md for templates.
+
+### Step 5: Create Directory
+
+Use the previously confirmed `SKILL_DIR`, explicitly assigned in the shell. Do not silently switch scope:
+
+```bash
+mkdir -p "$SKILL_DIR"
+# If complex:
+mkdir -p "$SKILL_DIR/workflows" "$SKILL_DIR/references"
+# If needed:
+mkdir -p "$SKILL_DIR/templates" "$SKILL_DIR/scripts"
+```
+
+### Step 6: Write SKILL.md
+
+Use the template from [templates/simple-skill.md](../templates/simple-skill.md) or [templates/router-skill.md](../templates/router-skill.md).
+
+Both templates are native, automatically discoverable defaults. Keep `name` unprefixed and matching the folder, at most 64 lowercase letters, numbers, and hyphens; keep `description` non-empty and at most 1,024 characters. Apply the chosen invocation policy from Step 3 separately.
+
+Read task inputs from the ordinary user message. Gather live context with explicit tool steps. Do not insert Claude argument substitution, shell injection, tool preapproval fields, or forked-context metadata.
+
+
+**Simple skill:** Write complete skill file with:
+- YAML frontmatter (`name`, `description`, and any invocation control fields)
+- `## Quick Start` with immediate actionable example
+- `## Instructions` with core guidance
+- `## Examples` with input/output pairs
+- `## Guidelines` with rules and constraints
+
+**Complex skill:** Write router with:
+- YAML frontmatter
+- `## Essential Principles` (inline, always loaded)
+- `## What Would You Like To Do?` (intake question)
+- `## Routing` table (maps answers to workflows)
+- `## Reference Index` and `## Workflows Index`
+
+**Body format:** Standard markdown headings only. No XML tags.
+
+### Step 7: Write Workflows (if complex)
+
+For each workflow file:
+
+```markdown
+# Workflow: Name
+
+## Required Reading
+
+Read these reference files before starting:
+1. references/relevant-file.md
+
+## Process
+
+### Step 1: Name
+What to do.
+
+### Step 2: Name
+What to do.
+
+## Success Criteria
+
+This workflow is complete when:
+- [ ] Criterion 1
+- [ ] Criterion 2
+```
+
+### Step 8: Write References (if needed)
+
+Domain knowledge that:
+- Multiple workflows might need
+- Doesn't change based on workflow
+- Contains patterns, examples, technical details
+
+### Step 9: Validate Structure
+
+Check:
+- [ ] YAML frontmatter valid
+- [ ] `name` matches directory (unprefixed, at most 64 lowercase letters/numbers/hyphens)
+- [ ] `description` says what it does AND when to use it (third person, at most 1,024 characters)
+- [ ] Body uses markdown headings — no XML tags
+- [ ] Invocation policy matches the user's choice using supported metadata or sidecar
+- [ ] All referenced files exist
+- [ ] `SKILL.md` under 500 lines
+- [ ] Only one agreed discovery location; no unnecessary command/prompt file
+- [ ] Resources resolve from the selected skill directory; scripts use normal execution/approval rules
+- [ ] Native output contains no source-only `targets`, canonical tools, or unresolved Jinja
+
+### Step 10: Test
+
+Invoke the skill and observe:
+- Does it load when expected (or stay hidden as intended)?
+- Does it ask the right intake question?
+- Does it load the right workflow?
+- Does the workflow load the right references?
+- Does output match expectations?
+
+Test a relevant ordinary prompt and an unrelated prompt as well as explicit invocation. Explicit-only skills must not auto-load; discoverable skills should load only when relevant. Record which tests were actually run and which still require the user's client.
+
+Iterate based on real usage, not assumptions.
+
+## Success Criteria
+
+Skill is complete when:
+- [ ] Requirements gathered with appropriate questions
+- [ ] Native versus marketplace-source mode and workspace versus personal scope resolved
+- [ ] Invocation mode chosen independently for the output skill
+- [ ] API research done if external service involved
+- [ ] Directory structure correct
+- [ ] `SKILL.md` has valid frontmatter
+- [ ] Essential principles inline (if complex skill)
+- [ ] Intake question routes to correct workflow (if router)
+- [ ] All workflows have Required Reading + Process + Success Criteria
+- [ ] References contain reusable domain knowledge
+- [ ] Tested with real invocation

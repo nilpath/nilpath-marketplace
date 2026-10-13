@@ -8,7 +8,7 @@ Provide output templates for consistent results. Match strictness to the task.
 
 **Strict** — when output format must be exact:
 
-```markdown
+````markdown
 ## Report Template
 
 Use this exact structure:
@@ -27,11 +27,11 @@ Use this exact structure:
 1. Specific actionable recommendation
 2. Specific actionable recommendation
 ```
-```
+````
 
-**Flexible** — when Claude should adapt based on context:
+**Flexible** — when the agent should adapt based on context:
 
-```markdown
+````markdown
 ## Report Template
 
 Here is a sensible default, but use your judgment:
@@ -50,7 +50,7 @@ Here is a sensible default, but use your judgment:
 ```
 
 Adjust sections as needed for the specific analysis type.
-```
+````
 
 Use strict when: compliance reports, standardized formats, automated processing.
 Use flexible when: exploratory analysis, context-dependent formatting, creative tasks.
@@ -59,7 +59,7 @@ Use flexible when: exploratory analysis, context-dependent formatting, creative 
 
 For skills where output quality depends on seeing examples, provide input/output pairs.
 
-```markdown
+````markdown
 ## Commit Message Format
 
 **Example 1:**
@@ -81,13 +81,14 @@ Use UTC timestamps consistently across report generation
 ```
 
 Follow this style: `type(scope): brief description`, then a detailed explanation.
-```
+````
 
 Use examples when:
 - Output format has nuances that text explanations can't capture
 - Pattern recognition is easier than rule following
 - Examples demonstrate edge cases
 - Multi-shot learning improves quality
+
 
 ## Shell Injection Pattern
 
@@ -162,7 +163,7 @@ For skills that operate on a target, use `$ARGUMENTS` for simple cases and named
 name: fix-issue
 description: Fix a GitHub issue
 disable-model-invocation: true
-argument-hint: [issue-number]
+argument-hint: "[issue-number]"
 ---
 
 Fix GitHub issue $ARGUMENTS following our coding standards.
@@ -175,16 +176,17 @@ Fix GitHub issue $ARGUMENTS following our coding standards.
 name: migrate-component
 description: Migrate a component between frameworks
 arguments: [component, from, to]
-argument-hint: [component] [from-framework] [to-framework]
+argument-hint: "[component] [from-framework] [to-framework]"
 ---
 
 Migrate the $component component from $from to $to.
 Preserve all existing behavior and tests.
 ```
 
+
 ## Consistent Terminology
 
-Choose one term and use it throughout. Inconsistent terminology confuses Claude and reduces quality.
+Choose one term and use it throughout. Inconsistent terminology confuses the agent and reduces quality.
 
 **Good** — consistent usage:
 - Always "API endpoint" (not mixing with "URL", "API route", "path")
@@ -193,7 +195,7 @@ Choose one term and use it throughout. Inconsistent terminology confuses Claude 
 
 **Bad** — inconsistent usage creates confusion:
 - Mix "API routes", "URLs", "paths", "endpoints" — are these the same?
-- Mix "fields", "boxes", "elements", "controls" — Claude must guess
+- Mix "fields", "boxes", "elements", "controls" — the agent must guess
 
 Implementation:
 1. Choose terminology early in skill development
@@ -206,7 +208,7 @@ Provide one default approach with a single escape hatch for edge cases. Avoid of
 
 **Good:**
 
-```markdown
+````markdown
 ## Quick Start
 
 Use pdfplumber for text extraction:
@@ -218,7 +220,7 @@ with pdfplumber.open("file.pdf") as pdf:
 ```
 
 For scanned PDFs requiring OCR, use pdf2image with pytesseract instead.
-```
+````
 
 **Bad** — too many options:
 
@@ -232,11 +234,11 @@ You can use any of these libraries:
 - **pdf2image**: For scanned documents
 ```
 
-Claude must now research and compare all options before starting.
+The agent must now research and compare all options before starting.
 
 ## Progressive Disclosure Pattern
 
-Keep `SKILL.md` concise by linking to reference files. Claude reads them only when needed.
+Keep `SKILL.md` concise by linking to reference files. The agent reads them only when needed.
 
 ```markdown
 ## Advanced Features
@@ -247,13 +249,13 @@ Keep `SKILL.md` concise by linking to reference files. Claude reads them only wh
 **API reference**: See [api-reference.md](api-reference.md)
 ```
 
-Benefits: `SKILL.md` stays under 500 lines, Claude only reads relevant references, token usage scales with task complexity.
+Benefits: `SKILL.md` stays under 500 lines, the agent only reads relevant references, token usage scales with task complexity.
 
 ## Validation Pattern
 
 For skills with validation steps, make validation scripts verbose and specific.
 
-```markdown
+````markdown
 ## Validation
 
 After making changes, validate immediately:
@@ -269,13 +271,13 @@ If validation fails, fix errors before continuing. Validation errors include:
 - **Missing required field**: "Required field 'customer_name' is missing"
 
 Only proceed when validation passes with zero errors.
-```
+````
 
 ## Checklist Pattern
 
-For complex multi-step workflows, provide a checklist Claude can copy and track.
+For complex multi-step workflows, provide a checklist the agent can copy and track.
 
-```markdown
+````markdown
 ## Workflow
 
 Copy this checklist and check off items as you complete them:
@@ -293,7 +295,7 @@ Copy this checklist and check off items as you complete them:
 Run: `python scripts/analyze_form.py input.pdf`
 
 This extracts form fields and saves to `fields.json`.
-```
+````
 
 Benefits: clear progress tracking, prevents skipping steps, easy to resume after interruption.
 
@@ -326,6 +328,7 @@ Benefits: clear progress tracking, prevents skipping steps, easy to resume after
 **Windows paths:**
 - `scripts\helper.py` ✗
 - `scripts/helper.py` ✓
+
 
 **Side-effect skill without `disable-model-invocation: true`:**
 - Deploy, commit, or send skills that Claude can trigger automatically ✗

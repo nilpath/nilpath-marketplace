@@ -1,15 +1,27 @@
 ---
 name: creating-agents
-description: Expert guidance for creating Claude Code subagents and multi-agent workflows. Invoke explicitly to design new subagents, configure agent tools/permissions, implement orchestration patterns, or troubleshoot agent delegation.
+description: Expert guidance for creating custom agents and multi-agent workflows for the active client. Invoke explicitly to design new agents, configure permissions, implement orchestration patterns, or troubleshoot delegation.
 argument-hint: '[agent description or requirements]'
 disable-model-invocation: true
 ---
 
-# Creating Claude Code Agents
+# Creating Custom Agents
 
-Expert guidance for designing and implementing Claude Code subagents based on Anthropic's official specification and industry best practices.
+Expert guidance for designing custom agents for the active client, with focused responsibilities, explicit permissions, and verifiable results.
+
 
 Invoke explicitly with `/authoring-tools:creating-agents`. Do not load this skill automatically.
+
+
+## Authoring Target and Placement
+
+**Default: native output for the active client.** Read [authoring-targets.md](references/authoring-targets.md) before creating or editing an agent.
+
+- Ask whether placement is **workspace** or **personal** using the `AskUserQuestion` tool when unspecified.
+- Resolve the actual destination before writing; read an existing file and confirm before overwriting it.
+- For audits, identify the file's actual format and intended client. Report mismatched harnesses and unsupported configuration; never silently convert or discard restrictions.
+- The examples in this skill are native configurations, not marketplace source metadata. Use the separate opt-in source-authoring path only when requested.
+- This authoring skill is manual-only. Choose discovery and invocation behavior of the agents it creates independently.
 
 ## Core principles
 
@@ -30,7 +42,7 @@ Launch multiple subagents simultaneously for independent tasks:
 Research the authentication, database, and API modules in parallel using separate subagents
 ```
 
-Each explores its area independently, then Claude synthesizes findings.
+Each explores its area independently, then the parent agent synthesizes findings.
 
 ### 3. Specialization
 
@@ -38,7 +50,10 @@ A single agent handling everything becomes a "jack of all trades, master of none
 
 ## How Delegation Works
 
-Claude automatically delegates based on each subagent's `description` field. Write clear descriptions that include:
+
+Claude can automatically delegate based on each subagent's `description` field.
+
+Write clear descriptions that include:
 
 - **What it does**: "Reviews code for quality and security"
 - **When to use it**: "Use proactively after code changes"
@@ -46,12 +61,16 @@ Claude automatically delegates based on each subagent's `description` field. Wri
 
 **Good description:**
 ```yaml
+
 description: Reviews code for quality, security, and best practices. Use proactively after code changes or when user mentions review, audit, or code quality.
+
 ```
 
 **Bad description:**
 ```yaml
+
 description: Helps with code
+
 ```
 
 ## Agent Design Principles
@@ -65,7 +84,8 @@ Each subagent should excel at ONE specific task. Don't create a "helper" agent t
 
 ### 2. Minimal Tool Access
 
-Grant only the tools necessary for the task:
+Grant only the capabilities necessary for the task:
+
 
 | Role | Recommended Tools |
 | ---- | ----------------- |
@@ -74,11 +94,14 @@ Grant only the tools necessary for the task:
 | Implementer | Read, Write, Edit, Bash, Glob, Grep |
 | Domain Expert | Read, Grep, Glob + domain-specific |
 
+
 See [references/tool-permissions.md](references/tool-permissions.md) for detailed guidance.
 
 ### 3. Clear System Prompts
 
-The markdown body becomes the subagent's system prompt. Be specific about:
+
+The Markdown body supplies the agent's instructions. Be specific about:
+
 
 - When to use which approach
 - Output format expectations
@@ -86,12 +109,15 @@ The markdown body becomes the subagent's system prompt. Be specific about:
 
 ### 4. Model Selection
 
+
 - **haiku**: Fast, cheap - ideal for read-only exploration
 - **sonnet**: Balanced - good for most tasks
 - **opus**: Most capable - use for complex reasoning
 - **inherit**: Uses main conversation model (default)
 
-## YAML Frontmatter Reference
+
+## Native Configuration Reference
+
 
 | Field | Required | Description |
 | ----- | -------- | ----------- |
@@ -103,6 +129,7 @@ The markdown body becomes the subagent's system prompt. Be specific about:
 | `permissionMode` | No | Permission handling mode |
 | `skills` | No | Skills to preload into context |
 | `hooks` | No | Lifecycle hooks for this agent |
+
 
 See [references/official-spec.md](references/official-spec.md) for complete specification.
 
@@ -146,7 +173,7 @@ Avoid these mistakes when creating agents:
 
 | Anti-Pattern | Problem | Solution |
 | ------------ | ------- | -------- |
-| Vague description | Claude doesn't know when to delegate | Include specific trigger keywords |
+| Vague description | Parent doesn't know when to delegate | Include specific trigger keywords |
 | Over-broad tools | Security risk, unfocused behavior | Grant minimal necessary permissions |
 | No verification | Can't tell if agent succeeded | Include verification steps in prompt |
 | Premature complexity | Multi-agent when single suffices | Start simple, add agents as needed |
@@ -202,6 +229,8 @@ Use the [agent-name] to [task description]
 [Task that should trigger the agent]
 ```
 
+Automatic delegation tests apply only when the active host supports and enables it. Inspect the actual selected agent rather than treating a matching answer as proof.
+
 ### 2. Verify Tool Access
 
 Check the agent has exactly the tools it needs, no more:
@@ -212,10 +241,12 @@ Use [agent-name] to describe what tools you have access to
 
 ### 3. Test with Different Models
 
+
 If you set `model: haiku` for speed, ensure instructions are clear enough:
 
 - Haiku needs explicit, step-by-step instructions
 - Sonnet/Opus can infer more from context
+
 
 ### 4. Check Edge Cases
 
@@ -225,6 +256,7 @@ If you set `model: haiku` for speed, ensure instructions are clear enough:
 
 ## Storage Locations
 
+
 | Location | Scope | Use Case |
 | -------- | ----- | -------- |
 | `.claude/agents/` | Current project | Team-shared, version-controlled |
@@ -233,6 +265,7 @@ If you set `model: haiku` for speed, ensure instructions are clear enough:
 | Plugin `agents/` | Where plugin enabled | Distributed via plugin |
 
 Higher-priority locations override lower when names conflict.
+
 
 ## Real-World Examples
 
@@ -253,11 +286,11 @@ A well-designed agent:
 - [ ] Uses **minimal tool access** appropriate for its role
 - [ ] Includes **verification steps** in its system prompt
 - [ ] **Handles failures gracefully** with useful error messages
-- [ ] Has been **tested** with explicit invocation and automatic delegation
+- [ ] Has been **tested** with explicit invocation and, when supported and enabled, automatic delegation
 
 ## References
 
-- [Official YAML specification](references/official-spec.md)
+- [Native configuration specification](references/official-spec.md)
 - [Orchestration patterns](references/orchestration-patterns.md)
 - [Tool permissions by role](references/tool-permissions.md)
 - [Anti-patterns to avoid](references/anti-patterns.md)
@@ -270,3 +303,5 @@ Research for this skill was conducted from multiple authoritative sources:
 - [Anthropic Engineering: Multi-Agent Research System](https://www.anthropic.com/engineering/multi-agent-research-system)
 - [Claude Agent SDK Blog](https://claude.com/blog/building-agents-with-the-claude-agent-sdk)
 - [VoltAgent Subagent Collection](https://github.com/VoltAgent/awesome-claude-code-subagents)
+- [VS Code custom agents](https://code.visualstudio.com/docs/agent-customization/custom-agents)
+- [Codex subagents](https://developers.openai.com/codex/subagents/)

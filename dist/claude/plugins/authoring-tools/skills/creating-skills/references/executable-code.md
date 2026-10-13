@@ -1,12 +1,12 @@
 <when_to_use_scripts>
-Even if Claude could write a script, pre-made scripts offer advantages:
+Even if the agent could write a script, pre-made scripts offer advantages:
 - More reliable than generated code
 - Save tokens (no need to include code in context)
 - Save time (no code generation required)
 - Ensure consistency across uses
 
 <execution_vs_reference>
-Make clear whether Claude should:
+Make clear whether the agent should:
 - **Execute the script** (most common): "Run `analyze_form.py` to extract fields"
 - **Read it as reference** (for complex logic): "See `analyze_form.py` for the extraction algorithm"
 
@@ -14,10 +14,10 @@ For most utility scripts, execution is preferred.
 </execution_vs_reference>
 
 <how_scripts_work>
-When Claude executes a script via bash:
-1. Script code never enters context window
+When the agent executes a script through an available shell tool:
+1. Execution alone does not load the script source into context; read it separately when needed for review or debugging
 2. Only script output consumes tokens
-3. Far more efficient than having Claude generate equivalent code
+3. Often more efficient than having the agent generate equivalent code
 </how_scripts_work>
 </when_to_use_scripts>
 
@@ -42,11 +42,13 @@ skill-name/
 - Consistent pattern across all skills
 - Easy to reference: `python scripts/script_name.py`
 
-**Reference pattern**: In SKILL.md, reference scripts using the `scripts/` path:
+**Reference pattern**: Resolve `scripts/` from the discovered skill directory. Explicitly assign the absolute root to an ordinary `SKILL_DIR` shell variable before running:
 
 ```bash
-python ~/.claude/skills/skill-name/scripts/analyze.py input.har
+python "$SKILL_DIR/scripts/analyze.py" input.har
 ```
+
+The shorter `scripts/...` paths below describe bundled resources; resolve them the same way in output workflows. Do not change the project working directory accidentally or assume Claude-style substitutions exist in other clients. Skill invocation does not bypass shell-tool approvals.
 </scripts_directory>
 </file_organization>
 
@@ -84,7 +86,7 @@ python scripts/fill_form.py input.pdf fields.json output.pdf
 </utility_scripts_pattern>
 
 <solve_dont_punt>
-Handle error conditions rather than punting to Claude.
+Handle error conditions rather than punting to the agent.
 
 <example type="good">
 ```python
@@ -107,7 +109,7 @@ def process_file(path):
 <example type="bad">
 ```python
 def process_file(path):
-    # Just fail and let Claude figure it out
+    # Just fail and let the agent figure it out
     return open(path).read()
 ```
 </example>
@@ -136,9 +138,7 @@ RETRIES = 5   # Why 5?
 
 <package_dependencies>
 <runtime_constraints>
-Skills run in code execution environment with platform-specific limitations:
-- **claude.ai**: Can install packages from npm and PyPI
-- **Anthropic API**: No network access and no runtime package installation
+Skills run in the active client's execution environment. Network access, package installation, shell availability, and approvals depend on that environment. Check them rather than importing assumptions from another product.
 </runtime_constraints>
 
 <guidance>
@@ -162,14 +162,14 @@ reader = PdfReader("file.pdf")
 </package_dependencies>
 
 <mcp_tool_references>
-If your Skill uses MCP (Model Context Protocol) tools, always use fully qualified tool names.
+If your skill uses MCP (Model Context Protocol) tools, use the exact tool identifiers exposed by the active client. Discover available integrations first; do not invent a tool or assume a server is configured.
 
-<format>ServerName:tool_name</format>
+Server qualification syntax varies by client.
 
 <examples>
-- Use the BigQuery:bigquery_schema tool to retrieve table schemas.
-- Use the GitHub:create_issue tool to create issues.
+- Select the installed BigQuery integration's schema tool to retrieve table schemas.
+- Select the installed GitHub integration's issue-creation tool to create issues.
 </examples>
 
-Without the server prefix, Claude may fail to locate the tool, especially when multiple MCP servers are available.
+Ambiguous or copied tool names may fail, especially when multiple integrations are available. In marketplace sources, use canonical vocabulary and prose helpers instead of hardcoded cross-client tool spellings.
 </mcp_tool_references>

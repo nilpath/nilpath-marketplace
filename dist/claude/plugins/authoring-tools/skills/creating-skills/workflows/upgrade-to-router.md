@@ -4,14 +4,14 @@
 **Read these reference files NOW:**
 1. references/recommended-structure.md
 2. references/skill-structure.md
+3. references/authoring-targets.md
+4. references/invocation-and-arguments.md
 </required_reading>
 
 <process>
 ## Step 1: Select the Skill
 
-```bash
-ls ~/.claude/skills/
-```
+Use the supplied skill path, or ask for workspace versus personal scope and enumerate the active client's locations from `references/authoring-targets.md`. Resolve one selected absolute path as `SKILL_DIR`. Do not move the skill or create a duplicate copy.
 
 Present numbered list, ask: "Which skill should be upgraded to the router pattern?"
 
@@ -19,8 +19,8 @@ Present numbered list, ask: "Which skill should be upgraded to the router patter
 
 Read the skill:
 ```bash
-cat ~/.claude/skills/{skill-name}/SKILL.md
-ls ~/.claude/skills/{skill-name}/
+cat "$SKILL_DIR/SKILL.md"
+ls "$SKILL_DIR"
 ```
 
 **Already a router?** (has workflows/ and intake question)
@@ -64,9 +64,10 @@ Ask: "Does this breakdown look right? Any adjustments?"
 
 ## Step 4: Create Directory Structure
 
+Confirm before rewriting existing files. Preserve the current client, native metadata, invocation policy (including any sidecar), inputs, and resource execution semantics. In explicitly requested marketplace-source mode, update `.j2` sources and inspect rendered outputs instead of replacing sources with native files.
+
 ```bash
-mkdir -p ~/.claude/skills/{skill-name}/workflows
-mkdir -p ~/.claude/skills/{skill-name}/references
+mkdir -p "$SKILL_DIR/workflows" "$SKILL_DIR/references"
 ```
 
 ## Step 5: Extract Workflows
@@ -74,9 +75,9 @@ mkdir -p ~/.claude/skills/{skill-name}/references
 For each identified workflow:
 
 1. Create `workflows/{workflow-name}.md`
-2. Add required_reading section (references it needs)
-3. Add process section (steps from original skill)
-4. Add success_criteria section
+2. Add a Required Reading section (references it needs)
+3. Add a Process section (steps from original skill)
+4. Add a Success Criteria section
 
 ## Step 6: Extract References
 
@@ -84,23 +85,22 @@ For each identified reference topic:
 
 1. Create `references/{reference-name}.md`
 2. Move relevant content from original skill
-3. Structure with semantic XML tags
+3. Structure with descriptive Markdown headings
 
 ## Step 7: Rewrite SKILL.md as Router
 
-Replace SKILL.md with router structure:
+Use the following native router skeleton, retaining all supported existing metadata and invocation policy, not just the two shown fields:
 
 ```markdown
 ---
-name: {skill-name}
-description: {existing description}
+name: skill-name
+description: "Replace with the existing description."
 ---
 
-<essential_principles>
+## Essential Principles
 [Extracted principles - inline, cannot be skipped]
-</essential_principles>
 
-<intake>
+## What Would You Like To Do?
 **Ask the user:**
 
 What would you like to do?
@@ -109,25 +109,21 @@ What would you like to do?
 ...
 
 **Wait for response before proceeding.**
-</intake>
 
-<routing>
+## Routing
 | Response | Workflow |
 |----------|----------|
 | 1, "keywords" | `workflows/workflow-a.md` |
 | 2, "keywords" | `workflows/workflow-b.md` |
-</routing>
 
-<reference_index>
+## Reference Index
 [List all references by category]
-</reference_index>
 
-<workflows_index>
+## Workflows Index
 | Workflow | Purpose |
 |----------|---------|
 | workflow-a.md | [What it does] |
 | workflow-b.md | [What it does] |
-</workflows_index>
 ```
 
 ## Step 8: Verify Nothing Was Lost
@@ -137,6 +133,8 @@ Compare original skill content against new structure:
 - [ ] All procedures preserved (now in workflows)
 - [ ] All knowledge preserved (now in references)
 - [ ] No orphaned content
+- [ ] Existing invocation mode and native metadata preserved
+- [ ] All links resolve from the selected skill; no discovery duplicates
 
 ## Step 9: Test
 
@@ -145,6 +143,7 @@ Invoke the upgraded skill:
 - Does each routing option work?
 - Do workflows load correct references?
 - Does behavior match original skill?
+- Does explicit versus automatic invocation still match the chosen policy?
 
 Report any issues.
 </process>

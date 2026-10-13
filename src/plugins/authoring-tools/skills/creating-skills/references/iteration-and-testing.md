@@ -1,5 +1,5 @@
 <overview>
-Skills improve through iteration and testing. This reference covers evaluation-driven development, Claude A/B testing patterns, and XML structure validation during testing.
+Skills improve through iteration and testing. This reference covers evaluation-driven development, separate author/executor sessions, and native skill structure validation.
 </overview>
 
 <evaluation_driven_development>
@@ -9,7 +9,7 @@ Create evaluations BEFORE writing extensive documentation. This ensures your ski
 
 <workflow>
 <step_1>
-**Identify gaps**: Run Claude on representative tasks without a skill. Document specific failures or missing context.
+**Identify gaps**: Run the agent on representative tasks without a skill. Document specific failures or missing context.
 </step_1>
 
 <step_2>
@@ -17,7 +17,7 @@ Create evaluations BEFORE writing extensive documentation. This ensures your ski
 </step_2>
 
 <step_3>
-**Establish baseline**: Measure Claude's performance without the skill.
+**Establish baseline**: Measure the agent's performance without the skill.
 </step_3>
 
 <step_4>
@@ -53,19 +53,19 @@ Create evaluations BEFORE writing extensive documentation. This ensures your ski
 </why_evaluations_first>
 </evaluation_driven_development>
 
-<iterative_development_with_claude>
+<iterative_development>
 <principle>
-The most effective skill development uses Claude itself. Work with "Claude A" (expert who helps refine) to create skills used by "Claude B" (agent executing tasks).
+Use separate author and executor sessions: "Agent A" helps refine the skill; "Agent B" tests it without the author's accumulated context. A fresh session can serve as the executor; this does not require subagent delegation.
 </principle>
 
 <creating_skills>
 <workflow>
 <step_1>
-**Complete task without skill**: Work through problem with Claude A, noting what context you repeatedly provide.
+**Complete task without skill**: Work through the problem with Agent A, noting what context you repeatedly provide.
 </step_1>
 
 <step_2>
-**Ask Claude A to create skill**: "Create a skill that captures this pattern we just used"
+**Ask Agent A to create skill**: "Create a skill that captures this pattern we just used"
 </step_2>
 
 <step_3>
@@ -77,23 +77,23 @@ The most effective skill development uses Claude itself. Work with "Claude A" (e
 </step_4>
 
 <step_5>
-**Test with Claude B**: Use fresh instance to test on real tasks.
+**Test with Agent B**: Use a fresh instance to test on real tasks.
 </step_5>
 
 <step_6>
-**Iterate based on observation**: Return to Claude A with specific issues observed.
+**Iterate based on observation**: Return to Agent A with specific issues observed.
 </step_6>
 </workflow>
 
 <insight>
-Claude models understand skill format natively. Simply ask Claude to create a skill and it will generate properly structured SKILL.md content.
+Agents can draft skill content, but validate generated YAML, metadata, invocation policy, and resource paths against the active client's specification instead of assuming the draft is correct.
 </insight>
 </creating_skills>
 
 <improving_skills>
 <workflow>
 <step_1>
-**Use skill in real workflows**: Give Claude B actual tasks.
+**Use skill in real workflows**: Give Agent B actual tasks.
 </step_1>
 
 <step_2>
@@ -101,11 +101,11 @@ Claude models understand skill format natively. Simply ask Claude to create a sk
 </step_2>
 
 <step_3>
-**Return to Claude A**: Share observations and current SKILL.md.
+**Return to Agent A**: Share observations and current SKILL.md.
 </step_3>
 
 <step_4>
-**Review suggestions**: Claude A might suggest reorganization, stronger language, or workflow restructuring.
+**Review suggestions**: Agent A might suggest reorganization, stronger language, or workflow restructuring.
 </step_4>
 
 <step_5>
@@ -125,31 +125,31 @@ Claude models understand skill format natively. Simply ask Claude to create a sk
 - **Critical metadata**: The name and description in your skill's metadata are critical for discovery
 </what_to_watch_for>
 </improving_skills>
-</iterative_development_with_claude>
+</iterative_development>
 
 <model_testing>
 <principle>
 Test with all models you plan to use. Different models have different strengths and need different levels of detail.
 </principle>
 
-<haiku_testing>
-**Claude Haiku** (fast, economical)
+<small_model_testing>
+**Small/fast model** (for example Haiku in Claude deployments)
 
 Questions to ask:
 - Does the skill provide enough guidance?
 - Are examples clear and complete?
 - Do implicit assumptions become explicit?
-- Does Haiku need more structure?
+- Does the model need more structure?
 
-Haiku benefits from:
+Smaller models often benefit from:
 - More explicit instructions
 - Complete examples (no partial code)
 - Clear success criteria
 - Step-by-step workflows
-</haiku_testing>
+</small_model_testing>
 
-<sonnet_testing>
-**Claude Sonnet** (balanced)
+<balanced_model_testing>
+**Balanced model** (for example Sonnet in Claude deployments)
 
 Questions to ask:
 - Is the skill clear and efficient?
@@ -157,86 +157,76 @@ Questions to ask:
 - Are workflows well-structured?
 - Does progressive disclosure work?
 
-Sonnet benefits from:
+Balanced models often benefit from:
 - Balanced detail level
-- XML structure for clarity
+- Clear Markdown headings
 - Progressive disclosure
 - Concise but complete guidance
-</sonnet_testing>
+</balanced_model_testing>
 
-<opus_testing>
-**Claude Opus** (powerful reasoning)
+<reasoning_model_testing>
+**High-reasoning model** (for example Opus in Claude deployments)
 
 Questions to ask:
 - Does the skill avoid over-explaining?
-- Can Opus infer obvious steps?
+- Can the model infer obvious steps?
 - Are constraints clear?
 - Is context minimal but sufficient?
 
-Opus benefits from:
+Stronger reasoning models often benefit from:
 - Concise instructions
 - Principles over procedures
 - High degrees of freedom
 - Trust in reasoning capabilities
-</opus_testing>
+</reasoning_model_testing>
 
 <balancing_across_models>
-What works for Opus might need more detail for Haiku. Aim for instructions that work well across all target models. Find the balance that serves your target audience.
+What works for a stronger model might need more detail for a smaller one. Test the models actually available in the intended client, not a fixed vendor list. Aim for instructions that serve the target audience without forcing model-selection metadata into native skills.
 
 See [core-principles.md](core-principles.md) for model testing examples.
 </balancing_across_models>
 </model_testing>
 
-<xml_structure_validation>
+<skill_structure_validation>
 <principle>
-During testing, validate that your skill's XML structure is correct and complete.
+During testing, validate native frontmatter and Markdown structure, not a custom XML schema.
 </principle>
 
 <validation_checklist>
 After updating a skill, verify:
 
-<required_tags_present>
-- ✅ `<objective>` tag exists and defines what skill does
-- ✅ `<quick_start>` tag exists with immediate guidance
-- ✅ `<success_criteria>` or `<when_successful>` tag exists
-</required_tags_present>
+<metadata>
+- ✅ YAML parses and `name` matches the folder without invocation prefixes
+- ✅ Name is at most 64 lowercase letters, numbers, and hyphens
+- ✅ Description is non-empty, at most 1,024 characters, and includes triggers
+- ✅ Invocation policy uses the active client's supported fields or sidecar
+- ✅ Native files contain no canonical source fields or unresolved Jinja
+</metadata>
 
-<no_markdown_headings>
-- ✅ No `#`, `##`, or `###` headings in skill body
-- ✅ All sections use XML tags instead
-- ✅ Markdown formatting within tags is preserved (bold, italic, lists, code blocks)
-</no_markdown_headings>
-
-<proper_xml_nesting>
-- ✅ All XML tags properly closed
-- ✅ Nested tags have correct hierarchy
-- ✅ No unclosed tags
-</proper_xml_nesting>
-
-<conditional_tags_appropriate>
-- ✅ Conditional tags match skill complexity
-- ✅ Simple skills use required tags only
-- ✅ Complex skills add appropriate conditional tags
-- ✅ No over-engineering or under-specifying
-</conditional_tags_appropriate>
+<body_structure>
+- ✅ Markdown headings identify purpose, immediate guidance, and success criteria
+- ✅ Code fences and links are well formed
+- ✅ Required principles appear in SKILL.md; optional details use progressive disclosure
+- ✅ Structure matches complexity without over-engineering
+</body_structure>
 
 <reference_files_check>
-- ✅ Reference files also use pure XML structure
+- ✅ Reference files use readable Markdown structure
 - ✅ Links to reference files are correct
 - ✅ References are one level deep from SKILL.md
 </reference_files_check>
 </validation_checklist>
 
-<testing_xml_during_iteration>
+<testing_structure_during_iteration>
 When iterating on a skill:
 
-1. Make changes to XML structure
-2. **Validate XML structure** (check tags, nesting, completeness)
-3. Test with Claude on representative tasks
-4. Observe if XML structure aids or hinders Claude's understanding
+1. Make targeted structure changes
+2. **Validate metadata, Markdown, and resources**
+3. Test with the active client on representative tasks
+4. Observe whether the structure aids or hinders the agent's understanding
 5. Iterate structure based on actual performance
-</testing_xml_during_iteration>
-</xml_structure_validation>
+</testing_structure_during_iteration>
+</skill_structure_validation>
 
 <observation_based_iteration>
 <principle>
@@ -244,31 +234,31 @@ Iterate based on what you observe, not what you assume. Real usage reveals issue
 </principle>
 
 <observation_categories>
-<what_claude_reads>
-Which sections does Claude actually read? Which are ignored? This reveals:
+<what_the_agent_reads>
+Which sections does the agent actually read? Which are ignored? This reveals:
 - Relevance of content
 - Effectiveness of progressive disclosure
 - Whether section names are clear
-</what_claude_reads>
+</what_the_agent_reads>
 
-<where_claude_struggles>
+<where_the_agent_struggles>
 Which tasks cause confusion or errors? This reveals:
 - Missing context
 - Unclear instructions
 - Insufficient examples
 - Ambiguous requirements
-</where_claude_struggles>
+</where_the_agent_struggles>
 
-<where_claude_succeeds>
+<where_the_agent_succeeds>
 Which tasks go smoothly? This reveals:
 - Effective patterns
 - Good examples
 - Clear instructions
 - Appropriate detail level
-</where_claude_succeeds>
+</where_the_agent_succeeds>
 
 <unexpected_behaviors>
-What does Claude do that surprises you? This reveals:
+What does the agent do that surprises you? This reveals:
 - Unstated assumptions
 - Ambiguous phrasing
 - Missing constraints
@@ -277,7 +267,7 @@ What does Claude do that surprises you? This reveals:
 </observation_categories>
 
 <iteration_pattern>
-1. **Observe**: Run Claude on real tasks with current skill
+1. **Observe**: Run the agent on real tasks with the current skill
 2. **Document**: Note specific issues, not general feelings
 3. **Hypothesize**: Why did this issue occur?
 4. **Fix**: Make targeted changes to address specific issues
@@ -295,7 +285,7 @@ Skills don't need to be perfect initially. Start minimal, observe usage, add wha
 <initial_version>
 Start with:
 - Valid YAML frontmatter
-- Required XML tags: objective, quick_start, success_criteria
+- Markdown headings for purpose, quick start, and success criteria
 - Minimal working example
 - Basic success criteria
 
@@ -326,17 +316,24 @@ Add through iteration:
 
 <testing_discovery>
 <principle>
-Test that Claude can discover and use your skill when appropriate.
+Test discovery against the chosen invocation mode. Automatic skills should load for relevant requests; explicit-only skills must stay unloaded until explicitly invoked.
 </principle>
 
 <discovery_testing>
 <test_description>
-Test if Claude loads your skill when it should:
+For an automatically discoverable skill:
 
-1. Start fresh conversation (Claude B)
+1. Start a fresh conversation (Agent B)
 2. Ask question that should trigger skill
 3. Check if skill was loaded
 4. Verify skill was used appropriately
+5. Try an unrelated request and confirm the skill does not load
+
+For an explicit-only skill:
+1. Ask a relevant question without invoking the skill and confirm it does not auto-load
+2. Invoke it using the active client's syntax and confirm it loads
+3. Verify missing inputs cause clarification rather than invented values
+4. Check all resources resolve from the selected directory, including scripts invoked from another working directory
 </test_description>
 
 <description_quality>
@@ -346,7 +343,7 @@ If skill isn't discovered:
 - Ensure description explains when to use skill
 - Test with different phrasings of the same request
 
-The description is Claude's primary discovery mechanism.
+The description is the primary discovery surface for automatic skills. Do not "fix" a manual-only skill by enabling automatic invocation unless the user requests a policy change.
 </description_quality>
 </discovery_testing>
 </testing_discovery>
@@ -357,13 +354,13 @@ The description is Claude's primary discovery mechanism.
 
 **Fix**:
 - Remove obvious explanations
-- Assume Claude knows common concepts
+- Assume the model knows common concepts
 - Use examples instead of lengthy descriptions
 - Move advanced content to reference files
 </pattern>
 
 <pattern name="too_minimal">
-**Observation**: Claude makes incorrect assumptions or misses steps
+**Observation**: The agent makes incorrect assumptions or misses steps
 
 **Fix**:
 - Add explicit instructions where assumptions fail
@@ -373,7 +370,7 @@ The description is Claude's primary discovery mechanism.
 </pattern>
 
 <pattern name="poor_discovery">
-**Observation**: Skill exists but Claude doesn't load it when needed
+**Observation**: A skill intended for automatic discovery does not load when needed
 
 **Fix**:
 - Improve description with specific triggers
@@ -383,17 +380,17 @@ The description is Claude's primary discovery mechanism.
 </pattern>
 
 <pattern name="unclear_structure">
-**Observation**: Claude reads wrong sections or misses relevant content
+**Observation**: The agent reads wrong sections or misses relevant content
 
 **Fix**:
-- Use clearer XML tag names
+- Use clearer Markdown headings
 - Reorganize content hierarchy
 - Move frequently-needed content earlier
 - Add explicit links to relevant sections
 </pattern>
 
 <pattern name="incomplete_examples">
-**Observation**: Claude produces outputs that don't match expected pattern
+**Observation**: The agent produces outputs that don't match the expected pattern
 
 **Fix**:
 - Add more examples showing pattern
@@ -459,7 +456,7 @@ Define how you'll measure if the skill is working. Quantify success.
 <subjective_metrics>
 - **Output quality**: Does output meet requirements?
 - **Appropriate detail**: Too verbose or too minimal?
-- **Claude confidence**: Does Claude seem uncertain?
+- **Agent uncertainty**: Does the agent acknowledge missing context and ask appropriate questions?
 - **User satisfaction**: Does skill solve the actual problem?
 </subjective_metrics>
 

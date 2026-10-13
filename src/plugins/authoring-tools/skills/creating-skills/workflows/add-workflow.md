@@ -4,16 +4,13 @@
 **Read these reference files NOW:**
 1. references/recommended-structure.md
 2. references/workflows-and-validation.md
+3. references/authoring-targets.md
 </required_reading>
 
 <process>
 ## Step 1: Select the Skill
 
-**DO NOT use AskUserQuestion** - there may be many skills.
-
-```bash
-ls ~/.claude/skills/
-```
+Use the supplied path or ask for workspace versus personal scope. Enumerate the selected scope's active-client locations from `references/authoring-targets.md` as a numbered list, showing full paths for duplicate names. Record one absolute path as `SKILL_DIR`; do not create a second copy.
 
 Present numbered list, ask: "Which skill needs a new workflow?"
 
@@ -21,8 +18,8 @@ Present numbered list, ask: "Which skill needs a new workflow?"
 
 Read the skill:
 ```bash
-cat ~/.claude/skills/{skill-name}/SKILL.md
-ls ~/.claude/skills/{skill-name}/workflows/ 2>/dev/null
+cat "$SKILL_DIR/SKILL.md"
+ls "$SKILL_DIR/workflows" 2>/dev/null
 ```
 
 Determine:
@@ -34,7 +31,7 @@ Report current structure to user.
 
 ## Step 3: Gather Workflow Requirements
 
-Ask using AskUserQuestion or direct question:
+Ask about remaining gaps:
 - What should this workflow do?
 - When would someone use it vs existing workflows?
 - What references would it need?
@@ -51,35 +48,34 @@ If yes:
 3. Rewrite SKILL.md as router with intake + routing
 4. Verify structure works before proceeding
 
+Preserve all supported metadata, invocation policy, and input/resource semantics during restructuring. Confirm before overwriting existing files. In explicitly selected marketplace-source mode, edit sources and render them; do not mix canonical source fields into native output.
+
 ## Step 5: Create the Workflow File
 
-Create `workflows/{workflow-name}.md`:
+Create `workflows/{workflow-name}.md` under `SKILL_DIR`:
 
 ```markdown
 # Workflow: {Workflow Name}
 
-<required_reading>
+## Required Reading
 **Read these reference files NOW:**
 1. references/{relevant-file}.md
-</required_reading>
 
-<process>
-## Step 1: {First Step}
+## Process
+### Step 1: {First Step}
 [What to do]
 
-## Step 2: {Second Step}
+### Step 2: {Second Step}
 [What to do]
 
-## Step 3: {Third Step}
+### Step 3: {Third Step}
 [What to do]
-</process>
 
-<success_criteria>
+## Success Criteria
 This workflow is complete when:
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
-</success_criteria>
 ```
 
 ## Step 6: Update SKILL.md
@@ -104,6 +100,7 @@ Invoke the skill:
 - Does selecting it route to the correct workflow?
 - Does the workflow load the right references?
 - Does the workflow execute correctly?
+- Are scripts resolved from the selected skill folder and run with normal tool approvals?
 
 Report results to user.
 </process>

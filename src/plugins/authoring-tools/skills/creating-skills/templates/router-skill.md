@@ -25,7 +25,7 @@ Explanation.
 3. [Third option]
 4. Something else
 
-**Wait for response before proceeding.**
+**Use the user's request to select a workflow when clear; otherwise ask and wait for a response.**
 
 ## Routing
 

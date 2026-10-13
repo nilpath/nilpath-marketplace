@@ -19,6 +19,9 @@ Create a code writer agent when you need:
 
 ## Step 1: Choose Storage Location
 
+Ask workspace versus personal scope using the `AskUserQuestion` tool if unspecified, then confirm the destination and any overwrite. See [authoring-targets.md](../references/authoring-targets.md).
+
+
 **Project-level** (`.claude/agents/`):
 - Shared with team via version control
 - Specific to this codebase
@@ -34,29 +37,35 @@ Create a code writer agent when you need:
 - Available wherever plugin is enabled
 - Best for: Agents bundled with plugin functionality
 
+
 ## Step 2: Determine Tool Access
 
 Code writers need modification tools, but scope appropriately:
+
 
 | Agent Type | Recommended Tools |
 | ---------- | ----------------- |
 | Bug fixer | Read, Write, Edit, Bash, Glob, Grep |
 | Feature implementer | Read, Write, Edit, Bash, Glob, Grep |
 | Test writer | Read, Write, Edit, Bash, Glob, Grep |
-| Refactorer | Read, Write, Edit, Glob, Grep |
+| Refactorer with test verification | Read, Write, Edit, Bash, Glob, Grep |
 | Migration assistant | Read, Write, Edit, Bash, Glob, Grep |
+
 
 ## Step 3: Create the Agent File
 
 ### Basic Template
 
-```markdown
+````markdown
 ---
 name: your-agent-name
 description: What it does. Use when [trigger conditions].
 tools: Read, Write, Edit, Bash, Glob, Grep
+
 model: sonnet
+
 ---
+
 
 You are a [role description].
 
@@ -66,19 +75,25 @@ When invoked:
 3. Implement changes
 4. Verify the changes work
 5. Report what was done
-```
+
+````
 
 ### Full Example: Bug Fixer
 
+
 `.claude/agents/bug-fixer.md`:
 
-```markdown
+
+````markdown
 ---
 name: bug-fixer
 description: Diagnoses and fixes bugs in code. Use when user mentions bug, error, fix, broken, or not working.
 tools: Read, Write, Edit, Bash, Glob, Grep
+
 model: sonnet
+
 ---
+
 
 You are an expert debugger specializing in root cause analysis and minimal fixes.
 
@@ -145,7 +160,8 @@ You are an expert debugger specializing in root cause analysis and minimal fixes
 - Do NOT refactor code that isn't related to the bug
 - Do NOT add features while fixing
 - If the fix is complex, explain the tradeoffs before implementing
-```
+
+````
 
 ## Step 4: Add Verification Steps
 
@@ -181,9 +197,11 @@ Prevent scope creep and unintended changes:
 
 ### Load the Agent
 
+
 ```
 /agents
 ```
+
 
 ### Test Implementation
 
@@ -202,13 +220,16 @@ After the agent completes:
 
 ### Feature Implementer
 
-```markdown
+````markdown
 ---
 name: feature-implementer
 description: Implements new features based on specifications. Use when user mentions implement, add feature, or build.
 tools: Read, Write, Edit, Bash, Glob, Grep
+
 model: sonnet
+
 ---
+
 
 You are a senior developer implementing features.
 
@@ -241,17 +262,21 @@ You are a senior developer implementing features.
 6. **Document**
    - Update relevant documentation
    - Add inline comments where needed
-```
+
+````
 
 ### Test Writer
 
-```markdown
+````markdown
 ---
 name: test-writer
 description: Writes tests for existing code. Use when user mentions write tests, add tests, test coverage, or untested.
 tools: Read, Write, Edit, Bash, Glob, Grep
+
 model: sonnet
+
 ---
+
 
 You are a QA engineer writing comprehensive tests.
 
@@ -285,17 +310,21 @@ You are a QA engineer writing comprehensive tests.
 - Arrange-Act-Assert pattern
 - Mock external dependencies
 - No tests that always pass
-```
+
+````
 
 ### Refactorer
 
-```markdown
+````markdown
 ---
 name: refactorer
 description: Refactors code for better structure and maintainability. Use when user mentions refactor, clean up, restructure, or technical debt.
-tools: Read, Write, Edit, Glob, Grep
+tools: Read, Write, Edit, Bash, Glob, Grep
+
 model: sonnet
+
 ---
+
 
 You are a senior developer improving code quality.
 
@@ -327,11 +356,13 @@ You are a senior developer improving code quality.
 - If tests are missing, write them first
 - If you find bugs, note them but don't fix (separate task)
 - Small steps are safer than big rewrites
-```
+
+````
 
 ## Step 7: Add Safety Hooks (Optional)
 
 For additional safety, add hooks to validate changes:
+
 
 ```yaml
 hooks:
@@ -341,6 +372,7 @@ hooks:
         - type: command
           command: "./scripts/lint-changed-files.sh"
 ```
+
 
 ## Checklist
 

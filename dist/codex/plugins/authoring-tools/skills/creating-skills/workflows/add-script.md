@@ -1,0 +1,102 @@
+# Workflow: Add a Script to a Skill
+
+<required_reading>
+**Read these reference files NOW:**
+1. references/using-scripts.md
+2. references/authoring-targets.md
+3. references/invocation-and-arguments.md
+</required_reading>
+
+<process>
+## Step 1: Identify the Skill
+
+Ask (if not already provided):
+- Which skill needs a script?
+- What operation should the script perform?
+
+Use the supplied path or resolve workspace versus personal scope and one active-client discovery location via `references/authoring-targets.md`. Set the selected absolute directory as `SKILL_DIR`. Preserve the existing skill's invocation mode and do not create a duplicate.
+
+## Step 2: Analyze Script Need
+
+Confirm this is a good script candidate:
+- [ ] Same code runs across multiple invocations
+- [ ] Operation is error-prone when rewritten
+- [ ] Consistency matters more than flexibility
+
+If not a good fit, suggest alternatives (inline code in workflow, reference examples).
+
+## Step 3: Create Scripts Directory
+
+```bash
+mkdir -p "$SKILL_DIR/scripts"
+```
+
+## Step 4: Design Script
+
+Gather requirements:
+- What inputs does the script need?
+- What should it output or accomplish?
+- What errors might occur?
+- Should it be idempotent?
+
+Choose language:
+- **bash** - Shell operations, file manipulation, CLI tools
+- **python** - Data processing, API calls, complex logic
+- **node/ts** - JavaScript ecosystem, async operations
+
+## Step 5: Write Script File
+
+Create `scripts/{script-name}.{ext}` within `SKILL_DIR`, confirming before overwriting any existing script or workflow. For explicitly selected marketplace sources, follow `authoring-targets.md`; otherwise create ordinary native files.
+
+Include:
+- Purpose comment at top
+- Usage instructions
+- Input validation
+- Error handling
+- Clear output/feedback
+
+For bash scripts:
+```bash
+#!/bin/bash
+set -euo pipefail
+```
+
+## Step 6: Make Executable (if bash)
+
+```bash
+chmod +x "$SKILL_DIR/scripts/{script-name}.sh"
+```
+
+## Step 7: Update Workflow to Use Script
+
+Find the workflow that needs this operation. Add:
+```markdown
+## Process
+...
+N. Resolve `scripts/{script-name}.sh` from this skill's directory.
+N. Run the resolved script through the shell tool with validated inputs and normal approvals.
+N+1. Verify operation succeeded
+...
+```
+
+Do not assume the working directory is the skill directory. Preserve project-relative input/output paths. A skill's metadata does not preapprove arbitrary commands; follow the active client's invocation and execution reference.
+
+## Step 8: Test
+
+Invoke the skill workflow and verify:
+- Script runs at the right step
+- Inputs are passed correctly
+- Errors are handled gracefully
+- Output matches expectations
+- Paths work when invoked from a different project working directory
+</process>
+
+<success_criteria>
+Script is complete when:
+- [ ] scripts/ directory exists
+- [ ] Script file has proper structure (comments, validation, error handling)
+- [ ] Script is executable (if bash)
+- [ ] At least one workflow references the script
+- [ ] No hardcoded secrets or credentials
+- [ ] Tested with real invocation
+</success_criteria>

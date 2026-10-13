@@ -6,17 +6,17 @@ Source: [platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practice
 
 ### Concise is Key
 
-The context window is a public good. Your Skill shares the context window with everything else Claude needs to know.
+The context window is a shared resource. Your skill shares it with everything else the agent needs to know.
 
-**Default assumption**: Claude is already very smart. Only add context Claude doesn't already have.
+**Default assumption**: The model is already capable. Only add context it doesn't already have.
 
 Challenge each piece of information:
-- "Does Claude really need this explanation?"
-- "Can I assume Claude knows this?"
+- "Does the agent really need this explanation?"
+- "Can I assume the model knows this?"
 - "Does this paragraph justify its token cost?"
 
 **Good example (concise, ~50 tokens):**
-```markdown
+````markdown
 ## Extract PDF text
 
 Use pdfplumber for text extraction:
@@ -26,7 +26,7 @@ import pdfplumber
 with pdfplumber.open("file.pdf") as pdf:
     text = pdf.pages[0].extract_text()
 ```
-```
+````
 
 **Bad example (too verbose, ~150 tokens):**
 ```markdown
@@ -52,7 +52,7 @@ Match specificity to task fragility and variability.
 ```
 
 **Medium freedom** (preferred pattern with variation):
-```markdown
+````markdown
 ## Generate report
 
 Use this template and customize as needed:
@@ -62,10 +62,10 @@ def generate_report(data, format="markdown"):
     # Process data
     # Generate output in specified format
 ```
-```
+````
 
 **Low freedom** (fragile, exact sequence required):
-```markdown
+````markdown
 ## Database migration
 
 Run exactly this script:
@@ -75,15 +75,15 @@ python scripts/migrate.py --verify --backup
 ```
 
 Do not modify the command or add flags.
-```
+````
 
 ### Test With All Models
 
-Skills act as additions to models. Test with Haiku, Sonnet, and Opus.
+Skills act as additions to models. Test with the models actually intended for the active client, covering the relevant capability range.
 
-- **Haiku**: Does the Skill provide enough guidance?
-- **Sonnet**: Is the Skill clear and efficient?
-- **Opus**: Does the Skill avoid over-explaining?
+- **Small/fast**: Does the skill provide enough guidance?
+- **Balanced**: Is the skill clear and efficient?
+- **High-reasoning**: Does the skill avoid over-explaining?
 
 ## Naming Conventions
 
@@ -103,11 +103,12 @@ Use **gerund form** (verb + -ing) for Skill names:
 **Avoid:**
 - Vague: `helper`, `utils`, `tools`
 - Generic: `documents`, `data`, `files`
-- Reserved: `anthropic-*`, `claude-*`
+- Client-reserved names where applicable; see the active client's specification
+- Invocation sigils, plugin prefixes, or path separators in `name`
 
 ## Writing Effective Descriptions
 
-**Always write in third person.** The description is injected into the system prompt.
+**Write in third person.** The description is the discovery surface. Keep it non-empty and at most 1,024 characters.
 
 **Be specific and include key terms:**
 
@@ -133,7 +134,7 @@ description: Does stuff with files # Useless!
 
 ### Pattern 1: High-level guide with references
 
-```markdown
+````markdown
 ---
 name: pdf-processing
 description: Extracts text and tables from PDF files, fills forms, merges documents.
@@ -154,7 +155,7 @@ with pdfplumber.open("file.pdf") as pdf:
 **Form filling**: See [FORMS.md](FORMS.md)
 **API reference**: See [REFERENCE.md](REFERENCE.md)
 **Examples**: See [EXAMPLES.md](EXAMPLES.md)
-```
+````
 
 ### Pattern 2: Domain-specific organization
 
@@ -187,7 +188,7 @@ For simple edits, modify the XML directly.
 
 ## Keep References One Level Deep
 
-Claude may partially read files when they're referenced from other referenced files.
+The agent may partially read files when they're referenced from other referenced files.
 
 **Bad (too deep):**
 ```markdown
@@ -215,7 +216,7 @@ Here's the actual information...
 
 ### Workflow with Checklist
 
-```markdown
+````markdown
 ## Research synthesis workflow
 
 Copy this checklist:
@@ -232,7 +233,7 @@ Copy this checklist:
 
 Review each document in `sources/`. Note main arguments.
 ...
-```
+````
 
 ### Feedback Loop Pattern
 
@@ -253,7 +254,7 @@ Review each document in `sources/`. Note main arguments.
 
 ### Template Pattern
 
-```markdown
+````markdown
 ## Report structure
 
 Use this template:
@@ -272,11 +273,11 @@ Use this template:
 1. Specific actionable recommendation
 2. Specific actionable recommendation
 ```
-```
+````
 
 ### Examples Pattern
 
-```markdown
+````markdown
 ## Commit message format
 
 **Example 1:**
@@ -294,7 +295,7 @@ Output:
 ```
 fix(reports): correct date formatting in timezone conversion
 ```
-```
+````
 
 ### Conditional Workflow Pattern
 
@@ -365,14 +366,14 @@ You can use pypdf, or pdfplumber, or PyMuPDF, or pdf2image, or...
 ```
 
 **Good:**
-```markdown
+````markdown
 Use pdfplumber for text extraction:
 ```python
 import pdfplumber
 ```
 
 For scanned PDFs requiring OCR, use pdf2image with pytesseract instead.
-```
+````
 
 ## Checklist for Effective Skills
 
@@ -399,6 +400,7 @@ For scanned PDFs requiring OCR, use pdf2image with pytesseract instead.
 
 ### Testing
 - [ ] At least three test scenarios
-- [ ] Tested with Haiku, Sonnet, and Opus
+- [ ] Tested with the models intended for the active client
+- [ ] Automatic versus explicit-only behavior matches the selected policy
 - [ ] Tested with real usage scenarios
 - [ ] Team feedback incorporated
