@@ -41,9 +41,13 @@ def _prose_helpers(harness: HarnessConfig) -> dict:
     def skill_ref(ref: str) -> str:
         return prose["skill"].format(**_ref_parts(ref))
 
-    helpers: dict = {"spawn": spawn, "skill_ref": skill_ref}
+    def launch(ref: str, tag: str) -> str:
+        """A subagent launch carrying `tag` where the harness's spawn call puts its label."""
+        return prose["launch"].format(**_ref_parts(ref), tag=tag)
+
+    helpers: dict = {"spawn": spawn, "skill_ref": skill_ref, "launch": launch}
     for key, value in prose.items():
-        if key not in ("spawn", "skill"):
+        if key not in ("spawn", "skill", "launch"):
             helpers[key] = value  # plain snippets, e.g. todo, ask_user
     return helpers
 

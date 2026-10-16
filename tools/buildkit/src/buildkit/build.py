@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -41,6 +42,59 @@ def discover_skills(plugin: PluginConfig) -> list[Path]:
 
 def discover_agents(plugin: PluginConfig) -> list[Path]:
     return sorted((plugin.src_dir / "agents").glob("*/*.md.j2"))
+
+
+def _build_hooks(
+    env,
+    plugin: PluginConfig,
+    harness: HarnessConfig,
+    cfg: SourceConfig,
+    out_root: Path,
+    result: BuildResult,
+) -> bool:
+    """Render a plugin's hooks/hooks.json.j2 for one harness.
+
+    A render that is empty for a harness skips it, so one template can target a
+    subset of harnesses. Returns True when a hooks file was written."""
+    src = plugin.src_dir / "hooks" / "hooks.json.j2"
+    if not src.exists():
+        return False
+    component = f"{plugin.name}/hooks"
+    rendered = render_file(env, src, harness, cfg)
+    if not rendered.strip():
+        return False
+    if not harness.hooks_path:
+        raise ValueError(f"{component}: renders hooks for {harness.id}, which has no hooks_path")
+    try:
+        json.loads(rendered)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{component}: rendered hooks for {harness.id} are not valid JSON: {exc}") from exc
+    out_file = _plugin_dist_dir(out_root, harness, plugin) / harness.hooks_path
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(rendered)
+    result.written.append(out_file)
+
+    # Support files (scripts, data) ship next to the hooks file, so hook commands
+    # and the scripts themselves can locate them relative to it.
+    hooks_src = src.parent
+    for support in sorted(hooks_src.rglob("*")):
+        if not support.is_file() or support == src or "__pycache__" in support.parts:
+            continue
+        rel = support.relative_to(hooks_src)
+        if support.suffix == ".j2":
+            text = render_file(env, support, harness, cfg)
+            if not text.strip():
+                continue
+            target = out_file.parent / rel.with_suffix("")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(text)
+        else:
+            target = out_file.parent / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(support, target)
+            shutil.copymode(support, target)
+        result.written.append(target)
+    return True
 
 
 def _component_targets(fm_data: dict, component: str) -> list[str]:
@@ -176,6 +230,7 @@ def build(
             if skill_count == 0 and not agent_files:
                 continue  # no components for this harness: no tree, no registry entry
             included[target].append(plugin)
+            _build_hooks(env, plugin, harness, cfg, out_root, result)
 
             readme = plugin.src_dir / "README.md"
             if readme.exists():

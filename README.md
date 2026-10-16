@@ -10,14 +10,17 @@ A marketplace for my AI coding-agent extensions — skills and agents authored o
 | **engineering-workflow** | 0.8.1 | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
 | **documentation** | 0.8.0 | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | ✅¹ | ✅¹ |
 | **authoring-tools** | 0.8.1 | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
+| **nstack** | 0.0.1 | Engineering backbone adapted from pstack: nstack-flow coordinator with feature/bug-fix/investigation playbooks, 8 workflow skills plus pstack's 24 principles and 11 supporting skills (43 total), 3 agents, per-role models via a hook² | ✅ | ✅ | ✅ |
 
 ¹ The orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are adapted per harness: subagent dispatch, todo tracking, and user questions render in each harness's native mechanism. They degrade gracefully on Copilot/Codex (chat questions instead of structured question UI, no parallel exploration fan-out).
+
+² nstack is independent of the other plugins. A plugin hook applies the model, and effort where supported, for each delegated role from built-in defaults or your overrides; it needs Python 3.11+, and Codex users must trust the hook once with `/hooks`. See [the nstack README](src/plugins/nstack/README.md).
 
 Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-writer agent from `documentation` — install them together.
 
 ## Manual-only skills
 
-Four selected skills require explicit user invocation; they must not be loaded automatically by the model or another workflow:
+Six selected skills require explicit user invocation; they must not be loaded automatically by the model or another workflow:
 
 | Skill | Claude Code | Copilot (VS Code and CLI) | Codex |
 | --- | --- | --- | --- |
@@ -25,8 +28,12 @@ Four selected skills require explicit user invocation; they must not be loaded a
 | `planning` | `/engineering-workflow:planning` | `/planning` | `$planning` |
 | `creating-skills` | `/authoring-tools:creating-skills` | Not distributed | Not distributed |
 | `creating-agents` | `/authoring-tools:creating-agents` | Not distributed | Not distributed |
+| `nstack-flow` | `/nstack:nstack-flow` | `/nstack:nstack-flow` (CLI) | `$nstack-flow` |
+| `setup-nstack` | `/nstack:setup-nstack` | `/nstack:setup-nstack` (CLI) | `$setup-nstack` |
 
-`creating-skills` and `creating-agents` remain Claude-only because they teach Claude Code's own authoring formats. `researching` and `planning` ship in all three distributions. Claude and Copilot enforce manual-only selection with `disable-model-invocation: true` in skill frontmatter; Codex uses `policy.allow_implicit_invocation: false` in each skill's `agents/openai.yaml` sidecar.
+`creating-skills` and `creating-agents` remain Claude-only because they teach Claude Code's own authoring formats. `researching`, `planning`, `nstack-flow`, and `setup-nstack` ship in all three distributions. Claude and Copilot enforce manual-only selection with `disable-model-invocation: true` in skill frontmatter; Codex uses `policy.allow_implicit_invocation: false` in each skill's `agents/openai.yaml` sidecar.
+
+The nstack Copilot commands above were observed in Copilot CLI 1.0.95, which registers plugin skills under a plugin namespace (`nstack:<skill>`). In that version, non-interactive prompt mode (`copilot -p`) passes slash text to the model without expanding the skill, so run `nstack-flow` and `setup-nstack` from an interactive session.
 
 After the design specification is approved and committed, `researching` shows the user the planning command with the actual feature path, then stops. The user must invoke planning explicitly; researching never invokes it automatically.
 
@@ -38,7 +45,7 @@ After the design specification is approved and committed, `researching` shows th
 
 ```bash
 /plugin marketplace add nilpath/nilpath-marketplace
-/plugin install git-tools          # or engineering-workflow, documentation, authoring-tools
+/plugin install git-tools          # or engineering-workflow, documentation, authoring-tools, nstack
 ```
 
 **GitHub Copilot (VS Code):** add the repo as a plugin marketplace in settings, then install from the Extensions view (`@agentPlugins`):
@@ -56,6 +63,7 @@ copilot plugin marketplace add nilpath/nilpath-marketplace
 copilot plugin install git-tools@nilpath-marketplace
 copilot plugin install documentation@nilpath-marketplace
 copilot plugin install engineering-workflow@nilpath-marketplace
+copilot plugin install nstack@nilpath-marketplace
 ```
 
 Both Copilot clients use `.github/plugin/marketplace.json`, which points to `dist/copilot/plugins/<plugin>/`; there is no separate CLI build. The [official CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference) documents support for this registry location and Agent Plugins 1.0 manifests. The [official CLI skills guide](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills) documents explicit `/skill-name` requests. Installation-format support does not guarantee runtime invocation of the manual-only skills; see the caveat above.
@@ -98,4 +106,10 @@ make check            # fail if committed output drifts from src/ (CI gate)
 make test-static      # structure tests over the generated output
 ```
 
-Workflow: edit `src/`, run `make build`, commit sources **and** `dist/` together. See [ai_docs/release-workflow.md](ai_docs/release-workflow.md) for releases.
+**`dist/` and the root registry files are read-only.** buildkit generates them from `src/`, and hand edits are overwritten on the next build. To change a skill, agent, or manifest:
+
+1. Edit the source under `src/`.
+2. Run `make build check` to regenerate `dist/` and confirm it matches `src/`. Run `build` before `check`; `check` fails until the output is regenerated.
+3. Commit the sources **and** `dist/` together.
+
+See [ai_docs/release-workflow.md](ai_docs/release-workflow.md) for releases.

@@ -73,6 +73,11 @@ class HarnessConfig:
         """Output format for agents: 'markdown' (frontmatter + body) or 'toml'."""
         return self.output.get("agent_format", "markdown")
 
+    @property
+    def hooks_path(self) -> str | None:
+        """Plugin-relative path of this harness's hooks file, or None if unsupported."""
+        return self.output.get("hooks_path")
+
     def supports_kind(self, kind: str) -> bool:
         dir_key = {"skill": "skills_dir", "agent": "agents_dir"}[kind]
         return dir_key in self.output

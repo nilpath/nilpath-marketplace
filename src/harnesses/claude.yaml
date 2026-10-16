@@ -3,6 +3,7 @@ output:
   dist_root: dist/claude        # plugins render under <dist_root>/plugins/<plugin>/
   skills_dir: skills            # plugin-relative
   agents_dir: agents
+  hooks_path: hooks/hooks.json       # plugin hooks file (rendered from hooks/hooks.json.j2)
 paths:
   skill_root: "${{CLAUDE_PLUGIN_ROOT}}/skills/{skill_name}"
 frontmatter:
@@ -34,6 +35,7 @@ tools:
 # {{ spawn('plugin:cat:agent') }}, {{ skill_ref('plugin:skill') }}, {{ todo }}, {{ ask_user }}
 prose:
   spawn: '`Agent(subagent_type="{full}")`'
+  launch: '`Agent(subagent_type="{full}")` with `{tag}` at the start of `description` and the brief as `prompt`'
   skill: 'the `{full}` skill'
   todo: 'the `TodoWrite` tool'
   ask_user: 'the `AskUserQuestion` tool'

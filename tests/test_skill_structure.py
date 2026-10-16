@@ -6,7 +6,7 @@ import pytest
 from paths import all_skill_dirs
 
 KNOWN_MODELS = {"haiku", "sonnet", "opus"}
-KNOWN_SUBDIRS = {"references", "templates", "workflows", "scripts", "examples", "prompts"}
+KNOWN_SUBDIRS = {"references", "templates", "workflows", "playbooks", "scripts", "examples", "prompts"}
 KEBAB_RE = re.compile(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$")
 
 

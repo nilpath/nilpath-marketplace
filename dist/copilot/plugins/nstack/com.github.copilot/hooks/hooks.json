@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "python3 \"$CLAUDE_PLUGIN_ROOT/com.github.copilot/hooks/nstack_config.py\" session-start || true",
+        "timeoutSec": 15
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "matcher": "task",
+        "bash": "python3 \"$CLAUDE_PLUGIN_ROOT/com.github.copilot/hooks/nstack_config.py\" hook || true",
+        "timeoutSec": 15
+      }
+    ]
+  }
+}
