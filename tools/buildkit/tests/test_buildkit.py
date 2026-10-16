@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from buildkit.build import BuildResult, _build_skill
-from buildkit.config import load_config
+from buildkit.build import BuildResult, _build_hooks, _build_skill
+from buildkit.config import PluginConfig, load_config
 from buildkit.fm import (
     FrontmatterError,
     dump_agent_toml,
@@ -221,6 +221,22 @@ class TestProseHelpers:
         assert "`code-reviewer` agent (spawn it as a subagent)" in out
         assert "update_plan" in out
 
+    @pytest.mark.parametrize(
+        ("harness_id", "expected"),
+        [
+            ("claude", '`Agent(subagent_type="p:cat:agent")` with `[tag x]` at the start of `description`'),
+            ("copilot", "agent type `p:agent`, `[tag x]` at the start of the description"),
+            ("codex", "`spawn_agent` with `agent_type` `agent` and a `message` that starts with `[tag x]`"),
+        ],
+    )
+    def test_launch_prose(self, cfg, harness_id, expected):
+        from buildkit.render import make_environment, render_text
+
+        out = render_text(
+            make_environment(), "{{ launch('p:cat:agent', '[tag x]') }}", cfg.harnesses[harness_id], cfg
+        )
+        assert expected in out
+
     def test_missing_prose_key_fails_loudly(self, cfg):
         from buildkit.render import make_environment, render_text
 
@@ -305,3 +321,89 @@ class TestConditionalSupportingFiles:
                 make_environment(), skill_dir, cfg.harnesses["claude"], plugin, cfg,
                 tmp_path / "out", BuildResult(),
             )
+
+
+class TestPluginHooks:
+    TEMPLATE = (
+        '{% if harness == "copilot" %}{"version": 1, "hooks": {"preToolUse": []}}'
+        '{% elif harness == "claude" %}{"hooks": {"PreToolUse": []}}{% endif %}\n'
+    )
+
+    def _plugin(self, tmp_path, template: str | None) -> PluginConfig:
+        src = tmp_path / "src" / "hooked"
+        (src / "hooks").mkdir(parents=True)
+        if template is not None:
+            (src / "hooks" / "hooks.json.j2").write_text(template)
+        return PluginConfig(src_dir=src, meta={"name": "hooked", "version": "0.0.0"})
+
+    @pytest.mark.parametrize(
+        ("harness_id", "expected"),
+        [
+            ("claude", "hooks/hooks.json"),
+            ("copilot", "com.github.copilot/hooks/hooks.json"),
+            ("codex", None),
+        ],
+    )
+    def test_renders_per_harness_and_skips_empty(self, cfg, tmp_path, harness_id, expected):
+        import json
+
+        plugin = self._plugin(tmp_path, self.TEMPLATE)
+        harness = cfg.harnesses[harness_id]
+        out_root = tmp_path / "out"
+        result = BuildResult()
+        written = _build_hooks(make_environment(), plugin, harness, cfg, out_root, result)
+        plugin_dir = out_root / harness.dist_root / "plugins" / "hooked"
+        if expected is None:
+            assert written is False
+            assert not plugin_dir.exists()
+            assert result.written == []
+        else:
+            assert written is True
+            assert json.loads((plugin_dir / expected).read_text())["hooks"]
+            assert result.written == [plugin_dir / expected]
+
+    def test_plugin_without_hooks_template_writes_nothing(self, cfg, tmp_path):
+        plugin = self._plugin(tmp_path, None)
+        assert not _build_hooks(
+            make_environment(), plugin, cfg.harnesses["claude"], cfg, tmp_path / "out", BuildResult()
+        )
+
+    def test_invalid_json_fails_loudly(self, cfg, tmp_path):
+        plugin = self._plugin(tmp_path, '{"hooks": [}\n')
+        with pytest.raises(ValueError, match="not valid JSON"):
+            _build_hooks(
+                make_environment(), plugin, cfg.harnesses["codex"], cfg, tmp_path / "out", BuildResult()
+            )
+
+
+class TestPluginHookSupportFiles:
+    @pytest.mark.parametrize(
+        ("harness_id", "hooks_dir"),
+        [("claude", "hooks"), ("copilot", "com.github.copilot/hooks"), ("codex", "hooks")],
+    )
+    def test_support_files_ship_next_to_the_hooks_file(self, cfg, tmp_path, harness_id, hooks_dir):
+        src = tmp_path / "src" / "hooked"
+        (src / "hooks" / "data").mkdir(parents=True)
+        (src / "hooks" / "hooks.json.j2").write_text('{"hooks": {}}\n')
+        script = src / "hooks" / "run.py"
+        script.write_text("print('hi')\n")
+        script.chmod(0o755)
+        (src / "hooks" / "data" / "note.md").write_text("note\n")
+        (src / "hooks" / "data" / "harness.txt.j2").write_text("{{ harness }}\n")
+        (src / "hooks" / "data" / "empty.txt.j2").write_text("{% if false %}x{% endif %}\n")
+        (src / "hooks" / "__pycache__").mkdir()
+        (src / "hooks" / "__pycache__" / "run.cpython-311.pyc").write_bytes(b"x")
+        plugin = PluginConfig(src_dir=src, meta={"name": "hooked", "version": "0.0.0"})
+        harness = cfg.harnesses[harness_id]
+        out_root = tmp_path / "out"
+
+        assert _build_hooks(make_environment(), plugin, harness, cfg, out_root, BuildResult())
+
+        out = out_root / harness.dist_root / "plugins" / "hooked" / hooks_dir
+        assert (out / "run.py").read_text() == "print('hi')\n"
+        assert (out / "run.py").stat().st_mode & 0o111
+        assert (out / "data" / "note.md").read_text() == "note\n"
+        assert (out / "data" / "harness.txt").read_text() == f"{harness_id}\n"
+        assert not (out / "data" / "empty.txt").exists()
+        assert not (out / "__pycache__").exists()
+        assert not (out / "hooks.json.j2").exists()

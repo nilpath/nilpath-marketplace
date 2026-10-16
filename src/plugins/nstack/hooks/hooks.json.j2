@@ -1,0 +1,54 @@
+{#- The script ships next to this file. `|| true`: a missing python3 must never block anything; Copilot hooks are fail-closed. -#}
+{% set script = '$CLAUDE_PLUGIN_ROOT/' ~ ('com.github.copilot/hooks' if harness == 'copilot' else 'hooks') ~ '/nstack_config.py' -%}
+{% set launch = 'python3 "' ~ script ~ '" hook || true' -%}
+{% set session = 'python3 "' ~ script ~ '" session-start || true' -%}
+{% if harness == "copilot" -%}
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": {{ session | tojson }},
+        "timeoutSec": 15
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "matcher": "task",
+        "bash": {{ launch | tojson }},
+        "timeoutSec": 15
+      }
+    ]
+  }
+}
+{% else -%}
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": {{ session | tojson }},
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "{{ 'Agent' if harness == 'claude' else 'spawn_agent' }}",
+        "hooks": [
+          {
+            "type": "command",
+            "command": {{ launch | tojson }},
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
+{% endif -%}

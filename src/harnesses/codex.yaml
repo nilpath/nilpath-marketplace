@@ -8,6 +8,7 @@ output:
   agents_dir: agents
   agent_suffix: ".toml"
   agent_format: toml
+  hooks_path: hooks/hooks.json       # plugin hooks file (rendered from hooks/hooks.json.j2)
 paths:
   skill_root: "."
 frontmatter:
@@ -29,6 +30,7 @@ tools:
   map: {}                          # no tool concept — stripped silently
 prose:
   spawn: 'the `{name}` agent (spawn it as a subagent)'
+  launch: '`spawn_agent` with `agent_type` `{name}` and a `message` that starts with `{tag}`, followed by the brief'
   skill: 'the `{name}` skill'
   todo: 'the plan tool (`update_plan`)'
   ask_user: 'a direct chat question to the user (wait for their reply before continuing)'

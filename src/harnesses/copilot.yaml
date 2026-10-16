@@ -6,6 +6,7 @@ output:
   # per the Agent Plugins 1.0 spec.
   agents_dir: com.github.copilot/agents
   agent_suffix: ".agent.md"
+  hooks_path: com.github.copilot/hooks/hooks.json       # plugin hooks file (rendered from hooks/hooks.json.j2)
 paths:
   skill_root: "."        # skills resolve relative to their own directory
 frontmatter:
@@ -37,6 +38,7 @@ tools:
     todo: todo
 prose:
   spawn: 'the `{name}` custom agent (delegate to it via the agent tool)'
+  launch: 'the task tool with agent type `{plugin}:{name}`, `{tag}` at the start of the description, and the brief as the prompt'
   skill: 'the `{name}` skill (`/{name}`)'
   todo: 'the todo list'
   ask_user: 'a direct chat question to the user (wait for their reply before continuing)'

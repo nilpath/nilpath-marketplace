@@ -11,6 +11,45 @@ ROOT = Path(__file__).resolve().parents[1]
 SELECTED_SKILLS = {
     "authoring-tools": {"creating-skills", "creating-agents"},
     "engineering-workflow": {"planning", "researching"},
+    "nstack": {
+        "benchmark-checklist",
+        "control-cli",
+        "control-ui",
+        "deslop",
+        "figure-it-out",
+        "no-comments",
+        "nstack-flow",
+        "principle-attack-the-premise",
+        "principle-boundary-discipline",
+        "principle-build-the-lever",
+        "principle-encode-lessons-in-structure",
+        "principle-exhaust-the-design-space",
+        "principle-experience-first",
+        "principle-explain-the-number",
+        "principle-fix-root-causes",
+        "principle-foundational-thinking",
+        "principle-guard-the-context-window",
+        "principle-laziness-protocol",
+        "principle-make-operations-idempotent",
+        "principle-migrate-callers-then-delete-legacy-apis",
+        "principle-minimize-reader-load",
+        "principle-model-the-domain",
+        "principle-never-block-on-the-human",
+        "principle-outcome-oriented-execution",
+        "principle-prove-it-works",
+        "principle-redesign-from-first-principles",
+        "principle-separate-before-serializing-shared-state",
+        "principle-sequence-verifiable-units",
+        "principle-subtract-before-you-add",
+        "principle-test-behavior-not-implementation",
+        "principle-type-system-discipline",
+        "setup-nstack",
+        "show-me-your-work",
+        "tdd",
+        "technical-writing",
+        "typescript-best-practices",
+        "unslop",
+    },
 }
 
 
@@ -43,7 +82,7 @@ def test_invocation_policy_matches_supported_skills(harness):
                 }
             else:
                 assert not sidecar.exists()
-    expected = {"planning", "researching"}
+    expected = {"planning", "researching"} | SELECTED_SKILLS["nstack"]
     if harness == "claude":
         expected |= {"creating-skills", "creating-agents"}
     else:
