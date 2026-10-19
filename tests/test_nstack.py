@@ -23,9 +23,11 @@ SKILLS = {
     "candidate-graft",
     "control-cli",
     "control-ui",
+    "create-verification-skill",
     "deslop",
     "figure-it-out",
     "how",
+    "maintain-verification-skill",
     "no-comments",
     "nstack-flow",
     "principle-attack-the-premise",
@@ -94,6 +96,7 @@ SKILL_ROLES = {
     "architect": {"architect-runner"},
     "review-panel": {"review-panel-reviewer"},
     "nstack-flow": {"implementer", "implementer-hard", "judgment"},
+    "maintain-verification-skill": {"how-explorer"},
 }
 LINK_RE = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
 PLAYBOOKS = {"feature.md", "bug-fix.md", "investigation.md"}

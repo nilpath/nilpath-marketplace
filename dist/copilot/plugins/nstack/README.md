@@ -20,6 +20,7 @@ An explicit coordinator picks a playbook (feature, bug fix, or investigation), g
 | unslop, technical-writing, no-comments, deslop | Explicit only | Prose and code cleanup triggered by nstack-flow's non-negotiables |
 | control-cli, control-ui, benchmark-checklist, tdd | Explicit only | Driving real surfaces, vetting measurements, failing-test-first bug fixes |
 | show-me-your-work, figure-it-out, typescript-best-practices | Explicit only | Decision trails, bespoke playbooks when none fits, TypeScript patterns |
+| create-verification-skill, maintain-verification-skill | Explicit only | Generate a project-local `verify-<app>` skill with a feature map, and keep it in line with the app through a source pass, one live pass, and at most one draft pull request |
 
 "Explicit only" skills stay out of the client's automatic skill catalog. nstack-flow and the agents read them directly from `../<name>/SKILL.md`.
 
