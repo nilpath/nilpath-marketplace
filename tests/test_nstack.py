@@ -120,7 +120,7 @@ def test_inventory(harness):
 @pytest.mark.parametrize("harness", HARNESSES)
 def test_manifest_version(harness):
     manifest = json.loads((plugin_dir(harness) / MANIFESTS[harness]).read_text())
-    assert manifest["version"] == VERSION == "0.0.1"
+    assert manifest["version"] == VERSION == "0.0.2"
 
 
 def test_codex_manifest_lists_the_agents():

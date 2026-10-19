@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **nstack 0.0.2**: adds pstack's **create-verification-skill** (with its `feature-map-example` references) and **maintain-verification-skill**, both explicit-only. The text matches pstack at commit `dbf49813`, the commit nstack's README credits, except for these changes:
+  - The generated skill goes to the active client's project skills directory (`.claude/skills/`, `.github/skills/`, or `.agents/skills/`) instead of `.cursor/skills/`.
+  - Cross-references between the two skills use nstack's skill names.
+  - maintain-verification-skill launches its per-feature source readers with the `how-explorer` role tag.
+  - maintain-verification-skill opens its one pull request as a draft, through nstack-flow's delivery reference.
 - **nstack 0.0.1** — new, independently installable plugin for Claude Code, Copilot (CLI and VS Code), and Codex, adapting the backbone of [pstack](https://github.com/cursor/plugins/tree/dbf49813a39c1a5389c5e28cb8e4c1c2379e2454/pstack) by Lauren Tan (MIT). Other plugin versions and the marketplace version are unchanged.
   - **nstack-flow** (explicit only) — coordinator that selects the feature, bug-fix, or investigation playbook and runs it to its stopping point. Features and bug fixes end as a verified, reviewed **draft** pull request; investigations end with a cited answer and no edits. It never marks pull requests ready, merges, or watches CI.
   - **how**, **why**, **architect**, **candidate-graft** (pstack's arena), **swarm**, and **review-panel** (pstack's interrogate), copied from pstack verbatim except for one launch sentence with the role tag in place of Cursor's Task and model-rule instructions.
