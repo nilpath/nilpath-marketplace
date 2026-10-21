@@ -40,7 +40,7 @@ def test_plugin_version_sync(plugin_dir):
 
 
 def test_copilot_registry_syncs_with_sources():
-    """VS Code's .github/plugin/marketplace.json must list every plugin that
+    """Copilot CLI's .github/plugin/marketplace.json must list every plugin that
     has copilot components, with versions matching src."""
     registry = json.loads(
         (MARKETPLACE_JSON.parent.parent / ".github" / "plugin" / "marketplace.json").read_text()

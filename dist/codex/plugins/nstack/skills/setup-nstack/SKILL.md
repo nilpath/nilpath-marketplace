@@ -11,11 +11,13 @@ nstack's plugin hook reads the `[nstack role=<role> seat=<n>]` tag on each launc
 
 Never hand-write `models.json`. Use the hook's script, `<helper>`: `../../hooks/nstack_config.py` from this skill's base directory (absolute path). It needs Python 3.11 or newer.
 
+Replace `<helper>` in each command with that absolute path. Quote it and keep the repository working directory. The helper is under plugin hooks, not this skill's scripts. Hook execution is independent of skill frontmatter approvals.
+
 Open a todolist with one entry per step before starting.
 
 ## 1. Load the current state
 
-Run `python3 --version`, then `python3 <helper> roles` (catalog, defaults, effort levels) and `python3 <helper> status` (effective model, effort, source, and verification per seat). Stop on Python below 3.11, or on `"ok": false` and show its `message` and `repair`.
+Run `python3 --version`, then `python3 "<helper>" roles` (catalog, defaults, effort levels) and `python3 "<helper>" status` (effective model, effort, source, and verification per seat). Stop on Python below 3.11, or on `"ok": false` and show its `message` and `repair`.
 
 Codex runs plugin hooks only once trusted. If nstack's hook is untrusted, have the user trust it in `/hooks` first. Until then nstack agents reply that the hook did not run.
 
@@ -44,11 +46,11 @@ Write the overrides to a temp JSON file outside the repository. It replaces this
 }
 ```
 
-Run `python3 <helper> configure --input <overrides.json> --dry-run` and show each changed role's `before` and `after`. Fix validation errors with the user and preview again.
+Run `python3 "<helper>" configure --input <overrides.json> --dry-run` and show each changed role's `before` and `after`. Fix validation errors with the user and preview again.
 
 ## 4. Apply
 
-After the user confirms, run `python3 <helper> configure --input <overrides.json> --apply --plan-id <plan_id>`. On `stale_plan` (exit 5), preview again and get fresh confirmation. Delete the temp file.
+After the user confirms, run `python3 "<helper>" configure --input <overrides.json> --apply --plan-id <plan_id>`. On `stale_plan` (exit 5), preview again and get fresh confirmation. Delete the temp file.
 
 ## 5. Check dispatch
 
@@ -59,7 +61,7 @@ A configured model is not proof the client runs it. Probe at least one seat per 
 Reply with exactly one line: NSTACK-PROBE <role> <seat>
 ```
 
-Record the result with `python3 <helper> record-verification --role <role> --seat <n> --status <verified|failed> --evidence "<observation>"`. Record `failed` when the launch is blocked or the model is rejected, and show the error. Record `verified` only when the client shows which model served the launch (the subagent's thread details), and quote it. A subagent's claim about its own model is not evidence. Otherwise leave the seat unverified.
+Record the result with `python3 "<helper>" record-verification --role <role> --seat <n> --status <verified|failed> --evidence "<observation>"`. Record `failed` when the launch is blocked or the model is rejected, and show the error. Record `verified` only when the client shows which model served the launch (the subagent's thread details), and quote it. A subagent's claim about its own model is not evidence. Otherwise leave the seat unverified.
 
 ## 6. Report
 

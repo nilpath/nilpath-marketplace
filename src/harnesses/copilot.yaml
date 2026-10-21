@@ -8,13 +8,21 @@ output:
   agent_suffix: ".agent.md"
   hooks_path: com.github.copilot/hooks/hooks.json       # plugin hooks file (rendered from hooks/hooks.json.j2)
 paths:
-  skill_root: "."        # skills resolve relative to their own directory
+  skill_root: "."        # no verified portable installed-path substitution
 frontmatter:
   skill:
-    key_for_tools: null  # Copilot skills carry no tool declarations
+    key_for_tools: null  # gated: headless grants and portable script paths failed runtime probes
     required: [name, description]
-    allowed: [name, description, license, disable-model-invocation]
+    allowed: [name, description, license, disable-model-invocation, allowed-tools]
     drop: [argument-hint]
+    tools:
+      format: list
+      keep_scopes: true
+      dedupe: true
+      scoped_only: [shell]
+      unmappable: [file-read, file-write, file-edit, glob-search, content-search, web-fetch, web-search, subagent, skill, ask-user, todo]
+      map:
+        shell: shell
   agent:
     key_for_tools: tools
     required: [name, description]

@@ -1,3 +1,4 @@
+{% if harness != "claude" %}{% set skill_root = "<git-stacked-prs skill directory>" %}{% endif %}
 # Updating Stack After PR Merge
 
 How to update PR targets and rebase remaining branches after merging stacked PRs.
@@ -147,7 +148,7 @@ git push --force-with-lease
 Use the built-in `stack-rebase.sh` script to automate the entire rebase process:
 
 ```bash
-{{ skill_root }}/scripts/stack-rebase.sh main feature/auth-models feature/auth-api feature/auth-ui
+"{{ skill_root }}/scripts/stack-rebase.sh" main feature/auth-models feature/auth-api feature/auth-ui
 ```
 
 Features:
@@ -163,7 +164,7 @@ Features:
 Use the `update-pr-targets.sh` script to automatically update PR targets after a merge:
 
 ```bash
-{{ skill_root }}/scripts/update-pr-targets.sh feature/auth-setup main
+"{{ skill_root }}/scripts/update-pr-targets.sh" feature/auth-setup main
 ```
 
 This script will:

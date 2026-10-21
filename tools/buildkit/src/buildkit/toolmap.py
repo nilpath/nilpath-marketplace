@@ -35,8 +35,12 @@ def parse_entry(entry: str) -> ToolEntry:
         # Distinguish "claude:raw" passthrough from scopes (scopes always sit in parens)
         if prefix.isalpha() and prefix.islower():
             return ToolEntry(name=rest, passthrough_harness=prefix)
-    if "(" in entry and entry.endswith(")"):
+    if "(" in entry:
+        if not entry.endswith(")"):
+            raise ValueError(f"malformed tool scope (entry: {entry!r})")
         name, scope = entry.split("(", 1)
+        if not scope[:-1].strip():
+            raise ValueError(f"empty tool scope (entry: {entry!r})")
         return ToolEntry(name=name.strip(), scope=scope[:-1])
     return ToolEntry(name=entry)
 
@@ -68,6 +72,7 @@ def translate_tools(
     entries: list[str],
     harness: HarnessConfig,
     cfg: SourceConfig,
+    kind: str,
 ) -> tuple[list[str], list[str]]:
     """Translate canonical entries to a harness's vocabulary.
 
@@ -75,6 +80,8 @@ def translate_tools(
     """
     out: list[str] = []
     warnings: list[str] = []
+    policy = harness.tool_policy(kind)
+    tool_map = policy.get("map", {})
     for raw in entries:
         entry = parse_entry(raw)
 
@@ -85,20 +92,23 @@ def translate_tools(
 
         if entry.name not in cfg.canonical_tools:
             raise ValueError(f"unknown canonical tool '{entry.name}' (entry: {raw!r})")
-        if entry.name in harness.tool_unmappable:
+        if entry.name in policy.get("unmappable", []):
             warnings.append(f"tool '{entry.name}' has no {harness.id} equivalent; dropped")
             continue
-        mapped = harness.tool_map.get(entry.name)
+        if entry.name in policy.get("scoped_only", []) and not entry.scope:
+            warnings.append(f"tool '{entry.name}' requires a scope for {harness.id} {kind}; dropped")
+            continue
+        mapped = tool_map.get(entry.name)
         if mapped is None:
-            if harness.tool_map:  # mapped vocabulary exists but lacks this tool
+            if tool_map:
                 warnings.append(f"tool '{entry.name}' not mapped for {harness.id}; dropped")
             continue  # empty map (codex): strip silently
-        if entry.scope and harness.keep_tool_scopes:
+        if entry.scope and policy.get("keep_scopes", False):
             out.append(f"{mapped}({entry.scope})")
         else:
             out.append(mapped)
 
-    if harness.tool_dedupe:
+    if policy.get("dedupe", False):
         seen: set[str] = set()
         deduped = []
         for item in out:

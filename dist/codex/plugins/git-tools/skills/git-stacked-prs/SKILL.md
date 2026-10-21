@@ -3,9 +3,13 @@ name: git-stacked-prs
 description: Stacked (dependent) pull request workflow. Use when creating, managing, or troubleshooting stacked PRs, or when user mentions stacked diffs, dependent PRs, PR stacks, or breaking large features into smaller PRs.
 ---
 
+
 # Git Stacked PRs
 
 Expert guidance for creating and managing stacked (dependent) pull requests.
+
+Replace `<git-stacked-prs skill directory>` in each command with the absolute directory containing this installed `SKILL.md`. Keep the working directory in the repository. The placeholder does not expand automatically. Approve script execution through the client's ordinary permission prompt.
+
 
 ## Current Git Context
 
@@ -190,7 +194,7 @@ The git-stacked-prs skill includes scripts to automate common workflows:
 Automatically rebase all branches in a stack with safety features:
 
 ```bash
-./scripts/stack-rebase.sh main feat/auth-base feat/auth-middleware feat/auth-api
+"<git-stacked-prs skill directory>/scripts/stack-rebase.sh" main feat/auth-base feat/auth-middleware feat/auth-api
 ```
 
 Features:
@@ -206,7 +210,7 @@ Features:
 Display visual tree of stack structure with PR status:
 
 ```bash
-./scripts/stack-status.sh --pr-status
+"<git-stacked-prs skill directory>/scripts/stack-status.sh" --pr-status
 ```
 
 Options:
@@ -219,7 +223,7 @@ Options:
 Batch update PR base branches after merging a base PR:
 
 ```bash
-./scripts/update-pr-targets.sh feat/auth-base main
+"<git-stacked-prs skill directory>/scripts/update-pr-targets.sh" feat/auth-base main
 ```
 
 Features:
@@ -235,16 +239,16 @@ Create backups before risky operations:
 
 ```bash
 # Create backups
-./scripts/stack-backup.sh create feat/auth-base feat/auth-middleware
+"<git-stacked-prs skill directory>/scripts/stack-backup.sh" create feat/auth-base feat/auth-middleware
 
 # List backups
-./scripts/stack-backup.sh list
+"<git-stacked-prs skill directory>/scripts/stack-backup.sh" list
 
 # Restore from backup
-./scripts/stack-backup.sh restore feat/auth-base
+"<git-stacked-prs skill directory>/scripts/stack-backup.sh" restore feat/auth-base
 
 # Clean old backups
-./scripts/stack-backup.sh clean --older-than 30
+"<git-stacked-prs skill directory>/scripts/stack-backup.sh" clean --older-than 30
 ```
 
 ## Common Operations
@@ -263,7 +267,7 @@ git log main..feat/auth/base --oneline
 git log feat/auth/base..feat/auth/middleware --oneline
 
 # Or use the automated script
-./scripts/stack-status.sh
+"<git-stacked-prs skill directory>/scripts/stack-status.sh"
 ```
 
 ### Rebase a Stack
@@ -271,7 +275,7 @@ git log feat/auth/base..feat/auth/middleware --oneline
 Use the automated script for safe, sequential rebasing:
 
 ```bash
-./scripts/stack-rebase.sh main feat/auth/base feat/auth/middleware feat/auth/api
+"<git-stacked-prs skill directory>/scripts/stack-rebase.sh" main feat/auth/base feat/auth/middleware feat/auth/api
 ```
 
 Or manually rebase each branch:

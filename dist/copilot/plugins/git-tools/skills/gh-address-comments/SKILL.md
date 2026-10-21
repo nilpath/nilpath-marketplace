@@ -3,21 +3,25 @@ name: gh-address-comments
 description: Address review/issue comments on the open GitHub PR for the current branch. Fetches all comments and review threads, summarizes what needs attention, and helps apply fixes. Use when responding to PR feedback, resolving review comments, or when user mentions "address comments" or "fix review feedback".
 ---
 
+
 # GitHub Address Comments
 
 Fetch and address review comments on the open PR for the current branch using the `gh` CLI.
+
+Replace `<gh-address-comments skill directory>` in each command with the absolute directory containing this installed `SKILL.md`. Keep the working directory in the repository. The placeholder does not expand automatically. Approve script execution through the client's ordinary permission prompt.
+
 
 ## Quick Start
 
 ```bash
 # Fetch all comments for current branch's PR
-./scripts/fetch-comments.sh
+"<gh-address-comments skill directory>/scripts/fetch-comments.sh"
 
 # Fetch comments for specific PR
-./scripts/fetch-comments.sh 123
+"<gh-address-comments skill directory>/scripts/fetch-comments.sh" 123
 
 # Reply to a review thread after fixing
-./scripts/reply-to-thread.sh "PRRT_threadId" "Fixed in this commit"
+"<gh-address-comments skill directory>/scripts/reply-to-thread.sh" "PRRT_threadId" "Fixed in this commit"
 ```
 
 ## Workflow
@@ -27,8 +31,10 @@ Fetch and address review comments on the open PR for the current branch using th
 Run the fetch script to get all PR comments:
 
 ```bash
-COMMENTS=$(./scripts/fetch-comments.sh)
+"<gh-address-comments skill directory>/scripts/fetch-comments.sh"
 ```
+
+Read the JSON from the tool result. Run the helper directly rather than wrapping it in command substitution, which can require separate shell approval.
 
 ### Step 2: Summarize and Number
 
@@ -71,7 +77,7 @@ After applying fixes, reply to the review threads to acknowledge:
 
 ```bash
 # For each addressed thread (use the thread id from fetch-comments.sh)
-./scripts/reply-to-thread.sh "$THREAD_ID" "Fixed in this commit"
+"<gh-address-comments skill directory>/scripts/reply-to-thread.sh" "$THREAD_ID" "Fixed in this commit"
 ```
 
 **Suggested reply formats:**
@@ -89,7 +95,7 @@ Fetches all PR comments using GitHub GraphQL API.
 **Usage:**
 
 ```bash
-./scripts/fetch-comments.sh [PR_NUMBER]
+"<gh-address-comments skill directory>/scripts/fetch-comments.sh" [PR_NUMBER]
 ```
 
 **Output:**
@@ -148,7 +154,7 @@ Reply to a PR review thread after addressing feedback.
 **Usage:**
 
 ```bash
-./scripts/reply-to-thread.sh <thread_id> <body>
+"<gh-address-comments skill directory>/scripts/reply-to-thread.sh" <thread_id> <body>
 ```
 
 **Arguments:**
@@ -174,7 +180,7 @@ Reply to a PR review thread after addressing feedback.
 
 ```bash
 # After fixing an issue, reply to acknowledge
-./scripts/reply-to-thread.sh "PRRT_kwDOExample123" "Fixed by adding null check"
+"<gh-address-comments skill directory>/scripts/reply-to-thread.sh" "PRRT_kwDOExample123" "Fixed by adding null check"
 ```
 
 ## Error Handling

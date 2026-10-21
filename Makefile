@@ -2,6 +2,7 @@ VENV := $(HOME)/.virtualenvs/nilpath-marketplace
 PYTHON := $(VENV)/bin/python
 PYTEST := $(VENV)/bin/pytest
 BUILDKIT := $(VENV)/bin/nilpath-build
+export PYTHONPATH := $(CURDIR)/tools/buildkit/src
 
 .PHONY: install build check validate test test-static test-behavioral
 

@@ -1,24 +1,26 @@
 ---
 name: gh-address-comments
 description: Address review/issue comments on the open GitHub PR for the current branch. Fetches all comments and review threads, summarizes what needs attention, and helps apply fixes. Use when responding to PR feedback, resolving review comments, or when user mentions "address comments" or "fix review feedback".
-allowed-tools: Bash(gh:*), Bash(jq:*), Read, Write, Edit
+allowed-tools: Bash(gh:*), Bash(jq:*), Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh":*), Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh":*), Read, Write, Edit
 ---
+
 
 # GitHub Address Comments
 
 Fetch and address review comments on the open PR for the current branch using the `gh` CLI.
 
+
 ## Quick Start
 
 ```bash
 # Fetch all comments for current branch's PR
-${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh"
 
 # Fetch comments for specific PR
-${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh 123
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh" 123
 
 # Reply to a review thread after fixing
-${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh "PRRT_threadId" "Fixed in this commit"
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh" "PRRT_threadId" "Fixed in this commit"
 ```
 
 ## Workflow
@@ -28,8 +30,10 @@ ${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh "PRR
 Run the fetch script to get all PR comments:
 
 ```bash
-COMMENTS=$(${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh)
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh"
 ```
+
+Read the JSON from the tool result. Run the helper directly rather than wrapping it in command substitution, which can require separate shell approval.
 
 ### Step 2: Summarize and Number
 
@@ -72,7 +76,7 @@ After applying fixes, reply to the review threads to acknowledge:
 
 ```bash
 # For each addressed thread (use the thread id from fetch-comments.sh)
-${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh "$THREAD_ID" "Fixed in this commit"
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh" "$THREAD_ID" "Fixed in this commit"
 ```
 
 **Suggested reply formats:**
@@ -90,7 +94,7 @@ Fetches all PR comments using GitHub GraphQL API.
 **Usage:**
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh [PR_NUMBER]
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh" [PR_NUMBER]
 ```
 
 **Output:**
@@ -149,7 +153,7 @@ Reply to a PR review thread after addressing feedback.
 **Usage:**
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh <thread_id> <body>
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh" <thread_id> <body>
 ```
 
 **Arguments:**
@@ -175,7 +179,7 @@ ${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh <thr
 
 ```bash
 # After fixing an issue, reply to acknowledge
-${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh "PRRT_kwDOExample123" "Fixed by adding null check"
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh" "PRRT_kwDOExample123" "Fixed by adding null check"
 ```
 
 ## Error Handling

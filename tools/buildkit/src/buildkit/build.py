@@ -21,7 +21,7 @@ ALL_TARGETS = ("claude", "copilot", "codex")
 
 # Repo-relative paths fully managed (regenerated) by the build. The three
 # registry files live at fixed discovery locations outside dist/:
-# Claude Code, Codex, and VS Code Copilot respectively.
+# Claude Code, Codex, and Copilot CLI respectively.
 OWNED_PATHS = (
     Path("dist"),
     Path(".claude-plugin") / "marketplace.json",

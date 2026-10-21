@@ -1,3 +1,4 @@
+
 # Creating Stacked PRs from Changes
 
 Step-by-step workflow for organizing unstaged changes into logical stacked PRs.
@@ -130,7 +131,7 @@ gh pr create --base feature/auth-api --head feature/auth-ui \
 After creating branches, use the stack status script to verify structure:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh --pr-status
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh" --pr-status
 ```
 
 This will show:
@@ -148,7 +149,7 @@ main
 - **Test each commit** - Ensure each branch works independently
 - **Document dependencies** - Always mention "Stacked on #N" in PR descriptions
 - **Use force-with-lease** - When rebasing, use `--force-with-lease` not `--force`
-- **Create backups** - Before complex operations: `${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh create feature/auth-setup feature/auth-models`
+- **Create backups** - Before complex operations: `"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh" create feature/auth-setup feature/auth-models`
 
 ## Common Patterns
 

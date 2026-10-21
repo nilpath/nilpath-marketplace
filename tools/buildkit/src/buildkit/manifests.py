@@ -98,9 +98,7 @@ def write_marketplace_registries(
     claude_plugins = included.get("claude", cfg.plugins) if included else cfg.plugins
     codex_plugins = included.get("codex", cfg.plugins) if included else cfg.plugins
     copilot_plugins = included.get("copilot", cfg.plugins) if included else cfg.plugins
-    # VS Code discovers marketplace plugins via .github/plugin/marketplace.json
-    # (it does NOT read the Claude-format registry); source paths are
-    # repo-relative and may point into dist/.
+    # Copilot CLI discovers this registry with repo-relative source paths.
     copilot_registry = {
         "name": marketplace["name"],
         "metadata": {

@@ -1,5 +1,9 @@
 # pstack architecture and dependency analysis
 
+This is a historical research snapshot. Current marketplace support covers
+Claude Code, Copilot CLI, and Codex, not native Copilot inside VS Code.
+See [skill permissions](skill-permissions.md) for current runtime evidence.
+
 ## Context & Problem
 
 **pstack is Lauren Tan's (poteto's) collection of engineering instructions for Cursor agents, backed by a small set of executable helpers.** Its main entry point, `poteto-mode`, interprets a task, selects a playbook, brings in relevant principles and specialist skills, delegates work, and requires evidence before declaring success. It is not a server, an agent runtime, or one executable pipeline. Its stated aim is less, better-grounded code rather than more generated code. [Upstream introduction][readme], [router][mode].

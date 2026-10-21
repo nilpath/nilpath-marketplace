@@ -118,7 +118,7 @@ ROLES: dict[str, Role] = {
 FLOW_ROLES = frozenset({"implementer", "implementer-hard", "judgment"})
 
 CLIENTS = ("claude", "copilot", "codex")
-CLIENT_NAMES = {"claude": "Claude Code", "copilot": "GitHub Copilot (CLI and VS Code Agent Host)", "codex": "Codex"}
+CLIENT_NAMES = {"claude": "Claude Code", "copilot": "GitHub Copilot CLI", "codex": "Codex"}
 CLAUDE_MODELS = ("sonnet", "opus", "haiku", "fable")
 EFFORTS: dict[str, tuple[str, ...]] = {
     "claude": (),
