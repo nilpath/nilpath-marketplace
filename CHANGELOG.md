@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **nstack 0.1.0**: adds the explicit-only **python-best-practices** skill for Claude Code, Copilot, and Codex, with an original Google Python Style Guide summary subordinate to repository-supported Python, tooling, and conventions. Includes contract docstrings, typing/runtime boundaries, resources, logging, and focused verification without mandatory tools or dependencies.
+- **Python-aware comment cleanup**: `comment-sicko` and `no-comments` preserve contract and consumed docstrings, interpreter/typing metadata, and tool directives. Suppressions are audited per rule and diagnostic, unknown directives remain unresolved, and correctness/safety bypasses require root-cause fixes before removal. Existing TypeScript suppression coverage remains.
 - **nstack 0.0.2**: adds pstack's **create-verification-skill** (with its `feature-map-example` references) and **maintain-verification-skill**, both explicit-only. The text matches pstack at commit `dbf49813`, the commit nstack's README credits, except for these changes:
   - The generated skill goes to the active client's project skills directory (`.claude/skills/`, `.github/skills/`, or `.agents/skills/`) instead of `.cursor/skills/`.
   - Cross-references between the two skills use nstack's skill names.

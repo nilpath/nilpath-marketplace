@@ -54,6 +54,7 @@ SKILLS = {
     "principle-subtract-before-you-add",
     "principle-test-behavior-not-implementation",
     "principle-type-system-discipline",
+    "python-best-practices",
     "review-panel",
     "setup-nstack",
     "show-me-your-work",
@@ -120,7 +121,7 @@ def test_inventory(harness):
 @pytest.mark.parametrize("harness", HARNESSES)
 def test_manifest_version(harness):
     manifest = json.loads((plugin_dir(harness) / MANIFESTS[harness]).read_text())
-    assert manifest["version"] == VERSION == "0.0.2"
+    assert manifest["version"] == VERSION == "0.1.0"
 
 
 def test_codex_manifest_lists_the_agents():

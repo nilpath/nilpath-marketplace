@@ -1,0 +1,44 @@
+---
+name: python-best-practices
+description: Python best practices for editing and reviewing .py files, typing, docstrings, and tests.
+---
+
+# Python best practices
+
+Use the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html) as the preferred baseline where the repository leaves a choice open. These are original summaries, not a replacement for the guide.
+
+| Concern | Rule |
+|---------|------|
+| Repository fit | Read repository instructions, supported Python versions, `pyproject.toml` or other tool configuration, nearby code, and tests first. Explicit task requirements and repository configuration/conventions take precedence over this baseline. Use supported syntax and existing tooling; do not mandate new formatters, linters, type checkers, dependencies, or prerequisite skills. |
+| Scope | Change requested Python code and directly coupled tests/docs only. Do not turn a local fix into an unrelated formatting, typing, API, or documentation-style migration. |
+| Imports and names | Keep dependencies and names clear: descriptive `snake_case` functions/variables, `CapWords` classes, and module-level imports grouped by origin. Prefer module-qualified access where it clarifies ownership; avoid wildcard imports and import-time work. Follow established repository conventions and formatter output. See [imports](https://google.github.io/styleguide/pyguide.html#22-imports) and [naming](https://google.github.io/styleguide/pyguide.html#316-naming). |
+| Typing and boundaries | Annotate meaningful interfaces with project-supported syntax, narrow optional/union values before use, and validate untrusted input at entry points. An annotation does not validate runtime data. Do not conceal real failures with `Any`, casts, or ignores, or blanket-annotate unrelated code. See [typing](https://google.github.io/styleguide/pyguide.html#319-type-annotations). |
+| Functions and data | Use the simplest data shape that expresses the contract and explicit dependencies. Avoid mutable default arguments; create per-call state inside the function. Do not introduce speculative abstractions or rewrite callers solely to change argument style. See [defaults](https://google.github.io/styleguide/pyguide.html#212-default-argument-values). |
+| Comparisons and iteration | Use `is None` / `is not None` rather than equality for `None`; distinguish missing values from valid empty or zero values. Keep comprehensions small and readable; use a loop when nesting, conditions, or side effects obscure the operation. See [conditionals](https://google.github.io/styleguide/pyguide.html#214-truefalse-evaluations) and [comprehensions](https://google.github.io/styleguide/pyguide.html#27-comprehensions--generator-expressions). |
+| Exceptions and resources | Catch specific expected exceptions, preserve useful cause/context, and make failure visible instead of swallowing it or returning a misleading default. Use context managers for owned resources and deterministic cleanup. See [exceptions](https://google.github.io/styleguide/pyguide.html#24-exceptions) and [resources](https://google.github.io/styleguide/pyguide.html#311-files-sockets-and-similar-stateful-resources). |
+| Logging | Use the repository's logger and levels, useful structured context where supported, and deferred formatting for logging calls. Keep secrets out of diagnostics; do not ship ad hoc debug prints or add a logging dependency by default. See [logging](https://google.github.io/styleguide/pyguide.html#3101-logging). |
+| Docstrings | Prefer Google-style docstrings for public modules, classes, functions/methods, and non-obvious contracts where useful. Preserve the repository's established alternative style rather than converting it. Summarize behavior, constraints, side effects, and caller-visible errors; use `Args`, `Returns` or `Yields`, and `Raises` only when relevant. Do not repeat annotations or add empty boilerplate. See [documentation](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings). |
+| Comments and directives | Remove narration, not documentation contracts or docstrings consumed by runtime, docs, or tests. Interpreter/tool directives are semantic metadata, not ordinary prose; preserve unknown directives as unresolved and fix genuine diagnostics at their root before removing correctness suppressions. For requested cleanup, use the existing [no-comments policy](../no-comments/SKILL.md); do not invoke it automatically. |
+| Tests and verification | Exercise observable behavior and regressions, including relevant edge/error cases and resource lifetime. Use the smallest existing test, lint, and type-check commands covering the change; do not require a whole-suite run or a new framework by default. |
+
+A short contract example (adapt its syntax and documentation style to the repository):
+
+```python
+def require_port(value: int) -> int:
+    """Validate a configured TCP port.
+
+    Args:
+        value: Candidate port from configuration.
+
+    Returns:
+        The port unchanged when it is within the allowed range.
+
+    Raises:
+        ValueError: If the port is outside 1 through 65535.
+    """
+    if not 1 <= value <= 65535:
+        raise ValueError("port must be between 1 and 65535")
+    return value
+```
+
+For a generator, document the yielded values under `Yields` rather than describing them as a returned collection.
