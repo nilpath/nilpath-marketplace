@@ -45,6 +45,7 @@ SELECTED_SKILLS = {
         "principle-subtract-before-you-add",
         "principle-test-behavior-not-implementation",
         "principle-type-system-discipline",
+        "python-best-practices",
         "setup-nstack",
         "show-me-your-work",
         "tdd",

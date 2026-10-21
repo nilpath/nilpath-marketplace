@@ -10,7 +10,7 @@ A marketplace for my AI coding-agent extensions — skills and agents authored o
 | **engineering-workflow** | 0.8.1 | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
 | **documentation** | 0.8.0 | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | ✅¹ | ✅¹ |
 | **authoring-tools** | 0.8.1 | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
-| **nstack** | 0.0.2 | Engineering backbone adapted from pstack: nstack-flow coordinator with feature/bug-fix/investigation playbooks, 8 workflow skills plus pstack's 24 principles and 13 supporting skills (45 total), 3 agents, per-role models via a hook² | ✅ | ✅ | ✅ |
+| **nstack** | 0.0.3 | Engineering backbone adapted from pstack: nstack-flow coordinator with feature/bug-fix/investigation playbooks, 8 workflow skills plus pstack's 24 principles and 14 supporting skills (46 total), including TypeScript/Python best practices, 3 agents, per-role models via a hook² | ✅ | ✅ | ✅ |
 
 ¹ The orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are adapted per harness: subagent dispatch, todo tracking, and user questions render in each harness's native mechanism. They degrade gracefully on Copilot/Codex (chat questions instead of structured question UI, no parallel exploration fan-out).
 
@@ -20,7 +20,7 @@ Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-wr
 
 ## Manual-only skills
 
-Six selected skills require explicit user invocation; they must not be loaded automatically by the model or another workflow:
+Selected skills require explicit user invocation; they must not be loaded automatically by the model or another workflow. Common entry points are below; see the [nstack skill catalog](src/plugins/nstack/README.md#skills) for its full explicit-only inventory.
 
 | Skill | Claude Code | Copilot (VS Code and CLI) | Codex |
 | --- | --- | --- | --- |
@@ -30,8 +30,9 @@ Six selected skills require explicit user invocation; they must not be loaded au
 | `creating-agents` | `/authoring-tools:creating-agents` | Not distributed | Not distributed |
 | `nstack-flow` | `/nstack:nstack-flow` | `/nstack:nstack-flow` (CLI) | `$nstack-flow` |
 | `setup-nstack` | `/nstack:setup-nstack` | `/nstack:setup-nstack` (CLI) | `$setup-nstack` |
+| `python-best-practices` | `/nstack:python-best-practices` | `/python-best-practices` (VS Code), `/nstack:python-best-practices` (CLI) | `$python-best-practices` |
 
-`creating-skills` and `creating-agents` remain Claude-only because they teach Claude Code's own authoring formats. `researching`, `planning`, `nstack-flow`, and `setup-nstack` ship in all three distributions. Claude and Copilot enforce manual-only selection with `disable-model-invocation: true` in skill frontmatter; Codex uses `policy.allow_implicit_invocation: false` in each skill's `agents/openai.yaml` sidecar.
+`creating-skills` and `creating-agents` remain Claude-only because they teach Claude Code's own authoring formats. The other listed skills ship in all three distributions. Claude and Copilot enforce manual-only selection with `disable-model-invocation: true` in skill frontmatter; Codex uses `policy.allow_implicit_invocation: false` in each skill's `agents/openai.yaml` sidecar.
 
 The nstack Copilot commands above were observed in Copilot CLI 1.0.95, which registers plugin skills under a plugin namespace (`nstack:<skill>`). In that version, non-interactive prompt mode (`copilot -p`) passes slash text to the model without expanding the skill, so run `nstack-flow` and `setup-nstack` from an interactive session.
 

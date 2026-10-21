@@ -20,16 +20,19 @@ An explicit coordinator picks a playbook (feature, bug fix, or investigation), g
 | unslop, technical-writing, no-comments, deslop | Explicit only | Prose and code cleanup triggered by nstack-flow's non-negotiables |
 | control-cli, control-ui, benchmark-checklist, tdd | Explicit only | Driving real surfaces, vetting measurements, failing-test-first bug fixes |
 | show-me-your-work, figure-it-out, typescript-best-practices | Explicit only | Decision trails, bespoke playbooks when none fits, TypeScript patterns |
+| python-best-practices | Explicit only | Python editing/review with Google as the fallback baseline, repository-supported tooling first, contract docstrings, typing, resources, and focused tests |
 | create-verification-skill, maintain-verification-skill | Explicit only | Generate a project-local `verify-<app>` skill with a feature map, and keep it in line with the app through a source pass, one live pass, and at most one draft pull request |
 
 "Explicit only" skills stay out of the client's automatic skill catalog. nstack-flow and the agents read them directly from `../<name>/SKILL.md`.
+
+`python-best-practices` is independently invoked: `/nstack:python-best-practices` in Claude Code, `/python-best-practices` in Copilot VS Code (`/nstack:python-best-practices` in Copilot CLI), or `$python-best-practices` in Codex. It adds no prerequisite skill or tool dependency and preserves established repository documentation styles. `no-comments` and Comment Sicko preserve Python documentation contracts and semantic directives, audit suppressions by actual rule/diagnostic, and leave unknown classifications unresolved. Correctness suppressions require a root-cause fix before removal.
 
 ## Agents
 
 - **nstack-agent**: the delegate for roles that may write or call tools: implementation tiers (`implementer`, `implementer-hard`, `judgment`), swarm workers, candidate and design runners, and `why` investigators. Never runs a playbook, spawns subagents, commits, or publishes on its own.
 - **nstack-reader**: the read-only delegate (read and search tools only) for `how` explorers and explainers, the candidate-graft judge, and review-panel reviewers.
 
-- **comment-sicko**: pstack's comment hunter, spawned by `no-comments`. It runs on the session's model.
+- **comment-sicko**: pstack's comment hunter, extended for Python docstrings and semantic directives, spawned by `no-comments`. It runs on the session's model.
 
 nstack-agent and nstack-reader have no model. nstack's model hook sets the model per launch.
 
@@ -75,6 +78,8 @@ Defaults are suggestions: an account may not have every model. A model the clien
 - Read-only roles run on `nstack-reader`, whose tools are limited to reading and searching (and a read-only sandbox in Codex). The `why` roles run on `nstack-agent` with full tool access for MCP evidence sources; their no-write rule is an instruction only.
 
 ## Attribution
+
+The Python best-practices skill is an original summary linking to the Google Python Style Guide, not copied guide text. Its repository-first guidance and the Python-aware cleanup policy are nstack additions.
 
 nstack adapts workflows, prompts, and principles from pstack by Lauren Tan (poteto), and the deslop, control-cli, and control-ui skills from Cursor's cursor-team-kit. Both are published in [cursor/plugins](https://github.com/cursor/plugins) at commit `dbf49813a39c1a5389c5e28cb8e4c1c2379e2454` (pstack 0.15.23) under the MIT License. Most skill text is copied verbatim; nstack replaces Cursor-specific mechanics (the Task tool, model rule files, cloud workers) with its own launch tags and model hook. nstack is not affiliated with or endorsed by the pstack author or Cursor.
 
