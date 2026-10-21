@@ -27,9 +27,11 @@ diagnostics. Unknown tools and malformed or empty scopes fail the build.
 An empty Codex map continues to strip valid declarations without warnings.
 Relative paths and scopes containing slashes are not rejected globally.
 
-The Copilot skill schema permits `allowed-tools`, but `key_for_tools: null`
-keeps emission off. Changing that key alone is not an approved activation path.
-The interpreter and installed-path failures below remain blocking evidence.
+The Copilot skill schema does not accept raw `allowed-tools`. Canonical `tools`
+are translated and validated, but `key_for_tools: null` keeps the translated
+field out of generated skills. Changing that key alone is not an approved
+activation path. The interpreter and installed-path failures below remain
+blocking evidence.
 
 ## Script declarations
 
@@ -71,6 +73,13 @@ independently of skill frontmatter.
 ## Permission-enforced local observations
 
 The local verifier exercised Claude Code 2.1.250 and Copilot CLI 1.0.101.
+Claude checks explicitly activated the fixture with a slash command in
+permission-enforced print mode. They did not verify model-initiated Skill-tool
+activation or the Claude interactive UI. Unapproved interpreter and portable-root
+calls prompted in Copilot interactive mode. The verifier did not accept those
+prompts. Headless calls were denied. The verifier did not test Codex runtime
+approvals, marketplace installation or discovery, or subagent inheritance.
+
 It loaded generated harmless plugin fixtures with `--plugin-dir`, in paths
 with spaces, from separate disposable working directories. This is not a
 marketplace-installation or paid-model integration test.
@@ -104,6 +113,12 @@ denies it in the next user turn without another skill invocation. Copilot
 executes it again in the next user turn without another skill invocation.
 Copilot skill grants must not be described as per-skill isolation.
 Subagent inheritance is unverified. The verifier does not spawn subagents.
+
+## Deferred callers
+
+`performing-code-review`, `researching`, and `creating-mermaid-diagrams` have
+pre-existing tool callers that this change does not convert. They remain a
+follow-up scope. This change does not normalize those callers.
 
 ## Rerun the observations
 

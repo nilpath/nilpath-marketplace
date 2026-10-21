@@ -13,7 +13,7 @@ frontmatter:
   skill:
     key_for_tools: null  # gated: headless grants and portable script paths failed runtime probes
     required: [name, description]
-    allowed: [name, description, license, disable-model-invocation, allowed-tools]
+    allowed: [name, description, license, disable-model-invocation]
     drop: [argument-hint]
     tools:
       format: list
