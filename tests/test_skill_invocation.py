@@ -21,6 +21,7 @@ SELECTED_SKILLS = {
         "maintain-verification-skill",
         "no-comments",
         "nstack-flow",
+        "nstack-help",
         "principle-attack-the-premise",
         "principle-boundary-discipline",
         "principle-build-the-lever",

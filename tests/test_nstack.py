@@ -30,6 +30,7 @@ SKILLS = {
     "maintain-verification-skill",
     "no-comments",
     "nstack-flow",
+    "nstack-help",
     "principle-attack-the-premise",
     "principle-boundary-discipline",
     "principle-build-the-lever",
@@ -233,6 +234,63 @@ def test_markdown_links_resolve(harness):
             if not (md.parent / target).exists():
                 broken.append(f"{md.relative_to(root)} -> {target}")
     assert broken == []
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_help_catalog_covers_bundled_skills(harness):
+    text = (plugin_dir(harness) / "skills" / "nstack-help" / "SKILL.md").read_text()
+    targets = set(re.findall(r"\]\(\.\./([^/]+)/SKILL\.md\)", text))
+    expected = {name for name in SKILLS if not name.startswith("principle-")} - {"nstack-help"}
+    assert targets == expected
+    assert "For a help question, don't start the work." in text
+    assert "https://github.com/nilpath/nilpath-marketplace/blob/main/src/plugins/nstack/" in text
+    assert "skills/<name>/SKILL.md.j2" in text
+    assert "draft pull request" in text
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_help_examples_use_client_native_commands(harness):
+    root = plugin_dir(harness) / "skills" / "nstack-help"
+    prefix = "$" if harness == "codex" else "/nstack:"
+    text = "\n".join(path.read_text() for path in root.rglob("*.md"))
+    for name in ("nstack-help", "nstack-flow", "setup-nstack", "how", "why", "review-panel"):
+        assert f"{prefix}{name}" in text
+    commands = set(re.findall(r"(?:/nstack:|\$)([a-z][a-z0-9-]*)", text))
+    assert commands - {"verify-", "principle-"} <= SKILLS
+    assert "/poteto-mode" not in text
+    assert "/setup-pstack" not in text
+    if harness == "codex":
+        assert "/nstack:" not in text
+        assert "Trust nstack's plugin hook once with `/hooks`" in text
+    elif harness == "copilot":
+        assert "copilot plugin install nstack@nilpath-marketplace" in text
+        assert "slash commands are not expanded" in text
+    else:
+        assert "/plugin install nstack" in text
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_help_guidance_routes_to_the_shared_sign_off_contract(harness):
+    skills = plugin_dir(harness) / "skills"
+    contract = skills / "nstack-flow" / "references" / "sign-off.md"
+    help_root = skills / "nstack-help"
+    for relative in ("SKILL.md", "references/prompting.md", "references/recipes.md"):
+        path = help_root / relative
+        text = path.read_text()
+        targets = {(path.parent / link).resolve() for link in LINK_RE.findall(text)}
+        assert contract.resolve() in targets, relative
+        assert "stop for approval by default" in text or "stop for user approval by default" in text
+    help_text = (help_root / "SKILL.md").read_text()
+    handoff = next(line for line in help_text.splitlines() if line.startswith("A message that asks for work"))
+    assert "[`nstack-flow`](../nstack-flow/SKILL.md)" in handoff
+    assert "including its default sign-off boundary" in handoff
+    assert "does not waive that checkpoint" in handoff
+    assert "Nested architect returns design only to the coordinator" in help_text
+    assert "even under an outer autonomy waiver" in help_text
+    recipes = (help_root / "references" / "recipes.md").read_text()
+    prefix = "$" if harness == "codex" else "/nstack:"
+    assert f"{prefix}architect with checkpoint:" in recipes
+    assert "implement <goal> autonomously, without the default sign-off checkpoint" in recipes
 
 
 @pytest.mark.parametrize("harness", HARNESSES)
@@ -497,6 +555,15 @@ def test_active_defaults_cannot_bypass_the_shared_contract(harness):
             "Reversible actions (write code, edit notes, split tasks) should proceed",
         ),
         "architect/references/rationale-template.md": ("Phase D sign-off", "if a checkpoint was opted into"),
+        "nstack-help/SKILL.md": (
+            "and do the work under it",
+            "implements right after it settles the design",
+            "ask for a checkpoint when the user wants to approve",
+        ),
+        "nstack-help/references/prompting.md": (
+            'Say "im going to bed" or "im stepping away" so the agent stops asking',
+            '"do it", "continue", and "keep going until done" are whole prompts once the chat holds the task',
+        ),
     }
     for relative, forbidden in stale_defaults.items():
         text = (skills / relative).read_text()
