@@ -5,9 +5,9 @@ description: Apply when adding demonstrated variation or deciding whether to int
 
 # Extend at Evidenced Seams
 
-Introduce flexibility only when variation is demonstrated. Evidence can be real variants, a requirement known to change, or a genuine testing boundary. Do not add an extension point for hypothetical flexibility.
+**Anticipation of Change.** Introduce flexibility only when variation is demonstrated. Evidence can be real variants, a requirement known to change, or a genuine testing boundary. Do not add an extension point for hypothetical flexibility.
 
-Choose the change that fits the current domain:
+**Open/Closed Principle (OCP).** Choose the change that fits the current domain:
 
 1. For an established open seam, add an implementation when its contract fits.
 2. For a closed variant set, edit the model and handle every variant exhaustively.

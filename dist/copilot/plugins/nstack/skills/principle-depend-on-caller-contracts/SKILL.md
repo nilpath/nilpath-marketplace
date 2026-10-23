@@ -6,11 +6,11 @@ disable-model-invocation: true
 
 # Depend on Caller Contracts
 
-Define a collaborator by the capabilities its caller needs. Keep the contract narrow. Do not require irrelevant methods, force stub implementations, or expose implementation details that the caller does not need.
+**Interface Segregation Principle (ISP).** Define a collaborator by the capabilities its caller needs. Keep the contract narrow. Do not require irrelevant methods, force stub implementations, or expose implementation details that the caller does not need.
 
-Ask an immediate collaborator for behavior. Do not traverse its private object graph to reach another object's data or methods. Move the needed behavior to the immediate collaborator when that hides the traversal.
+**Law of Demeter.** Ask an immediate collaborator for behavior. Do not traverse its private object graph to reach another object's data or methods. Move the needed behavior to the immediate collaborator when that hides the traversal.
 
-Keep high-level policy independent of concrete mechanisms. Supply mechanisms at a composition boundary instead of constructing or importing concrete implementations throughout the policy. Keep dependency direction clear and avoid cycles. Treat hard-to-test coupling as a signal to investigate the dependency, not automatic proof that a new contract is needed.
+**Dependency Inversion Principle (DIP).** Keep high-level policy independent of concrete mechanisms. Supply mechanisms at a composition boundary instead of constructing or importing concrete implementations throughout the policy. Keep dependency direction clear and avoid cycles. Treat hard-to-test coupling as a signal to investigate the dependency, not automatic proof that a new contract is needed.
 
 Reuse adequate existing functions and types. Add a contract only when it creates a concrete dependency, composition, or testing benefit. A useful contract can have one implementation. Do not add wrappers by default.
 

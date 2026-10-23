@@ -103,7 +103,9 @@ The Python best-practices skill is an original summary linking to the Google Pyt
 
 nstack adapts workflows, prompts, and principles from pstack by Lauren Tan (poteto), and the deslop, control-cli, and control-ui skills from Cursor's cursor-team-kit. Both are published in [cursor/plugins](https://github.com/cursor/plugins) at commit `dbf49813a39c1a5389c5e28cb8e4c1c2379e2454` (pstack 0.15.23) under the MIT License. Most skill text is copied verbatim; nstack replaces Cursor-specific mechanics (the Task tool, model rule files, cloud workers) with its own launch tags and model hook. nstack is not affiliated with or endorsed by the pstack author or Cursor.
 
-`principle-own-coherent-responsibilities`, `principle-depend-on-caller-contracts`, `principle-preserve-substitution-contracts`, and `principle-extend-at-evidenced-seams` are nstack-local additions adapted from engineering-workflow's `engineering-principles` skill. They do not change that skill, its consumers, or the 24 imported principle leaves. They are not claimed to match an upstream source byte for byte.
+`principle-own-coherent-responsibilities`, `principle-depend-on-caller-contracts`, `principle-preserve-substitution-contracts`, and `principle-extend-at-evidenced-seams` are nstack-local additions adapted from engineering-workflow's `engineering-principles` skill. That skill and its consumers remain unchanged.
+
+The pstack-derived `principle-boundary-discipline`, `principle-minimize-reader-load`, `principle-foundational-thinking`, and `principle-subtract-before-you-add` leaves have local terminology annotations for Separation of Concerns, Abstraction, KISS, and YAGNI. The annotations name existing rules without changing them.
 
 ```text
 MIT License

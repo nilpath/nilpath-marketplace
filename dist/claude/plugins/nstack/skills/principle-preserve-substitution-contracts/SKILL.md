@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Preserve Substitution Contracts
 
-An implementation can replace another only when callers can keep relying on the established contract. Matching a type signature is not enough.
+**Liskov Substitution Principle (LSP).** An implementation can replace another only when callers can keep relying on the established contract. Matching a type signature is not enough.
 
 Preserve accepted inputs, promised results, invariants, errors, and observable effects. Do not strengthen preconditions. Do not weaken postconditions. A replacement must not make callers provide more, handle less favorable results, or lose effects they could observe before.
 

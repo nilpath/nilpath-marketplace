@@ -42,8 +42,13 @@ Only nstack is bumped to 0.0.7. Other plugin versions and the marketplace versio
 
 ### Added
 
-- Four explicit-only nstack-local principles adapted from engineering-workflow's `engineering-principles`: `principle-own-coherent-responsibilities`, `principle-depend-on-caller-contracts`, `principle-preserve-substitution-contracts`, and `principle-extend-at-evidenced-seams`. The existing engineering-workflow skill, its consumers, and the 24 imported principle leaves are unchanged.
+- Four explicit-only nstack-local principles adapted from engineering-workflow's `engineering-principles`: `principle-own-coherent-responsibilities`, `principle-depend-on-caller-contracts`, `principle-preserve-substitution-contracts`, and `principle-extend-at-evidenced-seams`. The existing engineering-workflow skill and its consumers are unchanged.
 - Architecture routing in `nstack-flow` for responsibility ownership, collaborator contracts, behavioral substitution, and evidenced extension seams.
+
+### Changed
+
+- Name the underlying engineering principles beside their rules in all four new leaves. Skill IDs, triggers, and invocation policy are unchanged.
+- Add local terminology annotations to the existing boundary-discipline, minimize-reader-load, foundational-thinking, and subtract-before-you-add leaves. Their rules are unchanged.
 
 ## [nstack 0.0.5] - 2026-10-23
 
