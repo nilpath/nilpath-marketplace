@@ -311,7 +311,7 @@ export async function serve(buildId, nonce) {
     } else if (req.method !== 'GET') throw httpError('method_rejected', 'Only GET and guarded POST are supported.', 'Use the documented viewer operations.', 405);
     const cookieAuthorized = (req.headers.cookie ?? '').split(';').some((part) => part.trim() === `${cookieName}=${token}`);
     if (!cookieAuthorized && req.headers['x-nstack-token'] !== token) {
-      if (req.method === 'GET' && navigation) return send(res, 403, '<!doctype html><html lang="en"><meta charset="utf-8"><title>Viewer access required</title><h1>Viewer access required</h1><p>Run the viewer open command with the original absolute MDX source path, then open its complete returned URL unchanged. It grants access on this device.</p></html>', 'text/html; charset=utf-8');
+      if (req.method === 'GET' && navigation) return send(res, 403, '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Viewer access required</title><link rel="stylesheet" href="/assets/style.css"></head><body><main class="access-required"><h1>Viewer access required</h1><p>Run the viewer open command with the original absolute MDX source path, then open its complete returned URL unchanged. It grants access on this device.</p></main></body></html>', 'text/html; charset=utf-8');
       if (path === '/health') throw httpError('not_found', 'No matching viewer readiness.', 'Use ensure to verify readiness.', 404);
       throw httpError('access_required', 'Private viewer access is required.', 'Run open with the original MDX source path and open the complete returned URL unchanged.', 403);
     }

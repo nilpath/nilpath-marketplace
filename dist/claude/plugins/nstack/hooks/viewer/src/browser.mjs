@@ -108,7 +108,22 @@ function diagram(data, block) {
     group.append(text);
     svg.append(group);
   });
-  return e('div', { className: 'diagram-scroll', tabindex: '0', 'aria-label': `${block.title}. Scroll to explore the diagram.` }, svg);
+  const viewport = e('div', { className: 'diagram-scroll', 'data-view': 'fit', tabindex: '0', 'aria-label': `${block.title}. Switch to actual size to scroll and inspect labels.` }, svg);
+  const fit = e('button', { type: 'button', 'aria-pressed': 'true', onclick: () => setView('fit') }, 'Fit width');
+  const actual = e('button', { type: 'button', 'aria-pressed': 'false', onclick: () => setView('actual') }, 'Actual size');
+  function setView(view) {
+    viewport.setAttribute('data-view', view);
+    fit.setAttribute('aria-pressed', String(view === 'fit'));
+    actual.setAttribute('aria-pressed', String(view === 'actual'));
+  }
+  return e('div', { className: 'diagram' },
+    e('div', { className: 'diagram-toolbar' },
+      e('p', { className: 'diagram-summary' }, `${data.nodes.length} nodes · ${data.edges.length} connections`),
+      e('div', { className: 'diagram-actions', role: 'group', 'aria-label': `${block.title} diagram view` }, fit, actual),
+    ),
+    viewport,
+    e('p', { className: 'diagram-hint' }, 'Fit width shows the whole diagram. Use actual size to inspect labels and scroll.'),
+  );
 }
 
 function annotatedCode(data) {
@@ -125,8 +140,8 @@ function stateSequence(data) {
   let index = 0;
   const content = e('div', { className: 'state-content', 'aria-live': 'polite' });
   const progress = e('span', { className: 'state-progress', role: 'status' });
-  const previous = e('button', { type: 'button', onclick: () => { index--; update(); } }, 'Previous state');
-  const next = e('button', { type: 'button', onclick: () => { index++; update(); } }, 'Next state');
+  const previous = e('button', { type: 'button', className: 'secondary-button', onclick: () => { index--; update(); } }, 'Previous state');
+  const next = e('button', { type: 'button', className: 'secondary-button', onclick: () => { index++; update(); } }, 'Next state');
   function update() {
     const state = data.states[index];
     previous.disabled = index === 0;
@@ -142,19 +157,19 @@ function jsonTree(value, label, depth = 0) {
   if (value === null || typeof value !== 'object') return e('div', { className: 'schema-leaf' }, e('span', {}, `${label} `), e('code', {}, pretty(value)));
   const entries = Object.entries(value);
   return e('details', { className: 'schema-node', ...(depth === 0 ? { open: true } : {}) },
-    e('summary', {}, label, e('span', { className: 'schema-type' }, Array.isArray(value) ? ` array, ${entries.length} items` : typeof value.type === 'string' ? ` ${value.type}` : ` ${entries.length} fields`)),
+    e('summary', {}, label, e('span', { className: 'schema-type' }, Array.isArray(value) ? ` array, ${entries.length} ${entries.length === 1 ? 'item' : 'items'}` : typeof value.type === 'string' ? ` ${value.type}` : ` ${entries.length} ${entries.length === 1 ? 'field' : 'fields'}`)),
     e('div', { className: 'schema-children' }, entries.length ? entries.map(([key, child]) => jsonTree(child, key, depth + 1)) : e('p', { className: 'muted' }, 'No schema fields specified.')),
   );
 }
 function apiContract(data) {
   const endpoint = data.protocol === 'http' ? `${data.method} ${data.path}` : data.signature;
   const params = data.parameters.length ? e('div', { className: 'table-scroll', tabindex: '0', 'aria-label': 'Parameters table' },
-    e('table', {}, e('caption', {}, 'Parameters'), e('thead', {}, e('tr', {}, ['Name', 'Location', 'Type', 'Required', 'Description'].map((label) => e('th', { scope: 'col' }, label)))),
-      e('tbody', {}, data.parameters.map((param) => e('tr', {}, e('th', { scope: 'row' }, e('code', {}, param.name)), e('td', {}, param.in), e('td', {}, e('code', {}, param.type)), e('td', {}, param.required ? 'Required' : 'Optional'), e('td', {}, param.description)))),
+    e('table', { className: 'responsive-table parameter-table', role: 'table' }, e('caption', {}, 'Parameters'), e('thead', { role: 'rowgroup' }, e('tr', { role: 'row' }, ['Name', 'Location', 'Type', 'Required', 'Description'].map((label) => e('th', { scope: 'col', role: 'columnheader' }, label)))),
+      e('tbody', { role: 'rowgroup' }, data.parameters.map((param) => e('tr', { role: 'row' }, e('th', { scope: 'row', role: 'rowheader' }, e('code', {}, param.name)), e('td', { 'data-label': 'Location', role: 'cell' }, param.in), e('td', { 'data-label': 'Type', role: 'cell' }, e('code', {}, param.type)), e('td', { 'data-label': 'Required', role: 'cell' }, param.required ? 'Required' : 'Optional'), e('td', { 'data-label': 'Description', role: 'cell' }, param.description)))),
     ),
   ) : e('p', { className: 'muted' }, 'No parameters.');
   return e('div', { className: 'api-contract' },
-    e('p', { className: 'contract-protocol' }, titleCase(data.protocol), data.protocol === 'http' ? ' contract' : ` contract · ${data.name}`),
+    e('p', { className: 'contract-protocol' }, ({ http: 'HTTP', rpc: 'RPC', cli: 'CLI', function: 'Function', event: 'Event' })[data.protocol], data.protocol === 'http' ? ' contract' : ` contract · ${data.name}`),
     e('pre', { className: 'endpoint', tabindex: '0' }, e('code', {}, endpoint)),
     e('p', { className: 'auth' }, e('strong', {}, 'Authentication. '), data.auth),
     params,
@@ -206,7 +221,7 @@ function question(data, block, context) {
 const renderers = {
   Diagram: diagram,
   AnnotatedCode: annotatedCode,
-  FileMap: (data) => e('div', { className: 'table-scroll', tabindex: '0', 'aria-label': 'Changed files' }, e('table', {}, e('caption', { className: 'visually-hidden' }, 'Files and changes'), e('thead', {}, e('tr', {}, ['File', 'Change', 'Note'].map((label) => e('th', { scope: 'col' }, label)))), e('tbody', {}, data.files.map((file) => e('tr', {}, e('th', { scope: 'row' }, e('code', {}, file.path)), e('td', {}, file.change), e('td', {}, file.note)))))),
+  FileMap: (data) => e('div', { className: 'table-scroll', tabindex: '0', 'aria-label': 'Changed files' }, e('table', { className: 'responsive-table file-map-table', role: 'table' }, e('caption', { className: 'visually-hidden' }, 'Files and changes'), e('thead', { role: 'rowgroup' }, e('tr', { role: 'row' }, ['File', 'Change', 'Note'].map((label) => e('th', { scope: 'col', role: 'columnheader' }, label)))), e('tbody', { role: 'rowgroup' }, data.files.map((file) => e('tr', { role: 'row' }, e('th', { scope: 'row', role: 'rowheader' }, e('code', {}, file.path)), e('td', { 'data-label': 'Change', role: 'cell' }, file.change), e('td', { 'data-label': 'Note', role: 'cell' }, file.note)))))),
   BeforeAfter: (data) => e('div', { className: 'comparison' }, ['before', 'after'].map((side) => e('section', {}, e('h3', {}, data[side].label), code(data[side].code, data[side].language)))),
   Decision: (data) => e('ul', { className: 'decisions' }, data.options.map((option) => e('li', {}, e('p', {}, e('strong', {}, option.label), e('span', { className: `selection${option.selected ? ' selected' : ''}` }, option.selected ? 'Selected' : 'Not selected')), e('p', {}, option.reason)))),
   Question: question,
@@ -248,11 +263,13 @@ export function renderDocument(doc, context) {
   const removed = context.answers.filter((answer) => answer.removed);
   if (removed.length) body.append(e('section', { className: 'removed-answers' }, e('h2', {}, 'Answers to removed questions'), e('p', {}, 'Retained for reference only. These answers are stale and inactive.'), list(removed.map((answer) => `${answer.blockId}: ${answer.value}`))));
   root().replaceChildren(body);
-  document.getElementById('outline').replaceChildren(e('details', { open: true }, e('summary', {}, 'On this page'), outline));
+  const expanded = typeof matchMedia !== 'function' || matchMedia('(min-width: 701px)').matches;
+  document.getElementById('outline').replaceChildren(e('details', { open: expanded }, e('summary', {}, 'On this page'), outline));
   document.title = `${doc.title} · nstack`;
 }
 
 export async function start() {
+  root().setAttribute('aria-busy', 'true');
   try {
     await api('/api/session');
     const id = /^\/documents\/([a-zA-Z0-9][a-zA-Z0-9_-]{0,95})$/.exec(location.pathname)?.[1];
@@ -268,6 +285,8 @@ export async function start() {
   } catch (error) {
     document.getElementById('connection').textContent = 'Unavailable';
     root().replaceChildren(e('h1', {}, 'Unable to load the viewer'), e('p', { className: 'error', role: 'alert' }, error.message), e('button', { type: 'button', onclick: () => location.reload() }, 'Retry loading'));
+  } finally {
+    root().setAttribute('aria-busy', 'false');
   }
 }
 

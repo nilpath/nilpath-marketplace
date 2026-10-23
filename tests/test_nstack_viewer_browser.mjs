@@ -58,6 +58,47 @@ test('state previous/next controls change the actual visible content and endpoin
   assert.match(state.querySelector('.state-content').textContent, /Refreshing session/);
 });
 
+test('diagram view controls expose and switch the fit and actual-size states', () => {
+  const dom = setup();
+  const diagram = dom.querySelector('.diagram');
+  const viewport = diagram.querySelector('.diagram-scroll');
+  const [fit, actual] = diagram.querySelectorAll('button');
+  assert.equal(viewport.getAttribute('data-view'), 'fit');
+  assert.equal(fit.getAttribute('aria-pressed'), 'true');
+  assert.equal(actual.getAttribute('aria-pressed'), 'false');
+  actual.click();
+  assert.equal(viewport.getAttribute('data-view'), 'actual');
+  assert.equal(actual.getAttribute('aria-pressed'), 'true');
+  assert.equal(fit.getAttribute('aria-pressed'), 'false');
+  fit.click();
+  assert.equal(viewport.getAttribute('data-view'), 'fit');
+  assert.match(diagram.querySelector('.diagram-summary').textContent, /3 nodes/);
+});
+
+test('responsive tables retain column relationships and compact-layout field labels', () => {
+  const dom = setup();
+  const parameters = dom.querySelector('.parameter-table');
+  assert.equal(parameters.getAttribute('role'), 'table');
+  assert.equal(parameters.querySelectorAll('[scope="col"]').length, 5);
+  assert.equal(parameters.querySelector('[scope="row"] code').textContent, 'refresh_token');
+  assert.deepEqual([...parameters.querySelectorAll('tbody td')].map((cell) => cell.getAttribute('data-label')), ['Location', 'Type', 'Required', 'Description']);
+  assert.match(dom.querySelector('.component-ApiContract .contract-protocol').textContent, /^HTTP contract$/);
+  assert.equal(dom.querySelector('.file-map-table td').getAttribute('data-label'), 'Change');
+});
+
+test('compact viewports start with a collapsible outline instead of covering the document', () => {
+  const original = globalThis.matchMedia;
+  globalThis.matchMedia = () => ({ matches: false });
+  try {
+    const dom = setup();
+    assert.equal(dom.querySelector('#outline details').hasAttribute('open'), false);
+    assert.equal(dom.querySelector('#outline summary').textContent, 'On this page');
+    assert.ok(dom.querySelector('#outline a[href="#block-refresh-http"]'));
+  } finally {
+    globalThis.matchMedia = original;
+  }
+});
+
 test('stale feedback is visible without silently selecting it and text answers save by block and digest', async () => {
   const calls = [];
   const dom = setup([{ blockId: 'token-ttl', value: '1 hour', stale: true, active: false, savedAt: '2026-01-01T00:00:00Z' }], async (blockId, body) => {
@@ -188,5 +229,26 @@ test('browser reads and feedback use the same-origin cookie without requesting a
   } finally {
     globalThis.fetch = originalFetch;
     globalThis.location = originalLocation;
+  }
+});
+
+test('loading announces busy state and an unavailable viewer restores an actionable error', async () => {
+  const dom = setup();
+  const connection = dom.createElement('span');
+  connection.id = 'connection';
+  dom.body.append(connection);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    assert.equal(dom.querySelector('#document').getAttribute('aria-busy'), 'true');
+    throw new Error('Offline fixture');
+  };
+  try {
+    await start();
+    assert.equal(dom.querySelector('#document').getAttribute('aria-busy'), 'false');
+    assert.equal(connection.textContent, 'Unavailable');
+    assert.match(dom.querySelector('[role="alert"]').textContent, /Run the viewer ensure command/);
+    assert.equal(dom.querySelector('button').textContent, 'Retry loading');
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });

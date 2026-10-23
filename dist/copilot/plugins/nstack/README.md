@@ -74,6 +74,8 @@ Defaults are suggestions: an account may not have every model. A model the clien
 
 Both skills author `.mdx` files and publish through one bundled local viewer. The viewer supports diagrams, annotated code, file maps, before-and-after comparisons, decisions, review questions, wireframes, and UI state sequences. API contracts are first-class blocks. They display HTTP method and path or non-HTTP signatures, authentication, parameters, expandable schemas, request and response examples, errors, and contract comparisons. API blocks never send requests or collect credentials.
 
+Diagrams open fitted to the document width. Switch to **Actual size** to inspect labels and scroll. API parameters and file maps adapt to labeled rows in narrow panels. The document outline starts collapsed on small screens.
+
 The MDX compiler uses a standard AST parser and an allowlisted component vocabulary. Rich blocks carry literal attributes and fenced JSON data. Imports, exports, JavaScript expressions, raw HTML, and unknown components are rejected. The browser renders data rather than executing MDX. Graph diagrams use nodes and edges, not Mermaid source. The `components` command and bundled `all-components.mdx` are the authoring reference.
 
 The session-start hook starts or reconnects to the viewer. It preserves model context and reports viewer failures as warnings. It needs Node.js 20+ on `PATH`, but no runtime `npm install`. V1 viewer hosting requires macOS or Linux with POSIX private-directory permissions. Native Windows hosting is unsupported; use WSL or a Linux host. This viewer limit does not change the other nstack skills or model hook. Missing Node does not stop model configuration. Set `NSTACK_VIEWER=off` to disable hook startup.

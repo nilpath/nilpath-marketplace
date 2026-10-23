@@ -1,25 +1,25 @@
 {
   "version": 1,
-  "buildId": "b8202ab18bc9369565576a3c",
+  "buildId": "4994ff999ba0e1e92d6644ac",
   "inputs": {
     "src/plugins/nstack/hooks/viewer/src/answer.mjs": "151ae2233110f61d7eb4ea6f2c4034692d14e3ef3d242c592403a5466d9c199b",
-    "src/plugins/nstack/hooks/viewer/src/browser.mjs": "a1032f4a21ece23aeee35418b9125ee75d26de97de630fefe9cbb5b0723bf4a2",
+    "src/plugins/nstack/hooks/viewer/src/browser.mjs": "c33301938658a39b78467797f8cd228dfdbd34f6dc75b27637d0fec162ccc5ab",
     "src/plugins/nstack/hooks/viewer/src/cli.mjs": "0e4bf81fc7ac80651d5fb50278e127c77a601bdaedf728d0d00b2b46adaf7a12",
     "src/plugins/nstack/hooks/viewer/src/compiler.mjs": "29fa3aea03a953b7a9e8b30b84aa38b1605e4fdf55933bda7704333734ec28a8",
     "src/plugins/nstack/hooks/viewer/src/model.mjs": "c5188d5e7c155372006af0dbbf0d82aaca624e2aadcc272b32b7d5f149153ba2",
     "src/plugins/nstack/hooks/viewer/src/registry.mjs": "07d1627caeac79caf39e6c6bc87e0aff89fa2bf96dfa87177034fe56844e0a15",
-    "src/plugins/nstack/hooks/viewer/src/runtime.mjs": "8d3743846dae8fae151adc77d9fbd0f20f6515ebeb75c3df9939a9d3c49c5631",
+    "src/plugins/nstack/hooks/viewer/src/runtime.mjs": "831033a4d37f54158d8e2b40b9b1b775d0d219221386c5c58c387fee609e4add",
     "src/plugins/nstack/hooks/viewer/src/store.mjs": "f69f4a095d6e5a1692693e3b9baa7d5845856f92120e27a432a33b0bb88e69aa",
-    "src/plugins/nstack/hooks/viewer/src/style.css": "15b421425984847ac20ef94dc190fc4a9647ab40cac91f374873710dd425b112",
+    "src/plugins/nstack/hooks/viewer/src/style.css": "04626a561c8d3d720b535a8bad5ab2436793294043cee158cf78811b0f6f704d",
     "src/plugins/nstack/hooks/viewer/all-components.mdx": "65fe3b98c4ae729f0fabe48c954650d963f8ffca1312498e87d7ce2e115aafe6",
     "tools/visual-viewer/package.json": "3e7ee4e983c33c279092970ed15443db59c8856cf5608d00853c5291e9979feb",
     "tools/visual-viewer/package-lock.json": "97108ce9c1eccb283e121c6666bf8ced73c0c9004634322bbdbb3e2e59145fbd",
     "tools/visual-viewer/build.mjs": "5da1db6aaa933422272fc5ac0e582246de0fe9d510b771d94b38cf6e6cba231f"
   },
   "outputs": {
-    "viewer.mjs": "2461045cb552582c265c1c21aa3c3ca611830c29a31b09d88bb9eff0e4ec72ef",
-    "assets/browser.js": "c6093c533ffea5152c27e3efd54ae1614e094271938bd9fac7bd0222a86bbea6",
-    "assets/style.css": "15b421425984847ac20ef94dc190fc4a9647ab40cac91f374873710dd425b112",
+    "viewer.mjs": "a6a1e5f5878ddc954a61bc7857b558a4d20d217bdc3f9fc508d367f14810efb9",
+    "assets/browser.js": "7cc56a4ca87d4ffebd9a4763ba1676d93d731f6ff3543057be852356e5fd16c0",
+    "assets/style.css": "04626a561c8d3d720b535a8bad5ab2436793294043cee158cf78811b0f6f704d",
     "components.json": "e635f79eca5e345f242e05339a21aeb46e62efb64ba5466bf710cd7d0e525964",
     "THIRD-PARTY-NOTICES": "c8e68fb785a879da62b7eefa11b3357d27d2aefedf410d20d32718abe1e3cad3"
   }
