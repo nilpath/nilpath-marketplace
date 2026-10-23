@@ -1,6 +1,6 @@
 # nilpath-marketplace
 
-Tri-client marketplace: **5 plugins** (15 agents, 61 skills) authored once under `src/` and built into per-harness trees under `dist/` for **Claude Code**, **GitHub Copilot (VS Code)**, and **Codex**.
+Tri-client marketplace: **5 plugins** (15 agents, 61 skills) authored once under `src/` and built into per-harness trees under `dist/` for **Claude Code**, **GitHub Copilot CLI**, and **Codex**. Native Copilot use inside VS Code is unsupported. Running Copilot CLI in a VS Code terminal remains CLI usage.
 
 ## Critical rule: src/ is the only editable source
 
@@ -67,6 +67,13 @@ Sources use the **canonical vocabulary** from `src/harnesses/tools.yaml`, never 
 - Harness passthrough for names outside the vocabulary: `claude:mcp__server__tool`.
 - Harness-specific content uses `{% if harness == "claude" %}…{% endif %}`; script paths use `{{ skill_root }}`.
 - Templating is opt-in per file via the `.j2` suffix; other files copy verbatim.
+
+Agent `tools` describe availability. Skill `tools` describe approvals. A complete
+`frontmatter.skill.tools` harness policy overrides the top-level agent/default
+policy without merging. Copilot skill approval emission stays gated. Never turn
+on `key_for_tools` without permission-enforced runtime evidence, and never map
+unscoped source shell to a newly enabled blanket approval. See
+[skill permissions](ai_docs/skill-permissions.md).
 
 **Prose helpers** (from `prose:` in `src/harnesses/<h>.yaml`) render orchestration phrasing in each harness's native mechanism — use these instead of writing `Agent(...)`/`TodoWrite`/`AskUserQuestion` literally:
 

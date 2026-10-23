@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **git-tools 0.8.1**, **engineering-workflow 0.8.2**, and **nstack 0.0.4** support Copilot CLI, not native Copilot inside VS Code. The Copilot target, agent aliases, output layout, and `.github/plugin` registry stay unchanged.
+- Skill approval translation now selects a complete component-kind-specific policy. Copilot's scoped skill policy does not inherit agent availability aliases and excludes bare shell. Raw Copilot `allowed-tools` is rejected. Canonical declarations remain validated without emitted disposition warnings while skill approval emission stays disabled. Claude checks used explicit slash-command activation in permission-enforced print mode. Model-initiated Skill-tool activation and Claude's interactive UI remain unverified. Unapproved interpreter and portable-root calls prompted in Copilot interactive mode. Those prompts were not accepted. Headless calls were denied. Codex runtime approvals, marketplace installation and discovery, and subagent inheritance remain unverified.
+- The bundled GitHub and stacked-PR helper commands use quoted installed paths without changing the repository working directory. Claude receives narrowly scoped script approvals verified with its real permission checks. Copilot CLI and Codex retain manual script approval. The nstack logger uses a rooted path. Existing broad Claude orchestration grants and plugin hook behavior stay unchanged.
+- `tools/verify_skill_permissions.py` runs isolated local-only CLI probes with deterministic providers, real tool calls, negative controls, path checks, and turn-lifetime observations. Existing bypass-permission behavioral tests are not used as approval evidence.
+- Make targets load buildkit from the current worktree rather than another checkout referenced by a shared virtualenv.
+
 ### Added
 
 - **nstack 0.0.3**: adds the explicit-only **python-best-practices** skill for Claude Code, Copilot, and Codex, with an original Google Python Style Guide summary subordinate to repository-supported Python, tooling, and conventions. Includes contract docstrings, typing/runtime boundaries, resources, logging, and focused verification without mandatory tools or dependencies.

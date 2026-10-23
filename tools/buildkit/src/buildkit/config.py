@@ -29,26 +29,9 @@ class HarnessConfig:
     def frontmatter_schema(self, kind: str) -> dict:
         return self.raw.get("frontmatter", {}).get(kind, {})
 
-    @property
-    def tool_map(self) -> dict:
-        return self.raw.get("tools", {}).get("map", {})
-
-    @property
-    def tool_unmappable(self) -> list[str]:
-        return self.raw.get("tools", {}).get("unmappable", [])
-
-    @property
-    def tool_dedupe(self) -> bool:
-        return bool(self.raw.get("tools", {}).get("dedupe", False))
-
-    @property
-    def tools_format(self) -> str:
-        """How the translated tool list is rendered: 'comma' string or 'list'."""
-        return self.raw.get("tools", {}).get("format", "comma")
-
-    @property
-    def keep_tool_scopes(self) -> bool:
-        return bool(self.raw.get("tools", {}).get("keep_scopes", False))
+    def tool_policy(self, kind: str) -> dict:
+        """Select a complete component policy, never merge approval and availability maps."""
+        return self.frontmatter_schema(kind).get("tools", self.raw.get("tools", {}))
 
     @property
     def model_map(self) -> dict:

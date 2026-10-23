@@ -5,26 +5,34 @@ targets: [claude, copilot, codex]
 tools:
   - "shell(gh:*)"
   - "shell(jq:*)"
+{% if harness == "claude" %}
+  - 'shell("{{ skill_root }}/scripts/fetch-comments.sh":*)'
+  - 'shell("{{ skill_root }}/scripts/reply-to-thread.sh":*)'
+{% endif %}
   - "file-read"
   - "file-write"
   - "file-edit"
 ---
+{% if harness != "claude" %}{% set skill_root = "<gh-address-comments skill directory>" %}{% endif %}
 
 # GitHub Address Comments
 
 Fetch and address review comments on the open PR for the current branch using the `gh` CLI.
+{% if harness != "claude" %}
+Replace `<gh-address-comments skill directory>` in each command with the absolute directory containing this installed `SKILL.md`. Keep the working directory in the repository. The placeholder does not expand automatically. Approve script execution through the client's ordinary permission prompt.
+{% endif %}
 
 ## Quick Start
 
 ```bash
 # Fetch all comments for current branch's PR
-{{ skill_root }}/scripts/fetch-comments.sh
+"{{ skill_root }}/scripts/fetch-comments.sh"
 
 # Fetch comments for specific PR
-{{ skill_root }}/scripts/fetch-comments.sh 123
+"{{ skill_root }}/scripts/fetch-comments.sh" 123
 
 # Reply to a review thread after fixing
-{{ skill_root }}/scripts/reply-to-thread.sh "PRRT_threadId" "Fixed in this commit"
+"{{ skill_root }}/scripts/reply-to-thread.sh" "PRRT_threadId" "Fixed in this commit"
 ```
 
 ## Workflow
@@ -34,8 +42,10 @@ Fetch and address review comments on the open PR for the current branch using th
 Run the fetch script to get all PR comments:
 
 ```bash
-COMMENTS=$({{ skill_root }}/scripts/fetch-comments.sh)
+"{{ skill_root }}/scripts/fetch-comments.sh"
 ```
+
+Read the JSON from the tool result. Run the helper directly rather than wrapping it in command substitution, which can require separate shell approval.
 
 ### Step 2: Summarize and Number
 
@@ -78,7 +88,7 @@ After applying fixes, reply to the review threads to acknowledge:
 
 ```bash
 # For each addressed thread (use the thread id from fetch-comments.sh)
-{{ skill_root }}/scripts/reply-to-thread.sh "$THREAD_ID" "Fixed in this commit"
+"{{ skill_root }}/scripts/reply-to-thread.sh" "$THREAD_ID" "Fixed in this commit"
 ```
 
 **Suggested reply formats:**
@@ -96,7 +106,7 @@ Fetches all PR comments using GitHub GraphQL API.
 **Usage:**
 
 ```bash
-{{ skill_root }}/scripts/fetch-comments.sh [PR_NUMBER]
+"{{ skill_root }}/scripts/fetch-comments.sh" [PR_NUMBER]
 ```
 
 **Output:**
@@ -155,7 +165,7 @@ Reply to a PR review thread after addressing feedback.
 **Usage:**
 
 ```bash
-{{ skill_root }}/scripts/reply-to-thread.sh <thread_id> <body>
+"{{ skill_root }}/scripts/reply-to-thread.sh" <thread_id> <body>
 ```
 
 **Arguments:**
@@ -181,7 +191,7 @@ Reply to a PR review thread after addressing feedback.
 
 ```bash
 # After fixing an issue, reply to acknowledge
-{{ skill_root }}/scripts/reply-to-thread.sh "PRRT_kwDOExample123" "Fixed by adding null check"
+"{{ skill_root }}/scripts/reply-to-thread.sh" "PRRT_kwDOExample123" "Fixed by adding null check"
 ```
 
 ## Error Handling

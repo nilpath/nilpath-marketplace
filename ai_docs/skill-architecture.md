@@ -77,7 +77,7 @@ The selected skills below require explicit user invocation, not automatic model 
 | Skills | Targets | Automatic-invocation control |
 |--------|---------|------------------------------|
 | `creating-agents`, `creating-skills` | Claude only (`targets: [claude]`) | `disable-model-invocation: true` in rendered skill frontmatter |
-| `researching`, `planning` | Claude, Copilot (shared VS Code/CLI output), Codex | Claude/Copilot frontmatter flag; Codex skill-local policy |
+| `researching`, `planning` | Claude, Copilot CLI, Codex | Claude/Copilot frontmatter flag; Codex skill-local policy |
 
 Sources: [creating-agents](../src/plugins/authoring-tools/skills/creating-agents/SKILL.md.j2), [creating-skills](../src/plugins/authoring-tools/skills/creating-skills/SKILL.md.j2), [researching](../src/plugins/engineering-workflow/skills/researching/SKILL.md.j2), and [planning](../src/plugins/engineering-workflow/skills/planning/SKILL.md.j2).
 
@@ -106,6 +106,7 @@ Explicit commands are `/authoring-tools:creating-agents` and `/authoring-tools:c
 
 ## See Also
 
+- [Skill permissions](skill-permissions.md)
 - [Agent Architecture](agent-architecture.md)
 - [Release Workflow](release-workflow.md)
 - [Official Skills Docs](https://code.claude.com/docs/en/skills)

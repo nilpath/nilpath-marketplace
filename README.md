@@ -1,16 +1,18 @@
 # nilpath-marketplace
 
-A marketplace for my AI coding-agent extensions — skills and agents authored once under `src/`, built into per-harness distributions for **Claude Code**, **GitHub Copilot (VS Code and CLI)**, and **Codex**. Inspired by [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin).
+A marketplace for my AI coding-agent extensions. Skills and agents are authored once under `src/` and built for **Claude Code**, **GitHub Copilot CLI**, and **Codex**. Inspired by [EveryInc/compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin).
+
+Native Copilot use inside VS Code is not supported. Copilot CLI in a VS Code terminal is still CLI usage.
 
 ## Plugins
 
 | Plugin | Version | Contents | Claude Code | Copilot | Codex |
 | --- | --- | --- | --- | --- | --- |
-| **git-tools** | 0.8.0 | 6 git/gh workflow skills | ✅ | ✅ | ✅ |
-| **engineering-workflow** | 0.8.1 | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
+| **git-tools** | 0.8.1 | 6 git/gh workflow skills | ✅ | ✅ | ✅ |
+| **engineering-workflow** | 0.8.2 | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
 | **documentation** | 0.8.0 | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | ✅¹ | ✅¹ |
 | **authoring-tools** | 0.8.1 | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
-| **nstack** | 0.0.3 | Engineering backbone adapted from pstack: nstack-flow coordinator with feature/bug-fix/investigation playbooks, 8 workflow skills plus pstack's 24 principles and 14 supporting skills (46 total), including TypeScript/Python best practices, 3 agents, per-role models via a hook² | ✅ | ✅ | ✅ |
+| **nstack** | 0.0.4 | Engineering backbone adapted from pstack: nstack-flow coordinator with feature/bug-fix/investigation playbooks, 8 workflow skills plus pstack's 24 principles and 14 supporting skills (46 total), including TypeScript/Python best practices, 3 agents, per-role models via a hook² | ✅ | ✅ | ✅ |
 
 ¹ The orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are adapted per harness: subagent dispatch, todo tracking, and user questions render in each harness's native mechanism. They degrade gracefully on Copilot/Codex (chat questions instead of structured question UI, no parallel exploration fan-out).
 
@@ -22,7 +24,7 @@ Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-wr
 
 Selected skills require explicit user invocation; they must not be loaded automatically by the model or another workflow. Common entry points are below; see the [nstack skill catalog](src/plugins/nstack/README.md#skills) for its full explicit-only inventory.
 
-| Skill | Claude Code | Copilot (VS Code and CLI) | Codex |
+| Skill | Claude Code | Copilot CLI | Codex |
 | --- | --- | --- | --- |
 | `researching` | `/engineering-workflow:researching` | `/researching` | `$researching` |
 | `planning` | `/engineering-workflow:planning` | `/planning` | `$planning` |
@@ -30,7 +32,7 @@ Selected skills require explicit user invocation; they must not be loaded automa
 | `creating-agents` | `/authoring-tools:creating-agents` | Not distributed | Not distributed |
 | `nstack-flow` | `/nstack:nstack-flow` | `/nstack:nstack-flow` (CLI) | `$nstack-flow` |
 | `setup-nstack` | `/nstack:setup-nstack` | `/nstack:setup-nstack` (CLI) | `$setup-nstack` |
-| `python-best-practices` | `/nstack:python-best-practices` | `/python-best-practices` (VS Code), `/nstack:python-best-practices` (CLI) | `$python-best-practices` |
+| `python-best-practices` | `/nstack:python-best-practices` | `/nstack:python-best-practices` | `$python-best-practices` |
 
 `creating-skills` and `creating-agents` remain Claude-only because they teach Claude Code's own authoring formats. The other listed skills ship in all three distributions. Claude and Copilot enforce manual-only selection with `disable-model-invocation: true` in skill frontmatter; Codex uses `policy.allow_implicit_invocation: false` in each skill's `agents/openai.yaml` sidecar.
 
@@ -38,7 +40,9 @@ The nstack Copilot commands above were observed in Copilot CLI 1.0.95, which reg
 
 After the design specification is approved and committed, `researching` shows the user the planning command with the actual feature path, then stops. The user must invoke planning explicitly; researching never invokes it automatically.
 
-**Enforcement takes priority over compatibility.** Copilot VS Code and Copilot CLI use the same generated Copilot output and retain the manual-only flag. CLI runtime support for these flagged skills is not guaranteed: open issues [github/copilot-cli#4438](https://github.com/github/copilot-cli/issues/4438) and [github/copilot-cli#4637](https://github.com/github/copilot-cli/issues/4637) report inconsistent explicit invocation and `Skill not found` errors, including a slash-command path that can load instructions while another lookup reports failure. Do not remove the flag or switch to the Claude distribution as a workaround.
+**Enforcement takes priority over compatibility.** Copilot CLI retains the manual-only flag. CLI runtime support for these flagged skills is not guaranteed. Open issues [github/copilot-cli#4438](https://github.com/github/copilot-cli/issues/4438) and [github/copilot-cli#4637](https://github.com/github/copilot-cli/issues/4637) report inconsistent explicit invocation and `Skill not found` errors, including a slash-command path that can load instructions while another lookup reports failure. Do not remove the flag or switch to the Claude distribution as a workaround.
+
+Skill approvals are separate from agent tool availability. Claude script rules retain their command scopes. Copilot skill approval emission remains disabled after local permission checks found headless and portable-path limitations. Codex strips skill tool declarations. See [skill permissions](ai_docs/skill-permissions.md) for the evidence, manual approval behavior, and rerunnable verifier.
 
 ## Install
 
@@ -49,15 +53,7 @@ After the design specification is approved and committed, `researching` shows th
 /plugin install git-tools          # or engineering-workflow, documentation, authoring-tools, nstack
 ```
 
-**GitHub Copilot (VS Code):** add the repo as a plugin marketplace in settings, then install from the Extensions view (`@agentPlugins`):
-
-```json
-"chat.plugins.marketplaces": ["nilpath/nilpath-marketplace"]
-```
-
-Alternatively, copy any skill folder from `dist/copilot/plugins/<plugin>/skills/` into your repo's `.github/skills/`.
-
-**GitHub Copilot CLI:** register the same marketplace and install the shared Copilot plugins:
+**GitHub Copilot CLI:** register the marketplace and install the Copilot plugins:
 
 ```bash
 copilot plugin marketplace add nilpath/nilpath-marketplace
@@ -67,7 +63,7 @@ copilot plugin install engineering-workflow@nilpath-marketplace
 copilot plugin install nstack@nilpath-marketplace
 ```
 
-Both Copilot clients use `.github/plugin/marketplace.json`, which points to `dist/copilot/plugins/<plugin>/`; there is no separate CLI build. The [official CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference) documents support for this registry location and Agent Plugins 1.0 manifests. The [official CLI skills guide](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills) documents explicit `/skill-name` requests. Installation-format support does not guarantee runtime invocation of the manual-only skills; see the caveat above.
+Copilot CLI uses `.github/plugin/marketplace.json`, which points to `dist/copilot/plugins/<plugin>/`. The [official CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference) documents support for this registry location and Agent Plugins 1.0 manifests. The [official CLI skills guide](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-skills) documents explicit `/skill-name` requests. Installation-format support does not guarantee runtime invocation of the manual-only skills; see the caveat above.
 
 **Codex:**
 
@@ -78,7 +74,7 @@ codex plugin install git-tools
 
 ## How it works
 
-Everything under `dist/`, plus the three root registry files (`.claude-plugin/marketplace.json` for Claude Code, `.github/plugin/marketplace.json` for Copilot VS Code and CLI, `.agents/plugins/marketplace.json` for Codex), is **generated** — never edit it. The single source of truth is `src/`:
+Everything under `dist/`, plus the three root registry files (`.claude-plugin/marketplace.json` for Claude Code, `.github/plugin/marketplace.json` for Copilot CLI, `.agents/plugins/marketplace.json` for Codex), is **generated**. Never edit it. The single source of truth is `src/`:
 
 ```text
 src/

@@ -1,3 +1,4 @@
+
 # Stacked PRs Workflow
 
 Comprehensive guide to working with stacked (dependent) pull requests.
@@ -433,7 +434,7 @@ The git-stacked-prs skill includes powerful automation scripts:
 #### Stack Status
 Display visual tree of stack structure with PR status:
 ```bash
-./scripts/stack-status.sh --pr-status --detail
+"<git-stacked-prs skill directory>/scripts/stack-status.sh" --pr-status --detail
 ```
 
 Output:
@@ -447,7 +448,7 @@ main
 #### Stack Rebase
 Automate sequential rebasing with safety features:
 ```bash
-./scripts/stack-rebase.sh main feat/auth-base feat/auth-middleware feat/auth-api
+"<git-stacked-prs skill directory>/scripts/stack-rebase.sh" main feat/auth-base feat/auth-middleware feat/auth-api
 ```
 
 Features:
@@ -460,7 +461,7 @@ Features:
 #### Update PR Targets
 Batch update PR targets after merging:
 ```bash
-./scripts/update-pr-targets.sh feat/auth-base main
+"<git-stacked-prs skill directory>/scripts/update-pr-targets.sh" feat/auth-base main
 ```
 
 Auto-detects dependent PRs and:
@@ -472,16 +473,16 @@ Auto-detects dependent PRs and:
 Create backups before risky operations:
 ```bash
 # Create backups
-./scripts/stack-backup.sh create feat/auth-base feat/auth-middleware
+"<git-stacked-prs skill directory>/scripts/stack-backup.sh" create feat/auth-base feat/auth-middleware
 
 # List backups
-./scripts/stack-backup.sh list
+"<git-stacked-prs skill directory>/scripts/stack-backup.sh" list
 
 # Restore from backup
-./scripts/stack-backup.sh restore feat/auth-base
+"<git-stacked-prs skill directory>/scripts/stack-backup.sh" restore feat/auth-base
 
 # Clean old backups
-./scripts/stack-backup.sh clean --older-than 30
+"<git-stacked-prs skill directory>/scripts/stack-backup.sh" clean --older-than 30
 ```
 
 ### GitHub CLI

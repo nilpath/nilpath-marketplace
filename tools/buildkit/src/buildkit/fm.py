@@ -118,10 +118,11 @@ def process_frontmatter(
 
         if key == "tools":
             entries = split_tool_list(value)
-            translated, tool_warnings = translate_tools(entries, harness, cfg)
-            warnings.extend(f"{component}: {w}" for w in tool_warnings)
+            translated, tool_warnings = translate_tools(entries, harness, cfg, kind)
+            if key_for_tools:
+                warnings.extend(f"{component}: {w}" for w in tool_warnings)
             if key_for_tools and translated:
-                if harness.tools_format == "list":
+                if harness.tool_policy(kind).get("format", "comma") == "list":
                     out[key_for_tools] = translated
                 else:
                     out[key_for_tools] = ", ".join(translated)

@@ -1,24 +1,26 @@
 ---
 name: gh-pr-review
 description: GitHub PR review operations via gh CLI. Create pending reviews with line comments, submit reviews (approve/reject/comment). Use when adding PR comments, submitting reviews, or managing GitHub code reviews.
-allowed-tools: Bash(gh:*), Bash(git remote:*), Read
+allowed-tools: Bash(gh:*), Bash(git remote:*), Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/pr-info.sh":*), Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/create-review.sh":*), Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh":*), Read
 ---
+
 
 # GitHub PR Review
 
 Create and manage GitHub PR reviews with line-specific comments using the `gh` CLI.
 
+
 ## Quick Start
 
 ```bash
 # Get PR info for current branch
-${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/pr-info.sh
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/pr-info.sh"
 
 # Create a pending review with line comments
-echo '{"pr_number":123,"summary":"Review summary","comments":[{"path":"src/app.ts","line":42,"body":"Fix this issue"}]}' | ${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/create-review.sh
+echo '{"pr_number":123,"summary":"Review summary","comments":[{"path":"src/app.ts","line":42,"body":"Fix this issue"}]}' | "${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/create-review.sh"
 
 # Submit a pending review
-${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh 123 456789 COMMENT "Please address the comments"
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh" 123 456789 COMMENT "Please address the comments"
 ```
 
 ## Scripts
@@ -29,10 +31,10 @@ Get PR context information.
 
 ```bash
 # Auto-detect PR from current branch
-${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/pr-info.sh
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/pr-info.sh"
 
 # Get info for specific PR
-${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/pr-info.sh 123
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/pr-info.sh" 123
 ```
 
 **Output:**
@@ -50,7 +52,7 @@ ${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/pr-info.sh 123
 Create a pending review with line comments. The review is NOT submitted - user must submit manually.
 
 ```bash
-echo '$JSON' | ${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/create-review.sh
+echo '$JSON' | "${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/create-review.sh"
 ```
 
 **Input JSON:**
@@ -103,7 +105,7 @@ echo '$JSON' | ${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/create-review.s
 Submit a pending review with an event type.
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh <pr_number> <review_id> <event> [body]
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh" <pr_number> <review_id> <event> [body]
 ```
 
 **Events:**
@@ -113,7 +115,7 @@ ${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh <pr_number> <
 
 **Example:**
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh 123 456789 REQUEST_CHANGES "Please address the inline comments"
+"${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh" 123 456789 REQUEST_CHANGES "Please address the inline comments"
 ```
 
 ## Comment Format
@@ -155,21 +157,21 @@ Error codes:
 
 1. **Get PR info:**
    ```bash
-   PR_INFO=$(${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/pr-info.sh)
+   "${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/pr-info.sh"
    ```
 
-2. **Review the code** and collect findings
+2. **Review the code** using the JSON tool result and collect findings. Run the helper directly rather than through command substitution, which can require separate shell approval.
 
 3. **Create pending review:**
    ```bash
-   echo '{"pr_number":123,"comments":[...]}' | ${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/create-review.sh
+   echo '{"pr_number":123,"comments":[...]}' | "${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/create-review.sh"
    ```
 
 4. **User reviews comments on GitHub** and edits if needed
 
 5. **User submits review** via GitHub UI or:
    ```bash
-   ${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh 123 $REVIEW_ID COMMENT
+   "${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh" 123 $REVIEW_ID COMMENT
    ```
 
 ## Requirements

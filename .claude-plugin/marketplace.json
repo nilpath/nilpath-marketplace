@@ -47,7 +47,7 @@
       "name": "engineering-workflow",
       "source": "./dist/claude/plugins/engineering-workflow",
       "description": "Research → design → plan → implement → review pipeline. Orchestrator skills plus the reviewer, researcher, and implementation agents they delegate to, and core engineering principles.",
-      "version": "0.8.1",
+      "version": "0.8.2",
       "author": {
         "name": "Christoffer Ahrling",
         "url": "https://github.com/nilpath"
@@ -65,7 +65,7 @@
       "name": "git-tools",
       "source": "./dist/claude/plugins/git-tools",
       "description": "Git and GitHub workflow skills — commit conventions, advanced git operations, stacked PRs, worktrees, and gh-based PR review and comment handling.",
-      "version": "0.8.0",
+      "version": "0.8.1",
       "author": {
         "name": "Christoffer Ahrling",
         "url": "https://github.com/nilpath"
@@ -83,7 +83,7 @@
       "name": "nstack",
       "source": "./dist/claude/plugins/nstack",
       "description": "Portable engineering backbone adapted from pstack. An explicit coordinator with feature, bug-fix, and investigation playbooks; how/why grounding; architect, candidate-graft, swarm, and review-panel delegation; prove-it-works verification; and code-managed per-role model configuration.",
-      "version": "0.0.3",
+      "version": "0.0.4",
       "author": {
         "name": "Christoffer Ahrling",
         "url": "https://github.com/nilpath"

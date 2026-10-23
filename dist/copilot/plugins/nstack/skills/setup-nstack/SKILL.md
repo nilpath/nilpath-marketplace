@@ -12,17 +12,19 @@ nstack's plugin hook reads the `[nstack role=<role> seat=<n>]` tag on each launc
 
 Never hand-write `models.json`. Use the hook's script, `<helper>`: `../../com.github.copilot/hooks/nstack_config.py` from this skill's base directory (absolute path). It needs Python 3.11 or newer.
 
+Replace `<helper>` in each command with that absolute path. Quote it and keep the repository working directory. The helper is under plugin hooks, not this skill's scripts. Hook execution is independent of skill frontmatter approvals.
+
 Open a todolist with one entry per step before starting.
 
 ## 1. Load the current state
 
-Run `python3 --version`, then `python3 <helper> roles` (catalog, defaults, effort levels) and `python3 <helper> status` (effective model, effort, source, and verification per seat). Stop on Python below 3.11, or on `"ok": false` and show its `message` and `repair`.
+Run `python3 --version`, then `python3 "<helper>" roles` (catalog, defaults, effort levels) and `python3 "<helper>" status` (effective model, effort, source, and verification per seat). Stop on Python below 3.11, or on `"ok": false` and show its `message` and `repair`.
 
 ## 2. Choose overrides
 
 Show a table of every role with its model, effort, and source. Ask which to change with a direct chat question to the user (wait for their reply before continuing).
 
-Use model ids as Copilot lists them (`claude-opus-5.5`, `gpt-6.1-sol`), or `inherit`. They work in Copilot CLI and VS Code Agent Host alike. Effort is `low`, `medium`, `high`, `xhigh`, or `max`, where the model supports it. Never set a model the user hasn't confirmed they can use.
+Use model ids as Copilot CLI lists them (`claude-opus-5.5`, `gpt-6.1-sol`), or `inherit`. Effort is `low`, `medium`, `high`, `xhigh`, or `max`, where the model supports it. Never set a model the user hasn't confirmed they can use.
 
 Panel roles take 2 to 6 seats (`candidate-graft-judge` 1 to 6). Repeating a model across seats gives independent attempts, not model diversity. Say so.
 
@@ -43,11 +45,11 @@ Write the overrides to a temp JSON file outside the repository. It replaces this
 }
 ```
 
-Run `python3 <helper> configure --input <overrides.json> --dry-run` and show each changed role's `before` and `after`. Fix validation errors with the user and preview again.
+Run `python3 "<helper>" configure --input <overrides.json> --dry-run` and show each changed role's `before` and `after`. Fix validation errors with the user and preview again.
 
 ## 4. Apply
 
-After the user confirms, run `python3 <helper> configure --input <overrides.json> --apply --plan-id <plan_id>`. On `stale_plan` (exit 5), preview again and get fresh confirmation. Delete the temp file.
+After the user confirms, run `python3 "<helper>" configure --input <overrides.json> --apply --plan-id <plan_id>`. On `stale_plan` (exit 5), preview again and get fresh confirmation. Delete the temp file.
 
 ## 5. Check dispatch
 
@@ -58,7 +60,7 @@ A configured model is not proof the client runs it. Probe at least one seat per 
 Reply with exactly one line: NSTACK-PROBE <role> <seat>
 ```
 
-Record the result with `python3 <helper> record-verification --role <role> --seat <n> --status <verified|failed> --evidence "<observation>"`. Record `failed` when the launch is blocked or the model is rejected, and show the error. Record `verified` only when the client shows which model served the launch (the subagent's model in the session log or timeline), and quote it. A subagent's claim about its own model is not evidence. Otherwise leave the seat unverified.
+Record the result with `python3 "<helper>" record-verification --role <role> --seat <n> --status <verified|failed> --evidence "<observation>"`. Record `failed` when the launch is blocked or the model is rejected, and show the error. Record `verified` only when the client shows which model served the launch (the subagent's model in the session log or timeline), and quote it. A subagent's claim about its own model is not evidence. Otherwise leave the seat unverified.
 
 ## 6. Report
 

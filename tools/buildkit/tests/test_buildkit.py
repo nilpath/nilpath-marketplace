@@ -1,11 +1,12 @@
 """Unit tests for the buildkit translation core."""
 
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
 
-from buildkit.build import BuildResult, _build_hooks, _build_skill
-from buildkit.config import PluginConfig, load_config
+from buildkit.build import BuildResult, _build_hooks, _build_skill, build
+from buildkit.config import HarnessConfig, PluginConfig, load_config
 from buildkit.fm import (
     FrontmatterError,
     dump_agent_toml,
@@ -56,7 +57,7 @@ class TestParsing:
 class TestTranslation:
     def test_claude_keeps_scopes(self, cfg):
         out, warnings = translate_tools(
-            ["shell(git:*)", "file-read", "subagent(Explore)"], cfg.harnesses["claude"], cfg
+            ["shell(git:*)", "file-read", "subagent(Explore)"], cfg.harnesses["claude"], cfg, "skill"
         )
         assert out == ["Bash(git:*)", "Read", "Agent(Explore)"]
         assert warnings == []
@@ -66,25 +67,211 @@ class TestTranslation:
             ["glob-search", "content-search", "shell(git:*)", "ask-user"],
             cfg.harnesses["copilot"],
             cfg,
+            "agent",
         )
         assert out == ["search", "execute"]
         assert any("ask-user" in w for w in warnings)
 
+    def test_copilot_agent_aliases_remain_available(self, cfg):
+        out, warnings = translate_tools(
+            ["shell", "file-read", "file-write", "glob-search", "subagent(x)", "web-fetch"],
+            cfg.harnesses["copilot"], cfg, "agent",
+        )
+        assert out == ["execute", "read", "edit", "search", "agent", "web"]
+        assert warnings == []
+
     def test_codex_strips_silently(self, cfg):
-        out, warnings = translate_tools(["shell", "file-read"], cfg.harnesses["codex"], cfg)
+        out, warnings = translate_tools(["shell", "file-read"], cfg.harnesses["codex"], cfg, "skill")
         assert out == []
         assert warnings == []
 
     def test_passthrough_only_on_matching_harness(self, cfg):
         entries = ["claude:mcp__x__y"]
-        claude_out, _ = translate_tools(entries, cfg.harnesses["claude"], cfg)
-        copilot_out, copilot_warnings = translate_tools(entries, cfg.harnesses["copilot"], cfg)
+        claude_out, _ = translate_tools(entries, cfg.harnesses["claude"], cfg, "skill")
+        copilot_out, copilot_warnings = translate_tools(entries, cfg.harnesses["copilot"], cfg, "skill")
         assert claude_out == ["mcp__x__y"]
         assert copilot_out == [] and copilot_warnings == []
 
     def test_unknown_canonical_tool_raises(self, cfg):
         with pytest.raises(ValueError, match="unknown canonical tool"):
-            translate_tools(["Bash"], cfg.harnesses["claude"], cfg)
+            translate_tools(["Bash"], cfg.harnesses["claude"], cfg, "skill")
+
+    @pytest.mark.parametrize("entry", ["shell()", "shell( )", "shell(git:*"])
+    def test_malformed_scope_rejected(self, cfg, entry):
+        with pytest.raises(ValueError, match="tool scope"):
+            translate_tools([entry], cfg.harnesses["copilot"], cfg, "skill")
+
+    def test_copilot_skill_preserves_scopes_and_excludes_bare_shell(self, cfg):
+        out, warnings = translate_tools(
+            ["shell", "shell(git:*)", 'shell(python3 "/installed path/helper.py":*)', "file-read"],
+            cfg.harnesses["copilot"], cfg, "skill",
+        )
+        assert out == ["shell(git:*)", 'shell(python3 "/installed path/helper.py":*)']
+        assert warnings == [
+            "tool 'shell' requires a scope for copilot skill; dropped",
+            "tool 'file-read' has no copilot equivalent; dropped",
+        ]
+
+    def test_skill_policy_replaces_every_agent_setting(self, cfg):
+        harness = HarnessConfig("copilot", deepcopy(cfg.harnesses["copilot"].raw))
+        harness.raw["frontmatter"]["skill"]["tools"] = {"map": {"shell": "shell"}}
+        out, warnings = translate_tools(
+            ["shell(git:*)", "shell(git:*)", "file-read"], harness, cfg, "skill"
+        )
+        assert out == ["shell", "shell"]
+        assert warnings == ["tool 'file-read' not mapped for copilot; dropped"]
+        harness.raw["frontmatter"]["skill"]["key_for_tools"] = "allowed-tools"
+        harness.raw["frontmatter"]["skill"]["allowed"].append("allowed-tools")
+        data, _ = process_frontmatter(
+            {"name": "x", "description": "y", "tools": ["shell", "shell"]},
+            "skill", harness, cfg, "skill/x",
+        )
+        assert data["allowed-tools"] == "shell, shell"
+        data, _ = process_frontmatter(
+            {"name": "x", "description": "y", "tools": ["shell", "shell"]},
+            "agent", harness, cfg, "agent/x",
+        )
+        assert data["tools"] == ["execute"]
+
+    @pytest.mark.parametrize("scope", ["./scripts/helper.sh:*", "git feature/branch:*"])
+    def test_claude_does_not_reject_relative_paths_or_slashes(self, cfg, scope):
+        out, warnings = translate_tools([f"shell({scope})"], cfg.harnesses["claude"], cfg, "skill")
+        assert out == [f"Bash({scope})"]
+        assert warnings == []
+
+
+class TestSkillPermissionRendering:
+    def test_dormant_copilot_policy_renders_scoped_list_without_agent_aliases(self, cfg, tmp_path):
+        harness = HarnessConfig("copilot", deepcopy(cfg.harnesses["copilot"].raw))
+        harness.raw["frontmatter"]["skill"]["key_for_tools"] = "allowed-tools"
+        harness.raw["frontmatter"]["skill"]["allowed"].append("allowed-tools")
+        skill_dir = tmp_path / "fixture"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md.j2").write_text(
+            '---\nname: fixture\ndescription: Fixture.\ntargets: [copilot]\n'
+            'tools:\n  - shell\n  - shell(git:*)\n'
+            '  - \'shell(python3 "/installed path/helper.py":*)\'\n'
+            '  - file-read\n---\nFixture.\n'
+        )
+        result = BuildResult()
+        plugin = next(p for p in cfg.plugins if p.name == "git-tools")
+        _build_skill(make_environment(), skill_dir, harness, plugin, cfg, tmp_path / "out", result)
+        text = result.written[0].read_text()
+        data, _ = split_document(text)
+        assert data == {
+            "name": "fixture", "description": "Fixture.",
+            "allowed-tools": ["shell(git:*)", 'shell(python3 "/installed path/helper.py":*)'],
+        }
+        assert "\nallowed-tools:\n  - shell(git:*)\n" in text
+        assert "execute" not in text and "\n  - shell\n" not in text
+        assert result.warnings == [
+            "git-tools/skill/fixture: tool 'shell' requires a scope for copilot skill; dropped",
+            "git-tools/skill/fixture: tool 'file-read' has no copilot equivalent; dropped",
+        ]
+
+    def test_normal_build_retains_runtime_gates_and_agent_aliases(self, tmp_path):
+        result = build(REPO_ROOT, out_root=tmp_path)
+        for path in result.written:
+            if path.name == "SKILL.md" and "copilot" in path.parts:
+                data, _ = split_document(path.read_text())
+                assert "tools" not in data and "allowed-tools" not in data
+        agent = tmp_path / "dist/copilot/plugins/nstack/com.github.copilot/agents/nstack-agent.agent.md"
+        data, _ = split_document(agent.read_text())
+        assert data["tools"] == ["read", "edit", "execute", "search"]
+        assert not any("copilot skill" in warning for warning in result.warnings)
+
+    def test_copilot_raw_tools_are_rejected_and_canonical_tools_stay_gated(self, cfg, tmp_path):
+        plugin = next(p for p in cfg.plugins if p.name == "git-tools")
+        skill_dir = tmp_path / "fixture"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md.j2").write_text(
+            "---\nname: fixture\ndescription: Fixture.\ntargets: [copilot]\n"
+            "allowed-tools: shell\n---\nFixture.\n"
+        )
+        with pytest.raises(FrontmatterError, match="allowed-tools"):
+            _build_skill(
+                make_environment(), skill_dir, cfg.harnesses["copilot"], plugin, cfg,
+                tmp_path / "out", BuildResult(),
+            )
+        (skill_dir / "SKILL.md.j2").write_text(
+            "---\nname: fixture\ndescription: Fixture.\ntargets: [copilot]\n"
+            "tools:\n  - shell(git:*)\n---\nFixture.\n"
+        )
+        result = BuildResult()
+        _build_skill(
+            make_environment(), skill_dir, cfg.harnesses["copilot"], plugin, cfg,
+            tmp_path / "out", result,
+        )
+        data, _ = split_document(result.written[0].read_text())
+        assert "tools" not in data and "allowed-tools" not in data
+        assert result.warnings == []
+
+    @pytest.mark.parametrize(
+        ("plugin_name", "skill_name", "expected_tools", "scripts"),
+        [
+            (
+                "git-tools", "gh-pr-review",
+                'Bash(gh:*), Bash(git remote:*), '
+                'Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/pr-info.sh":*), '
+                'Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/create-review.sh":*), '
+                'Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh":*), Read',
+                ["pr-info.sh", "create-review.sh", "submit-review.sh"],
+            ),
+            (
+                "git-tools", "git-stacked-prs",
+                'Bash(git:*), '
+                'Bash("${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh":*), '
+                'Bash("${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh":*), '
+                'Bash("${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/update-pr-targets.sh":*), '
+                'Bash("${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh":*), '
+                'Read, Edit, Write',
+                ["stack-rebase.sh", "stack-status.sh", "update-pr-targets.sh", "stack-backup.sh"],
+            ),
+            (
+                "nstack", "show-me-your-work",
+                'Bash("${CLAUDE_PLUGIN_ROOT}/skills/show-me-your-work/scripts/log.sh":*)',
+                ["log.sh"],
+            ),
+        ],
+    )
+    def test_claude_script_callers_match_literal_rules(
+        self, cfg, tmp_path, plugin_name, skill_name, expected_tools, scripts
+    ):
+        plugin = next(p for p in cfg.plugins if p.name == plugin_name)
+        result = BuildResult()
+        _build_skill(
+            make_environment(), plugin.src_dir / "skills" / skill_name,
+            cfg.harnesses["claude"], plugin, cfg, tmp_path, result,
+        )
+        data, body = split_document(result.written[0].read_text())
+        assert data["allowed-tools"] == expected_tools
+        assert "PR_INFO=$(" not in body
+        for script in scripts:
+            assert f'"${{CLAUDE_PLUGIN_ROOT}}/skills/{skill_name}/scripts/{script}"' in body
+            assert (result.written[0].parent / "scripts" / script).stat().st_mode & 0o111
+
+    @pytest.mark.parametrize("harness_id", ["claude", "codex"])
+    def test_normal_skill_build_preserves_claude_and_strips_codex(self, cfg, tmp_path, harness_id):
+        plugin = next(p for p in cfg.plugins if p.name == "git-tools")
+        harness = cfg.harnesses[harness_id]
+        result = BuildResult()
+        _build_skill(
+            make_environment(), plugin.src_dir / "skills/gh-address-comments",
+            harness, plugin, cfg, tmp_path, result,
+        )
+        data, body = split_document(result.written[0].read_text())
+        if harness_id == "claude":
+            assert data["allowed-tools"] == (
+                'Bash(gh:*), Bash(jq:*), '
+                'Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh":*), '
+                'Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/reply-to-thread.sh":*), '
+                'Read, Write, Edit'
+            )
+            assert '"${CLAUDE_PLUGIN_ROOT}/skills/gh-address-comments/scripts/fetch-comments.sh" 123' in body
+            assert "COMMENTS=$(" not in body
+        else:
+            assert "allowed-tools" not in data and "tools" not in data
+            assert '"<gh-address-comments skill directory>/scripts/fetch-comments.sh" 123' in body
 
 
 class TestModels:
@@ -131,9 +318,45 @@ class TestFrontmatter:
         assert out["allowed-tools"] == "Read"
 
     def test_copilot_skill_drops_tools_key(self, cfg):
-        data = {"name": "x", "description": "y", "targets": ["copilot"], "tools": ["file-read"]}
-        out, _ = process_frontmatter(data, "skill", cfg.harnesses["copilot"], cfg, "skill/x")
+        data = {
+            "name": "x", "description": "y", "targets": ["copilot"],
+            "tools": ["shell", "shell(git:*)", "file-read"],
+        }
+        out, warnings = process_frontmatter(
+            data, "skill", cfg.harnesses["copilot"], cfg, "skill/x"
+        )
         assert "tools" not in out and "allowed-tools" not in out
+        assert warnings == []
+
+        harness = HarnessConfig("copilot", deepcopy(cfg.harnesses["copilot"].raw))
+        harness.raw["frontmatter"]["skill"]["key_for_tools"] = "allowed-tools"
+        harness.raw["frontmatter"]["skill"]["allowed"].append("allowed-tools")
+        out, warnings = process_frontmatter(data, "skill", harness, cfg, "skill/x")
+        assert out["allowed-tools"] == ["shell(git:*)"]
+        assert warnings == [
+            "skill/x: tool 'shell' requires a scope for copilot skill; dropped",
+            "skill/x: tool 'file-read' has no copilot equivalent; dropped",
+        ]
+
+    def test_active_copilot_skill_warns_when_all_tools_drop(self, cfg):
+        harness = HarnessConfig("copilot", deepcopy(cfg.harnesses["copilot"].raw))
+        harness.raw["frontmatter"]["skill"]["key_for_tools"] = "allowed-tools"
+        harness.raw["frontmatter"]["skill"]["allowed"].append("allowed-tools")
+        out, warnings = process_frontmatter(
+            {"name": "x", "description": "y", "tools": ["shell", "file-read"]},
+            "skill", harness, cfg, "skill/x",
+        )
+        assert "allowed-tools" not in out
+        assert warnings == [
+            "skill/x: tool 'shell' requires a scope for copilot skill; dropped",
+            "skill/x: tool 'file-read' has no copilot equivalent; dropped",
+        ]
+
+    @pytest.mark.parametrize("tools", [["unknown"], ["shell()"], ["shell( )"]])
+    def test_gated_copilot_skill_tools_still_validate(self, cfg, tools):
+        data = {"name": "x", "description": "y", "tools": tools}
+        with pytest.raises(ValueError):
+            process_frontmatter(data, "skill", cfg.harnesses["copilot"], cfg, "skill/x")
 
     def test_reasoning_mapped_for_claude_dropped_for_copilot(self, cfg):
         data = {"name": "x", "description": "y", "targets": ["claude"], "reasoning": "max"}

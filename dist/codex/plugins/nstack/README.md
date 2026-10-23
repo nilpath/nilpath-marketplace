@@ -1,6 +1,6 @@
 # nstack
 
-A portable engineering backbone for Claude Code, GitHub Copilot (CLI and VS Code), and Codex, adapted from [pstack](https://github.com/cursor/plugins/tree/dbf49813a39c1a5389c5e28cb8e4c1c2379e2454/pstack).
+A portable engineering backbone for Claude Code, GitHub Copilot CLI, and Codex, adapted from [pstack](https://github.com/cursor/plugins/tree/dbf49813a39c1a5389c5e28cb8e4c1c2379e2454/pstack).
 
 An explicit coordinator picks a playbook (feature, bug fix, or investigation), grounds the work in the existing code and its history, compares alternative designs, delegates bounded implementation, proves the result against the real artifact, has it reviewed independently, and ends a code change as a draft pull request.
 
@@ -25,7 +25,7 @@ An explicit coordinator picks a playbook (feature, bug fix, or investigation), g
 
 "Explicit only" skills stay out of the client's automatic skill catalog. nstack-flow and the agents read them directly from `../<name>/SKILL.md`.
 
-`python-best-practices` is independently invoked: `/nstack:python-best-practices` in Claude Code, `/python-best-practices` in Copilot VS Code (`/nstack:python-best-practices` in Copilot CLI), or `$python-best-practices` in Codex. It adds no prerequisite skill or tool dependency and preserves established repository documentation styles. `no-comments` and Comment Sicko preserve Python documentation contracts and semantic directives, audit suppressions by actual rule/diagnostic, and leave unknown classifications unresolved. Correctness suppressions require a root-cause fix before removal.
+`python-best-practices` is independently invoked: `/nstack:python-best-practices` in Claude Code or Copilot CLI, or `$python-best-practices` in Codex. It adds no prerequisite skill or tool dependency and preserves established repository documentation styles. `no-comments` and Comment Sicko preserve Python documentation contracts and semantic directives, audit suppressions by actual rule/diagnostic, and leave unknown classifications unresolved. Correctness suppressions require a root-cause fix before removal.
 
 ## Agents
 
@@ -60,7 +60,7 @@ nstack works without setup: every delegated role has a built-in default model, a
 | Client | Model per launch | Effort per launch | Built-in defaults (fast / strong / panel) |
 | --- | --- | --- | --- |
 | Claude Code | Aliases only: `sonnet`, `opus`, `haiku`, `fable` | Not supported | `sonnet` / `opus` / `opus` + `sonnet` |
-| Copilot CLI and VS Code (Agent Host) | Model ids, such as `claude-opus-5.5` | `low` to `max` | `claude-sonnet-5` medium / `claude-opus-5.5` high / `claude-opus-5.5` + `gpt-6.1-sol` high |
+| Copilot CLI | Model ids, such as `claude-opus-5.5` | `low` to `max` | `claude-sonnet-5` medium / `claude-opus-5.5` high / `claude-opus-5.5` + `gpt-6.1-sol` high |
 | Codex | Model ids, such as `gpt-5.6-sol` | `minimal` to `ultra` | `gpt-5.6-luna` medium / `gpt-5.6-sol` high / `gpt-5.6-sol` + `gpt-5.6-terra` high |
 
 Defaults are suggestions: an account may not have every model. A model the client rejects fails the launch visibly; nstack never falls back to another model.
@@ -70,7 +70,8 @@ Defaults are suggestions: an account may not have every model. A model the clien
 - Python 3.11+ for the model hook and `setup-nstack`.
 - **Codex:** trust nstack's plugin hook once with `/hooks`. Until then, nstack agents reply that the hook did not run, and delegation stops.
 - Read access to the plugin's install directory: skills and subagents read their reference files there. Interactive sessions ask for approval; non-interactive runs must pre-approve it (for example, Copilot CLI's `--add-dir`).
-- The model hook is verified for Copilot CLI and Claude Code plugins, and with the same hook command in Codex. Codex loading it from an installed plugin, and VS Code's Copilot Agent Host sessions (which use the same `task` tool as Copilot CLI), are not yet verified. VS Code's Local agent harness launches subagents through a different tool and is not supported.
+- The model hook is verified for Copilot CLI and Claude Code plugins, and with the same hook command in Codex. Codex loading it from an installed plugin is not yet verified. Native Copilot use inside VS Code is unsupported. Copilot CLI in a VS Code terminal remains CLI usage.
+- Skill approvals do not control plugin hooks. Broad Claude shell grants for orchestration stay unchanged. Copilot skill approval emission is disabled, so those declarations do not become blanket CLI approvals. `show-me-your-work` preapproves only its rooted logger on Claude. Resolve its installed absolute path and use ordinary approval on Copilot CLI and Codex.
 - If `python3` is missing or older than 3.11, the hook steps aside rather than blocking other tools; nstack agents then report that the hook did not run.
 - `git` and an authenticated `gh` CLI for draft pull requests.
 - Copilot CLI namespaces plugin skill commands (`/nstack:how`, `/nstack:nstack-flow`), but the skill names the model sees (`how`, `why`, `swarm`, and the others) can still collide with skills from other plugins. In Copilot CLI's non-interactive prompt mode (`-p`), slash commands are not expanded into skills, so start `nstack-flow` and `setup-nstack` interactively.

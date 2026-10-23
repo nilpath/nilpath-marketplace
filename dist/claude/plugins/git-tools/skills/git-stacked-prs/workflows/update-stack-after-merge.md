@@ -1,3 +1,4 @@
+
 # Updating Stack After PR Merge
 
 How to update PR targets and rebase remaining branches after merging stacked PRs.
@@ -147,7 +148,7 @@ git push --force-with-lease
 Use the built-in `stack-rebase.sh` script to automate the entire rebase process:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh main feature/auth-models feature/auth-api feature/auth-ui
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh" main feature/auth-models feature/auth-api feature/auth-ui
 ```
 
 Features:
@@ -163,7 +164,7 @@ Features:
 Use the `update-pr-targets.sh` script to automatically update PR targets after a merge:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/update-pr-targets.sh feature/auth-setup main
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/update-pr-targets.sh" feature/auth-setup main
 ```
 
 This script will:

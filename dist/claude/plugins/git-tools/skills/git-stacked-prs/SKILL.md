@@ -1,12 +1,14 @@
 ---
 name: git-stacked-prs
 description: Stacked (dependent) pull request workflow. Use when creating, managing, or troubleshooting stacked PRs, or when user mentions stacked diffs, dependent PRs, PR stacks, or breaking large features into smaller PRs.
-allowed-tools: Bash(git:*), Read, Edit, Write
+allowed-tools: Bash(git:*), Bash("${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh":*), Bash("${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh":*), Bash("${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/update-pr-targets.sh":*), Bash("${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh":*), Read, Edit, Write
 ---
+
 
 # Git Stacked PRs
 
 Expert guidance for creating and managing stacked (dependent) pull requests.
+
 
 ## Current Git Context
 
@@ -191,7 +193,7 @@ The git-stacked-prs skill includes scripts to automate common workflows:
 Automatically rebase all branches in a stack with safety features:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh main feat/auth-base feat/auth-middleware feat/auth-api
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh" main feat/auth-base feat/auth-middleware feat/auth-api
 ```
 
 Features:
@@ -207,7 +209,7 @@ Features:
 Display visual tree of stack structure with PR status:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh --pr-status
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh" --pr-status
 ```
 
 Options:
@@ -220,7 +222,7 @@ Options:
 Batch update PR base branches after merging a base PR:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/update-pr-targets.sh feat/auth-base main
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/update-pr-targets.sh" feat/auth-base main
 ```
 
 Features:
@@ -236,16 +238,16 @@ Create backups before risky operations:
 
 ```bash
 # Create backups
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh create feat/auth-base feat/auth-middleware
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh" create feat/auth-base feat/auth-middleware
 
 # List backups
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh list
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh" list
 
 # Restore from backup
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh restore feat/auth-base
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh" restore feat/auth-base
 
 # Clean old backups
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh clean --older-than 30
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh" clean --older-than 30
 ```
 
 ## Common Operations
@@ -264,7 +266,7 @@ git log main..feat/auth/base --oneline
 git log feat/auth/base..feat/auth/middleware --oneline
 
 # Or use the automated script
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh"
 ```
 
 ### Rebase a Stack
@@ -272,7 +274,7 @@ ${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-status.sh
 Use the automated script for safe, sequential rebasing:
 
 ```bash
-${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh main feat/auth/base feat/auth/middleware feat/auth/api
+"${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-rebase.sh" main feat/auth/base feat/auth/middleware feat/auth/api
 ```
 
 Or manually rebase each branch:

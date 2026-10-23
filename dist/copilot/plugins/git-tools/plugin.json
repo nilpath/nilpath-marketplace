@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "git-tools",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Git and GitHub workflow skills — commit conventions, advanced git operations, stacked PRs, worktrees, and gh-based PR review and comment handling.",
   "author": {
     "name": "Christoffer Ahrling",

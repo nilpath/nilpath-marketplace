@@ -3,21 +3,25 @@ name: gh-pr-review
 description: GitHub PR review operations via gh CLI. Create pending reviews with line comments, submit reviews (approve/reject/comment). Use when adding PR comments, submitting reviews, or managing GitHub code reviews.
 ---
 
+
 # GitHub PR Review
 
 Create and manage GitHub PR reviews with line-specific comments using the `gh` CLI.
+
+Replace `<gh-pr-review skill directory>` in each command with the absolute directory containing this installed `SKILL.md`. Keep the working directory in the repository. The placeholder does not expand automatically. Approve script execution through the client's ordinary permission prompt.
+
 
 ## Quick Start
 
 ```bash
 # Get PR info for current branch
-./scripts/pr-info.sh
+"<gh-pr-review skill directory>/scripts/pr-info.sh"
 
 # Create a pending review with line comments
-echo '{"pr_number":123,"summary":"Review summary","comments":[{"path":"src/app.ts","line":42,"body":"Fix this issue"}]}' | ./scripts/create-review.sh
+echo '{"pr_number":123,"summary":"Review summary","comments":[{"path":"src/app.ts","line":42,"body":"Fix this issue"}]}' | "<gh-pr-review skill directory>/scripts/create-review.sh"
 
 # Submit a pending review
-./scripts/submit-review.sh 123 456789 COMMENT "Please address the comments"
+"<gh-pr-review skill directory>/scripts/submit-review.sh" 123 456789 COMMENT "Please address the comments"
 ```
 
 ## Scripts
@@ -28,10 +32,10 @@ Get PR context information.
 
 ```bash
 # Auto-detect PR from current branch
-./scripts/pr-info.sh
+"<gh-pr-review skill directory>/scripts/pr-info.sh"
 
 # Get info for specific PR
-./scripts/pr-info.sh 123
+"<gh-pr-review skill directory>/scripts/pr-info.sh" 123
 ```
 
 **Output:**
@@ -49,7 +53,7 @@ Get PR context information.
 Create a pending review with line comments. The review is NOT submitted - user must submit manually.
 
 ```bash
-echo '$JSON' | ./scripts/create-review.sh
+echo '$JSON' | "<gh-pr-review skill directory>/scripts/create-review.sh"
 ```
 
 **Input JSON:**
@@ -102,7 +106,7 @@ echo '$JSON' | ./scripts/create-review.sh
 Submit a pending review with an event type.
 
 ```bash
-./scripts/submit-review.sh <pr_number> <review_id> <event> [body]
+"<gh-pr-review skill directory>/scripts/submit-review.sh" <pr_number> <review_id> <event> [body]
 ```
 
 **Events:**
@@ -112,7 +116,7 @@ Submit a pending review with an event type.
 
 **Example:**
 ```bash
-./scripts/submit-review.sh 123 456789 REQUEST_CHANGES "Please address the inline comments"
+"<gh-pr-review skill directory>/scripts/submit-review.sh" 123 456789 REQUEST_CHANGES "Please address the inline comments"
 ```
 
 ## Comment Format
@@ -154,21 +158,21 @@ Error codes:
 
 1. **Get PR info:**
    ```bash
-   PR_INFO=$(./scripts/pr-info.sh)
+   "<gh-pr-review skill directory>/scripts/pr-info.sh"
    ```
 
-2. **Review the code** and collect findings
+2. **Review the code** using the JSON tool result and collect findings. Run the helper directly rather than through command substitution, which can require separate shell approval.
 
 3. **Create pending review:**
    ```bash
-   echo '{"pr_number":123,"comments":[...]}' | ./scripts/create-review.sh
+   echo '{"pr_number":123,"comments":[...]}' | "<gh-pr-review skill directory>/scripts/create-review.sh"
    ```
 
 4. **User reviews comments on GitHub** and edits if needed
 
 5. **User submits review** via GitHub UI or:
    ```bash
-   ./scripts/submit-review.sh 123 $REVIEW_ID COMMENT
+   "<gh-pr-review skill directory>/scripts/submit-review.sh" 123 $REVIEW_ID COMMENT
    ```
 
 ## Requirements
