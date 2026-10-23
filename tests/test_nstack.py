@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tomllib
@@ -64,6 +65,8 @@ SKILLS = {
     "technical-writing",
     "typescript-best-practices",
     "unslop",
+    "visual-plan",
+    "visual-recap",
     "why",
 }
 AGENT_FILES = {
@@ -123,6 +126,34 @@ def test_inventory(harness):
 def test_manifest_version(harness):
     manifest = json.loads((plugin_dir(harness) / MANIFESTS[harness]).read_text())
     assert manifest["version"] == VERSION
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_visual_skills_share_the_installed_viewer(harness):
+    root = plugin_dir(harness)
+    viewer = root / HOOK_DIRS[harness] / "viewer" / "viewer.mjs"
+    sample = viewer.with_name("all-components.mdx")
+    assert viewer.is_file()
+    assert sample.is_file()
+    plan = root / "skills" / "visual-plan"
+    recap = root / "skills" / "visual-recap"
+    reference = plan / "references" / "viewer.md"
+    assert "../visual-plan/references/viewer.md" in (recap / "SKILL.md").read_text()
+    assert "references/viewer.md" in (plan / "SKILL.md").read_text()
+    if harness == "claude":
+        assert "${CLAUDE_PLUGIN_ROOT}/hooks/viewer/viewer.mjs" in reference.read_text()
+    else:
+        relative = f"../../{HOOK_DIRS[harness]}/viewer/viewer.mjs"
+        assert relative in reference.read_text()
+        assert (plan / relative).resolve() == viewer.resolve()
+        assert (recap / relative).resolve() == viewer.resolve()
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node.js 20+ is required to exercise the installed visual viewer")
+    proc = subprocess.run(
+        [node, str(viewer), "check", str(sample)], capture_output=True, text=True, check=True,
+    )
+    assert json.loads(proc.stdout)["ok"] is True
 
 
 def test_codex_manifest_lists_the_agents():

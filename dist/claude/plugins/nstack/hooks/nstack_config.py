@@ -46,6 +46,8 @@ import hashlib
 import json
 import os
 import re
+import shutil
+import subprocess
 import tempfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -717,11 +719,69 @@ def session_start_output(client: str, context: str) -> dict:
     return {"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": context}}
 
 
+def viewer_context() -> str:
+    """Viewer startup has its own bound and cannot suppress the model context."""
+    if os.environ.get("NSTACK_VIEWER", "").lower() == "off":
+        return "nstack viewer hook startup is disabled by NSTACK_VIEWER=off. Explicit viewer ensure/open commands still work."
+    node = shutil.which("node")
+    if node is None:
+        return "nstack viewer warning (node_missing). Node >=20 is not on PATH. Install Node >=20 and run the viewer ensure command. Model configuration remains available."
+    viewer = SCRIPT_DIR / "viewer" / "viewer.mjs"
+    if not viewer.is_file():
+        return f"nstack viewer warning (viewer_missing). The viewer bundle is missing at {viewer}. Reinstall the nstack plugin. Model configuration remains available."
+    try:
+        result = subprocess.run(
+            [node, str(viewer), "ensure"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=7.5,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return "nstack viewer warning (startup_timeout). Viewer ensure exceeded the 7.5 second hook bound. Run the viewer ensure command to inspect its owner and retry. No process was signalled. Model configuration remains available."
+    except OSError as exc:
+        return f"nstack viewer warning (node_failed). {exc}. Check Node >=20 and plugin file permissions, then run viewer ensure. Model configuration remains available."
+    try:
+        data = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return "nstack viewer warning (invalid_output). Viewer ensure did not return JSON. Check the Node installation and viewer bundle, then run ensure manually. Model configuration remains available."
+    ready_url = data.get("url") if isinstance(data, dict) else None
+    match = re.fullmatch(r"http://127\.0\.0\.1:([0-9]{1,5})", ready_url) if isinstance(ready_url, str) else None
+    if (
+        result.returncode == 0
+        and isinstance(data, dict)
+        and data.get("ok") is True
+        and match
+        and 1 <= int(match.group(1)) <= 65535
+        and data.get("protocol") == 1
+        and type(data.get("pid")) is int
+        and data["pid"] > 0
+        and isinstance(data.get("buildId"), str)
+        and re.fullmatch(r"[a-f0-9]{24}", data["buildId"])
+    ):
+        return f"nstack viewer ready at {data['url']}. Use the shared viewer open command to publish an MDX document. Published documents and feedback remain on this device."
+    errors = data.get("errors") if isinstance(data, dict) else None
+    failure = errors[0] if isinstance(errors, list) and errors and isinstance(errors[0], dict) else {}
+    return (
+        f"nstack viewer warning ({failure.get('code', 'ensure_failed')}). "
+        f"{failure.get('message', 'Viewer ensure did not prove readiness.')} "
+        f"{failure.get('repair', 'Run viewer ensure manually and inspect its diagnostics.')} "
+        "Model configuration remains available."
+    )
+
+
 def cmd_session_start() -> int:
     try:
         sys.stdin.read()
         client, _version = detect_distribution()
-        output = session_start_output(client, panel_context(client))
+        context = panel_context(client)
+        try:
+            viewer = viewer_context()
+        except Exception as exc:  # noqa: BLE001 - diagnostics preserve the independent model context
+            viewer = f"nstack viewer warning (viewer_error). {exc}. Run viewer ensure manually to inspect its diagnostics. Model configuration remains available."
+        output = session_start_output(client, context + "\n" + viewer)
     except Exception:  # noqa: BLE001 - a hook must never break session start
         output = None
     if output is not None:

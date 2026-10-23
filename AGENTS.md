@@ -1,6 +1,6 @@
 # nilpath-marketplace
 
-Tri-client marketplace: **5 plugins** (15 agents, 62 skills) authored once under `src/` and built into per-harness trees under `dist/` for **Claude Code**, **GitHub Copilot CLI**, and **Codex**. Native Copilot use inside VS Code is unsupported. Running Copilot CLI in a VS Code terminal remains CLI usage.
+Tri-client marketplace: **5 plugins** (15 agents, 64 skills) authored once under `src/` and built into per-harness trees under `dist/` for **Claude Code**, **GitHub Copilot CLI**, and **Codex**. Native Copilot use inside VS Code is unsupported. Running Copilot CLI in a VS Code terminal remains CLI usage.
 
 ## Critical rule: src/ is the only editable source
 
@@ -49,7 +49,7 @@ flowchart TD
 | engineering-workflow | researching, planning, executing-plan, performing-code-review, engineering-principles | task-decomposer; spec/plan/code reviewers; api/architecture/docs researchers; code-debugger; coding/python task agents |
 | documentation | writing-documentation, creating-mermaid-diagrams | doc-writer, doc-auditor |
 | authoring-tools | creating-agents, creating-skills | — |
-| nstack | nstack-flow, setup-nstack, nstack-help, how, why, architect, candidate-graft, swarm, review-panel; 24 principle-* skills; unslop, technical-writing, no-comments, deslop, control-cli, control-ui, benchmark-checklist, tdd, show-me-your-work, figure-it-out, typescript-best-practices, python-best-practices, create-verification-skill, maintain-verification-skill | nstack-agent, nstack-reader, comment-sicko |
+| nstack | nstack-flow, setup-nstack, nstack-help, how, why, architect, candidate-graft, swarm, review-panel, visual-plan, visual-recap; 24 principle-* skills; unslop, technical-writing, no-comments, deslop, control-cli, control-ui, benchmark-checklist, tdd, show-me-your-work, figure-it-out, typescript-best-practices, python-best-practices, create-verification-skill, maintain-verification-skill | nstack-agent, nstack-reader, comment-sicko |
 
 Cross-plugin references are plugin-qualified (e.g. `Skill(git-tools:git-commits)`, `documentation:implementation:doc-writer`). engineering-workflow depends on git-tools and documentation. nstack is independent; its skills reference each other by relative path, and a plugin hook (`src/plugins/nstack/hooks/`) applies per-role models. A plugin's `hooks/hooks.json.j2` renders per harness to that harness's `hooks_path`; other files in `hooks/` ship next to it.
 
