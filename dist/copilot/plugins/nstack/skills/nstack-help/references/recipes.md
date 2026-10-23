@@ -25,12 +25,14 @@ Swap in the real paths, skills, and done checks. Informal wording works.
 - `/nstack:nstack-flow write a tutorial for how i would use <new package> first. then explain why it beats the current one.`
 - `ask /nstack:candidate-graft for a second opinion on this thread and our approach.`
 - `/nstack:architect with checkpoint: design <change>. stop and show me before implementing.`
+- `/nstack:visual-plan turn the existing design for <change> into a local MDX review. show the proposed API and unresolved decisions. don't implement it.`
 
 ## Review and deliver
 
 - `/nstack:review-panel the whole branch, but skeptically. don't change anything yet. no nitpicks unless it's a real bug or regression.` Read the dismissals too.
 - `/nstack:swarm check every package under <dir> against its check script. one worker per package. one report.`
 - `/nstack:nstack-flow finish <change> as a draft pr. small ordered commits, evidence in the description.` nstack does not babysit or merge the pull request.
+- `/nstack:visual-recap explain this branch's actual changes in the local viewer. compare the API contracts and distinguish evidence from inference.`
 
 ## Away and back
 
