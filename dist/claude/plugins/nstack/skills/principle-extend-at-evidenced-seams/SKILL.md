@@ -1,26 +1,26 @@
 ---
 name: principle-extend-at-evidenced-seams
-description: Apply when adding demonstrated variation or deciding whether to introduce an extension point. Extend earned seams, update closed variants exhaustively, and redesign contracts that changed.
+description: Apply when you add a required variant or decide whether code needs an extension point. Base the choice on known requirements or a concrete testing need.
 disable-model-invocation: true
 ---
 
-# Extend at Evidenced Seams
+# Extend at evidenced seams
 
-**Anticipation of Change.** Introduce flexibility only when variation is demonstrated. Evidence can be real variants, a requirement known to change, or a genuine testing boundary. Do not add an extension point for hypothetical flexibility.
+**Anticipation of change.** Add flexibility only when you can identify what must vary. Evidence can be existing variants, a requirement known to change, or a concrete testing need. Do not add extension points for hypothetical requirements.
 
-**Open/Closed Principle (OCP).** Choose the change that fits the current domain:
+**Open/closed principle, OCP.** Choose the change that fits the code:
 
-1. For an established open seam, add an implementation when its contract fits.
-2. For a closed variant set, edit the model and handle every variant exhaustively.
-3. When the contract itself changes, redesign the seam instead of forcing the requirement through an unsuitable extension point.
+1. If an existing extension point supports the required contract, add an implementation.
+2. If the model has a closed set of variants, change the model and handle every variant.
+3. If the contract must change, redesign the extension point.
 
-Open and closed guidance does not prohibit all edits to existing code. An existing model can be the right place to change when it is closed and its variants remain explicit.
+OCP does not forbid editing existing code.
 
-Do not require an interface wrapper or two concrete implementations before a seam earns its cost. Require evidence that the seam represents a real boundary or variation.
+An extension point can have one implementation without an interface wrapper. It must still represent a real boundary or variation.
 
 Ask:
 
-- What demonstrated variation or testing boundary earns flexibility here?
-- Does an existing seam accept the required contract without distortion?
-- If the model is closed, where will every variant be handled?
-- Has the contract changed enough that the seam needs redesign?
+- What requirement or test justifies this extension point?
+- Does an existing extension point support the required contract?
+- If the variant set is closed, where does the code handle each variant?
+- Does the requirement change the contract itself?

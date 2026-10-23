@@ -48,6 +48,7 @@ Only nstack is bumped to 0.0.7. Other plugin versions and the marketplace versio
 ### Changed
 
 - Name the underlying engineering principles beside their rules in all four new leaves. Skill IDs, triggers, and invocation policy are unchanged.
+- Rewrite the four new leaves in plain language while preserving their named principles and guidance.
 - Add local terminology annotations to the existing boundary-discipline, minimize-reader-load, foundational-thinking, and subtract-before-you-add leaves. Their rules are unchanged.
 
 ## [nstack 0.0.5] - 2026-10-23

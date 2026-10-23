@@ -1,24 +1,24 @@
 ---
 name: principle-own-coherent-responsibilities
-description: Apply when creating or splitting a module, placing state, or consolidating repeated rules. Give each module one coherent responsibility, keep its state private with its operations, and extract only conceptual duplication.
+description: Apply when you create or split a module, decide where state belongs, or consider extracting shared code.
 ---
 
-# Own Coherent Responsibilities
+# Own coherent responsibilities
 
-**Modularity and Single Responsibility Principle (SRP).** Give each module one coherent responsibility and one reason to change. Split unrelated knowledge and behavior. Do not split a module by execution phase when the same responsibility spans loading, validation, transformation, and saving.
+**Modularity and the single responsibility principle, SRP.** Give each module one coherent responsibility and one reason to change. Put unrelated responsibilities in separate modules. Keep a responsibility's operations together even when they include loading, validation, transformation, and saving.
 
-**Encapsulation.** Keep state with the operations that preserve its invariants. Enforce privacy. Do not expose mutable fields, scatter related state, or make callers coordinate a module's internal rules.
+**Encapsulation.** Keep state with the operations that preserve its invariants. Keep that state private. Do not expose mutable fields or scatter related state. The module must enforce its own rules rather than ask callers to coordinate them.
 
-**Don't Repeat Yourself (DRY).** Consolidate duplication when the same future change or bug fix must reach every site. Keep similar-looking code separate when the sites evolve independently. Textual resemblance alone does not justify an abstraction.
+**Don't repeat yourself, DRY.** Share a rule when the same change or bug fix must apply to every copy. Keep similar code separate when the copies change independently. Similar text alone does not justify an abstraction.
 
-Treat unrelated imports, excessive or unrelated parameters, change fan-out across responsibilities, and names that hide intent as signals to investigate ownership. They do not prove that a module must split.
+Long parameter lists, unrelated parameters or imports, changes across several responsibilities, and unclear names are reasons to review ownership. They do not prove that a module needs splitting.
 
-When a feature conflicts with an existing responsibility boundary, restructure first and check that change separately from the feature. Follow [Sequence Work into Verifiable Units](../principle-sequence-verifiable-units/SKILL.md) for the checked sequence.
+When a feature needs a different responsibility boundary, restructure the modules first. Verify that change separately before adding the feature. Use [Sequence Work into Verifiable Units](../principle-sequence-verifiable-units/SKILL.md) to order those checks.
 
 Ask:
 
-- What knowledge and behavior change together?
+- Which rules and operations change together?
 - Which operations must protect this state?
-- Could a replacement preserve neighboring callers without taking on unrelated work?
-- Would one future change or bug fix need to update every duplicated site?
-- Do imports, parameters, changes, or names point to unrelated work or hidden intent?
+- Can another implementation replace the module without changes to its callers?
+- Would one fix require changing every copy?
+- Do imports, parameters, edits, or names make the module's responsibility unclear?
