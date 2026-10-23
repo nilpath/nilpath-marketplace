@@ -30,6 +30,7 @@ SKILLS = {
     "maintain-verification-skill",
     "no-comments",
     "nstack-flow",
+    "nstack-help",
     "principle-attack-the-premise",
     "principle-boundary-discipline",
     "principle-build-the-lever",
@@ -233,6 +234,39 @@ def test_markdown_links_resolve(harness):
             if not (md.parent / target).exists():
                 broken.append(f"{md.relative_to(root)} -> {target}")
     assert broken == []
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_help_catalog_covers_bundled_skills(harness):
+    text = (plugin_dir(harness) / "skills" / "nstack-help" / "SKILL.md").read_text()
+    targets = set(re.findall(r"\]\(\.\./([^/]+)/SKILL\.md\)", text))
+    expected = {name for name in SKILLS if not name.startswith("principle-")} - {"nstack-help"}
+    assert targets == expected
+    assert "For a help question, don't start the work." in text
+    assert "https://github.com/nilpath/nilpath-marketplace/blob/main/src/plugins/nstack/" in text
+    assert "skills/<name>/SKILL.md.j2" in text
+    assert "draft pull request" in text
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_help_examples_use_client_native_commands(harness):
+    root = plugin_dir(harness) / "skills" / "nstack-help"
+    prefix = "$" if harness == "codex" else "/nstack:"
+    text = "\n".join(path.read_text() for path in root.rglob("*.md"))
+    for name in ("nstack-help", "nstack-flow", "setup-nstack", "how", "why", "review-panel"):
+        assert f"{prefix}{name}" in text
+    commands = set(re.findall(r"(?:/nstack:|\$)([a-z][a-z0-9-]*)", text))
+    assert commands - {"verify-", "principle-"} <= SKILLS
+    assert "/poteto-mode" not in text
+    assert "/setup-pstack" not in text
+    if harness == "codex":
+        assert "/nstack:" not in text
+        assert "Trust nstack's plugin hook once with `/hooks`" in text
+    elif harness == "copilot":
+        assert "copilot plugin install nstack@nilpath-marketplace" in text
+        assert "slash commands are not expanded" in text
+    else:
+        assert "/plugin install nstack" in text
 
 
 @pytest.mark.parametrize("harness", HARNESSES)

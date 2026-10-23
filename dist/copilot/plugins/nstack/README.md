@@ -9,6 +9,7 @@ An explicit coordinator picks a playbook (feature, bug fix, or investigation), g
 | Skill | Invocation | Purpose |
 | --- | --- | --- |
 | nstack-flow | Explicit only | Coordinator in poteto-mode's shape: non-negotiables, principles, autonomy, subagents, reply and comment rules, and the feature, bug-fix, and investigation playbooks |
+| nstack-help | Explicit only | pstack's poteto-help adapted to nstack: setup, skill and playbook selection, troubleshooting, and copyable prompts |
 | setup-nstack | Explicit only (optional) | Reviews and overrides the model and effort per delegated role, and checks that the client runs them |
 | how | Automatic or explicit | Source-grounded explanation of how a subsystem works (explorers plus an explainer) |
 | why | Automatic or explicit | Evidence-tiered history of why code is the way it is (investigators plus a synthesizer) |
@@ -81,6 +82,8 @@ Defaults are suggestions: an account may not have every model. A model the clien
 ## Attribution
 
 The Python best-practices skill is an original summary linking to the Google Python Style Guide, not copied guide text. Its repository-first guidance and the Python-aware cleanup policy are nstack additions.
+
+`nstack-help` and its prompting and recipe references are adapted from [pstack's poteto-help](https://github.com/cursor/plugins/tree/8b3326d99fd4b993cb33a24dad8af03175c642c5/pstack/skills/poteto-help) at commit `8b3326d99fd4b993cb33a24dad8af03175c642c5` (pstack 0.15.30), under the same Lauren Tan MIT License below. Wording is retained where it applies; commands, setup, public source links, and the inventory match nstack's three clients and bundled playbooks. Unsupported pstack-only workflows are not offered.
 
 nstack adapts workflows, prompts, and principles from pstack by Lauren Tan (poteto), and the deslop, control-cli, and control-ui skills from Cursor's cursor-team-kit. Both are published in [cursor/plugins](https://github.com/cursor/plugins) at commit `dbf49813a39c1a5389c5e28cb8e4c1c2379e2454` (pstack 0.15.23) under the MIT License. Most skill text is copied verbatim; nstack replaces Cursor-specific mechanics (the Task tool, model rule files, cloud workers) with its own launch tags and model hook. nstack is not affiliated with or endorsed by the pstack author or Cursor.
 
