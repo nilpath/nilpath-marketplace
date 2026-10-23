@@ -21,6 +21,7 @@ Remaining triggers:
 - Parallel fan-out → the **swarm** skill for coverage matrices, races, gauntlets, and exploration partitions. Use **candidate-graft** for design or code bakeoffs with base selection and grafting.
 - Contested design → the **review-panel** skill (multi-model adversarial) before shipping.
 - Nontrivial multi-step → write the throughput checkpoint (Feature step 3).
+- A visual plan or change recap is requested → the **visual-plan** or **visual-recap** skill. Reuse the existing design and evidence. Render the canonical MDX through their shared local viewer.
 - Any prose surface, your reply to the user included → the **unslop** skill. Write the reply per **Writing the reply**.
 - Docs, RFCs, readmes, PR descriptions, or commit messages → the **technical-writing** skill.
 - Before commit → the **deslop** skill.

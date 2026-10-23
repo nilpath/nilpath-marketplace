@@ -71,6 +71,7 @@ def env(tmp_path):
     home.mkdir()
     values = {k: v for k, v in os.environ.items() if k != "NSTACK_HOME"}
     values["HOME"] = str(home)
+    values["NSTACK_VIEWER"] = "off"
     return {"home": home, "vars": values, "tmp": tmp_path}
 
 
@@ -550,6 +551,96 @@ def session_context(helper, env, client) -> str:
         return out["additionalContext"]
     assert out["hookSpecificOutput"]["hookEventName"] == "SessionStart"
     return out["hookSpecificOutput"]["additionalContext"]
+
+
+@pytest.mark.parametrize("client", ["claude", "copilot", "codex"])
+def test_session_viewer_startup_reuses_shared_ensure_without_changing_model_context(env, client):
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Viewer requires Node >=20.")
+    helper = install(env["tmp"], client)
+    viewer = helper.parent / "viewer"
+    shutil.copytree(SRC_HOOKS / "viewer", viewer)
+    env["vars"].pop("NSTACK_VIEWER")
+    env["vars"]["NSTACK_HOME"] = str(env["tmp"] / "isolated-state")
+    try:
+        first = session_context(helper, env, client)
+        record = Path(env["vars"]["NSTACK_HOME"]) / "viewer/runtime/ready.json"
+        owner = json.loads(record.read_text())
+        second = session_context(helper, env, client)
+        assert "nstack panels" in first and "nstack panels" in second
+        assert "nstack viewer ready at http://127.0.0.1:" in first
+        assert "nstack viewer ready at http://127.0.0.1:" in second
+        assert json.loads(record.read_text())["pid"] == owner["pid"]
+        assert not (env["home"] / ".nstack").exists()
+    finally:
+        proc = subprocess.run([node, str(viewer / "viewer.mjs"), "stop"], env=env["vars"], capture_output=True, text=True, timeout=5)
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        assert json.loads(proc.stdout)["ok"] is True
+        assert not (Path(env["vars"]["NSTACK_HOME"]) / "viewer/runtime/ready.json").exists()
+
+
+def test_session_viewer_off_preserves_no_write_behavior(env):
+    helper = install(env["tmp"], "copilot")
+    before = snapshot(env["home"])
+    assert "NSTACK_VIEWER=off" in session_context(helper, env, "copilot")
+    assert snapshot(env["home"]) == before
+
+
+def test_session_viewer_reports_missing_node_without_suppressing_panel_context(env):
+    helper = install(env["tmp"], "copilot")
+    env["vars"].pop("NSTACK_VIEWER")
+    env["vars"]["PATH"] = ""
+    context = session_context(helper, env, "copilot")
+    assert "nstack panels" in context
+    assert "viewer warning (node_missing)" in context
+    assert "Install Node >=20" in context
+    assert "viewer ready" not in context
+
+
+@pytest.mark.parametrize("output,returncode,expected", [
+    ({"ok": False, "errors": [{"code": "owner_busy", "message": "Live owner is unresponsive.", "repair": "Inspect the owner."}]}, 1, "owner_busy"),
+    ({"ok": True}, 0, "ensure_failed"),
+    ({"ok": True, "url": "http://127.0.0.1:99999", "pid": 1, "buildId": "a" * 24, "protocol": 1}, 0, "ensure_failed"),
+    ("not JSON", 0, "invalid_output"),
+])
+def test_session_viewer_failure_has_explicit_warning_and_repair(env, output, returncode, expected):
+    helper = install(env["tmp"], "copilot")
+    (helper.parent / "viewer").mkdir()
+    (helper.parent / "viewer/viewer.mjs").write_text("test stub")
+    bin_dir = env["tmp"] / "fake-bin"
+    bin_dir.mkdir()
+    fake_node = bin_dir / "node"
+    text = json.dumps(output) if isinstance(output, dict) else output
+    fake_node.write_text(f"#!{sys.executable}\nimport sys\nsys.stdout.write({text!r})\nsys.exit({returncode})\n")
+    fake_node.chmod(0o700)
+    env["vars"]["PATH"] = str(bin_dir)
+    env["vars"].pop("NSTACK_VIEWER")
+    context = session_context(helper, env, "copilot")
+    assert "nstack panels" in context
+    assert f"viewer warning ({expected})" in context
+    assert "viewer ready" not in context
+    assert "Model configuration remains available" in context
+
+
+def test_session_viewer_timeout_is_bounded_and_does_not_claim_readiness(env):
+    helper = install(env["tmp"], "copilot")
+    (helper.parent / "viewer").mkdir()
+    (helper.parent / "viewer/viewer.mjs").write_text("test stub")
+    bin_dir = env["tmp"] / "slow-bin"
+    bin_dir.mkdir()
+    fake_node = bin_dir / "node"
+    fake_node.write_text(f"#!{sys.executable}\nimport time\ntime.sleep(30)\n")
+    fake_node.chmod(0o700)
+    env["vars"]["PATH"] = str(bin_dir)
+    env["vars"].pop("NSTACK_VIEWER")
+    context = session_context(helper, env, "copilot")
+    assert "nstack panels" in context
+    assert "viewer warning (startup_timeout)" in context
+    assert "7.5 second hook bound" in context
+    assert "The hook stopped its own ensure command." in context
+    assert "No existing viewer or unrelated process was signalled." in context
+    assert "viewer ready" not in context
 
 
 def test_session_start_lists_default_panels_for_copilot(env):

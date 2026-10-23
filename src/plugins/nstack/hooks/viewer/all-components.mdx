@@ -1,0 +1,93 @@
+<Document id="nstack-components-reference" kind="plan" title="Token refresh review">
+
+## Request flow
+
+This document is the canonical authoring example. Every rich block contains one fenced JSON payload. All content here is proposed or existing context, not an implementation claim.
+
+<Diagram id="refresh-flow" title="Refresh request" status="proposed">
+```json
+{"layout":"flow","nodes":[{"id":"client","label":"Client"},{"id":"auth","label":"Auth API"},{"id":"store","label":"Token store"}],"edges":[{"from":"client","to":"auth","label":"Refresh"},{"from":"auth","to":"store","label":"Rotate token"},{"from":"auth","to":"client","label":"Return access token"}]}
+```
+</Diagram>
+
+<Diagram id="refresh-recovery-flow" title="Refresh recovery across rows" status="proposed">
+```json
+{"layout":"flow","nodes":[{"id":"request","label":"Receive request"},{"id":"validate","label":"Validate session"},{"id":"rotate","label":"Rotate token"},{"id":"respond","label":"Return tokens"},{"id":"retry","label":"Wait before retry"},{"id":"reject","label":"Ask for sign in"},{"id":"audit","label":"Record outcome"},{"id":"expire","label":"Expire old token"},{"id":"done","label":"Finish review"}],"edges":[{"from":"request","to":"validate","label":"Start"},{"from":"validate","to":"rotate","label":"Valid"},{"from":"rotate","to":"respond","label":"Rotated"},{"from":"validate","to":"reject","label":"Rejected"},{"from":"rotate","to":"retry","label":"Conflict"},{"from":"retry","to":"request","label":"Retry request"},{"from":"respond","to":"done","label":"Success"},{"from":"reject","to":"audit","label":"Record rejection"},{"from":"audit","to":"done","label":"Complete"},{"from":"rotate","to":"expire","label":"Retire old token"}]}
+```
+</Diagram>
+
+<AnnotatedCode id="rotation-code" title="Rotate only after validation" status="proposed">
+```json
+{"language":"typescript","code":"async function refresh(token: string) {\n  const session = await validate(token);\n  return rotate(session);\n}","annotations":[{"line":2,"text":"Reject an expired or revoked session before writing."},{"line":3,"text":"Rotate the refresh token atomically."}]}
+```
+</AnnotatedCode>
+
+<FileMap id="file-map" title="Change locations" status="proposed">
+```json
+{"files":[{"path":"src/auth/refresh.ts","change":"added","note":"Validate and rotate refresh tokens."},{"path":"tests/auth.test.ts","change":"modified","note":"Cover expired and reused tokens."},{"path":"src/auth/session.ts","change":"context","note":"Existing session storage boundary."}]}
+```
+</FileMap>
+
+<BeforeAfter id="expiry-change" title="Make expiry explicit" status="proposed">
+```json
+{"before":{"label":"Existing return value","language":"typescript","code":"return { accessToken };"},"after":{"label":"Proposed return value","language":"typescript","code":"return { accessToken, expiresIn: 900 };"}}
+```
+</BeforeAfter>
+
+## Decisions and feedback
+
+<Decision id="storage-decision" title="Refresh token storage" status="proposed">
+```json
+{"options":[{"label":"HTTP-only cookie","reason":"Keep the refresh token outside JavaScript access.","selected":true},{"label":"Browser local storage","reason":"Simpler client integration but a broader exposure boundary.","selected":false}]}
+```
+</Decision>
+
+<Question id="token-ttl" title="Choose the token lifetime" status="proposed">
+```json
+{"prompt":"Which access token lifetime should we use?","options":["15 minutes","1 hour"]}
+```
+</Question>
+
+<Question id="review-notes" title="Additional review notes" status="proposed">
+```json
+{"prompt":"What edge cases should the implementation cover?"}
+```
+</Question>
+
+## Interface and states
+
+<Wireframe id="session-view" title="Session settings" status="proposed">
+```json
+{"regions":[{"label":"Account","kind":"header","content":"Session settings"},{"label":"Navigation","kind":"navigation","content":"Profile | Sessions | Security"},{"label":"Active sessions","kind":"content","content":"Current device, last active time, revoke control"},{"label":"Security note","kind":"footer","content":"Signing out revokes refresh access."}]}
+```
+</Wireframe>
+
+<StateSequence id="refresh-states" title="Refresh interaction" status="proposed">
+```json
+{"states":[{"name":"Ready","description":"The session is valid.","regions":[{"label":"Session","kind":"content","content":"Signed in"}]},{"name":"Refreshing","description":"A refresh is in progress. Duplicate requests wait.","regions":[{"label":"Session","kind":"content","content":"Refreshing session..."}]},{"name":"Expired","description":"The refresh token was rejected. Ask the user to sign in.","regions":[{"label":"Session","kind":"control","content":"Sign in again"}]}]}
+```
+</StateSequence>
+
+## HTTP and function contracts
+
+API blocks describe contracts. They never send requests or execute functions. Schemas and examples are expandable.
+
+<ApiContract id="refresh-http" title="Refresh endpoint" status="proposed">
+```json
+{"protocol":"http","method":"POST","path":"/v1/auth/refresh","auth":"HTTP-only refresh cookie. No credentials are entered in this viewer.","parameters":[{"name":"refresh_token","in":"cookie","type":"string","required":true,"description":"Opaque, rotating refresh token."}],"schema":{"type":"object","required":["accessToken","expiresIn"],"properties":{"accessToken":{"type":"string","description":"Short-lived access token."},"expiresIn":{"type":"integer","minimum":1},"session":{"type":"object","properties":{"id":{"type":"string"},"scopes":{"type":"array","items":{"type":"string"}}}}}},"examples":[{"kind":"request","body":{}},{"kind":"response","status":200,"body":{"accessToken":"example-only","expiresIn":900}},{"kind":"error","status":401,"body":{"code":"session_expired","message":"Sign in again."}}]}
+```
+</ApiContract>
+
+<ApiContract id="refresh-function" title="Token rotation function" status="proposed">
+```json
+{"protocol":"function","name":"rotateSession","signature":"rotateSession(sessionId: string): Promise<TokenPair>","auth":"Called only after session validation.","parameters":[{"name":"sessionId","in":"argument","type":"string","required":true,"description":"Validated session identifier."}],"schema":{"type":"object","properties":{"accessToken":{"type":"string"},"refreshToken":{"type":"string"}}},"examples":[{"kind":"request","body":{"sessionId":"example-session"}},{"kind":"response","body":{"accessToken":"example-access","refreshToken":"example-refresh"}},{"kind":"error","body":{"code":"rotation_conflict"}}]}
+```
+</ApiContract>
+
+<ApiComparison id="refresh-comparison" title="Response contract change" status="proposed">
+```json
+{"before":{"protocol":"http","method":"POST","path":"/v1/auth/refresh","auth":"Refresh cookie.","parameters":[],"schema":{"type":"object","properties":{"accessToken":{"type":"string"}}},"examples":[{"kind":"response","status":200,"body":{"accessToken":"example-only"}}]},"after":{"protocol":"http","method":"POST","path":"/v1/auth/refresh","auth":"Refresh cookie.","parameters":[],"schema":{"type":"object","properties":{"accessToken":{"type":"string"},"expiresIn":{"type":"integer"}}},"examples":[{"kind":"response","status":200,"body":{"accessToken":"example-only","expiresIn":900}}]},"changes":["Add expiresIn in seconds.","Keep accessToken for existing clients."]}
+```
+</ApiComparison>
+
+</Document>

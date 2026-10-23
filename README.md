@@ -12,13 +12,15 @@ Native Copilot use inside VS Code is not supported. Copilot CLI in a VS Code ter
 | **engineering-workflow** | 0.8.2 | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
 | **documentation** | 0.8.0 | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | ✅¹ | ✅¹ |
 | **authoring-tools** | 0.8.1 | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
-| **nstack** | 0.0.5 | Engineering backbone adapted from pstack: nstack-flow coordinator with feature/bug-fix/investigation playbooks, 8 workflow skills plus pstack's 24 principles and 15 supporting skills (47 total), including nstack-help and TypeScript/Python best practices, 3 agents, per-role models via a hook² | ✅ | ✅ | ✅ |
+| **nstack** | 0.1.0 | Engineering backbone adapted from pstack: nstack-flow coordinator, 10 workflow skills including local MDX visual plans and recaps, pstack's 24 principles and 15 supporting skills (49 total), including nstack-help, 3 agents, per-role models via a hook² | ✅ | ✅ | ✅ |
 
 ¹ The orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are adapted per harness: subagent dispatch, todo tracking, and user questions render in each harness's native mechanism. They degrade gracefully on Copilot/Codex (chat questions instead of structured question UI, no parallel exploration fan-out).
 
-² nstack is independent of the other plugins. A plugin hook applies the model, and effort where supported, for each delegated role from built-in defaults or your overrides; it needs Python 3.11+, and Codex users must trust the hook once with `/hooks`. See [the nstack README](src/plugins/nstack/README.md).
+² nstack is independent of the other plugins. A plugin hook applies the model, and effort where supported, for each delegated role from built-in defaults or your overrides; it needs Python 3.11+, and Codex users must trust the hook once with `/hooks`. The visual viewer needs Node.js 20+ on macOS or Linux, starts or reconnects at session start, and also has an explicit startup fallback. Native Windows viewer hosting requires WSL in v1. Missing Node does not disable model routing. See [the nstack README](src/plugins/nstack/README.md).
 
 Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-writer agent from `documentation` — install them together.
+
+`visual-plan` and `visual-recap` in nstack render local MDX documents with diagrams, code annotations, file maps, comparisons, decisions, persistent questions, wireframes, UI state sequences, and read-only API contracts. Proposed APIs include HTTP routes and non-HTTP signatures, authentication, parameters, expandable schemas, and examples. Both skills use the same loopback viewer in an ordinary browser. The Copilot app's Browser canvas can open the same URL when available; no custom canvas extension or hosted service is required.
 
 ## Manual-only skills
 
@@ -103,6 +105,16 @@ make build            # render src/ -> dist/ (all harnesses)
 make check            # fail if committed output drifts from src/ (CI gate)
 make test-static      # structure tests over the generated output
 ```
+
+The visual viewer ships prebuilt bundles. After changing its authored sources under `src/plugins/nstack/hooks/viewer/src/`, rebuild them before regenerating the distributions:
+
+```bash
+npm --prefix tools/visual-viewer ci
+make viewer-build viewer-check viewer-test
+make build check
+```
+
+Node packages are build-time dependencies only. Hooks never install packages. Normal `make build check` uses committed viewer bundles; `viewer-check` proves they match the authored sources.
 
 **`dist/` and the root registry files are read-only.** buildkit generates them from `src/`, and hand edits are overwritten on the next build. To change a skill, agent, or manifest:
 

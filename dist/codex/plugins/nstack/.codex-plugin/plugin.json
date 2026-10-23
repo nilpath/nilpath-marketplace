@@ -1,7 +1,7 @@
 {
   "name": "nstack",
-  "version": "0.0.5",
-  "description": "Portable engineering backbone adapted from pstack. An explicit coordinator with feature, bug-fix, and investigation playbooks; how/why grounding; architect, candidate-graft, swarm, and review-panel delegation; prove-it-works verification; and code-managed per-role model configuration.",
+  "version": "0.1.0",
+  "description": "Portable engineering backbone adapted from pstack. An explicit coordinator with feature, bug-fix, and investigation playbooks; how/why grounding; architect, candidate-graft, swarm, and review-panel delegation; local MDX visual plans and recaps; prove-it-works verification; and code-managed per-role model configuration.",
   "skills": "./skills/",
   "author": {
     "name": "Christoffer Ahrling",
@@ -18,7 +18,7 @@
   "interface": {
     "displayName": "Nstack",
     "shortDescription": "Portable engineering backbone adapted from pstack. An explicit coordinator with feature, bug-fix, an",
-    "longDescription": "Portable engineering backbone adapted from pstack. An explicit coordinator with feature, bug-fix, and investigation playbooks; how/why grounding; architect, candidate-graft, swarm, and review-panel delegation; prove-it-works verification; and code-managed per-role model configuration.",
+    "longDescription": "Portable engineering backbone adapted from pstack. An explicit coordinator with feature, bug-fix, and investigation playbooks; how/why grounding; architect, candidate-graft, swarm, and review-panel delegation; local MDX visual plans and recaps; prove-it-works verification; and code-managed per-role model configuration.",
     "category": "Productivity"
   },
   "components": {

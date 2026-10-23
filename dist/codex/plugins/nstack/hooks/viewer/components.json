@@ -1,0 +1,1297 @@
+{
+  "ok": true,
+  "version": 1,
+  "source": "MDX with exactly one fenced json payload per rich block. No ESM, expressions, HTML, or executable JSX.",
+  "document": {
+    "attributes": {
+      "id": "stable unique ID, 1-96 ASCII letters, digits, underscore or hyphen",
+      "kind": [
+        "plan",
+        "recap"
+      ],
+      "title": "nonempty string"
+    },
+    "children": "Markdown and rich blocks"
+  },
+  "attributes": {
+    "required": [
+      "id",
+      "title",
+      "status"
+    ],
+    "optional": [
+      "evidence",
+      "reason"
+    ],
+    "statuses": {
+      "plan": [
+        "proposed",
+        "context"
+      ],
+      "recap": [
+        "implemented",
+        "inferred",
+        "context",
+        "proposed"
+      ]
+    },
+    "rules": [
+      "implemented requires nonempty evidence attribute or payload evidence array",
+      "inferred requires nonempty reason attribute",
+      "proposed in a recap is an explicitly unimplemented follow-up"
+    ]
+  },
+  "components": {
+    "Diagram": {
+      "type": "object",
+      "properties": {
+        "layout": {
+          "enum": [
+            "flow",
+            "sequence"
+          ]
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 200
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 200
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "minItems": 1,
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "nodes",
+        "edges"
+      ],
+      "additionalProperties": false
+    },
+    "AnnotatedCode": {
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100000
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100000
+        },
+        "annotations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "line": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              }
+            },
+            "required": [
+              "line",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0,
+          "maxItems": 200
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "minItems": 1,
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "language",
+        "code",
+        "annotations"
+      ],
+      "additionalProperties": false
+    },
+    "FileMap": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              },
+              "change": {
+                "enum": [
+                  "added",
+                  "modified",
+                  "deleted",
+                  "context"
+                ]
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              }
+            },
+            "required": [
+              "path",
+              "change",
+              "note"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 200
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "minItems": 1,
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "files"
+      ],
+      "additionalProperties": false
+    },
+    "BeforeAfter": {
+      "type": "object",
+      "properties": {
+        "before": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000
+            },
+            "language": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000
+            }
+          },
+          "required": [
+            "label",
+            "code",
+            "language"
+          ],
+          "additionalProperties": false
+        },
+        "after": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000
+            },
+            "language": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000
+            }
+          },
+          "required": [
+            "label",
+            "code",
+            "language"
+          ],
+          "additionalProperties": false
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "minItems": 1,
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "before",
+        "after"
+      ],
+      "additionalProperties": false
+    },
+    "Decision": {
+      "type": "object",
+      "properties": {
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              },
+              "selected": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "label",
+              "reason",
+              "selected"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 200
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "minItems": 1,
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "options"
+      ],
+      "additionalProperties": false
+    },
+    "Question": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100000
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+            "pattern": "\\S",
+            "description": "Nonblank. The viewer enforces a maximum of 10000 UTF-16 code units, as in browser text controls."
+          },
+          "minItems": 2,
+          "maxItems": 200
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "minItems": 1,
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "prompt"
+      ],
+      "additionalProperties": false
+    },
+    "Wireframe": {
+      "type": "object",
+      "properties": {
+        "regions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              },
+              "kind": {
+                "enum": [
+                  "header",
+                  "navigation",
+                  "content",
+                  "sidebar",
+                  "footer",
+                  "control"
+                ]
+              },
+              "content": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              }
+            },
+            "required": [
+              "label"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 200
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "minItems": 1,
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "regions"
+      ],
+      "additionalProperties": false
+    },
+    "StateSequence": {
+      "type": "object",
+      "properties": {
+        "states": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              },
+              "regions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100000
+                    },
+                    "kind": {
+                      "enum": [
+                        "header",
+                        "navigation",
+                        "content",
+                        "sidebar",
+                        "footer",
+                        "control"
+                      ]
+                    },
+                    "content": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100000
+                    }
+                  },
+                  "required": [
+                    "label"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 200
+              }
+            },
+            "required": [
+              "name",
+              "description"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 200
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "minItems": 1,
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "states"
+      ],
+      "additionalProperties": false
+    },
+    "ApiContract": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "protocol": {
+              "enum": [
+                "http"
+              ]
+            },
+            "method": {
+              "enum": [
+                "GET",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "HEAD",
+                "OPTIONS"
+              ]
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000
+            },
+            "auth": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000
+            },
+            "parameters": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100000
+                  },
+                  "in": {
+                    "enum": [
+                      "path",
+                      "query",
+                      "header",
+                      "cookie",
+                      "body",
+                      "argument",
+                      "message",
+                      "option"
+                    ]
+                  },
+                  "type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100000
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100000
+                  }
+                },
+                "required": [
+                  "name",
+                  "in",
+                  "type",
+                  "required",
+                  "description"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 0,
+              "maxItems": 200
+            },
+            "schema": {
+              "type": "object"
+            },
+            "examples": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "request",
+                      "response",
+                      "error"
+                    ]
+                  },
+                  "status": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 599
+                  },
+                  "body": {}
+                },
+                "required": [
+                  "kind",
+                  "body"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 200
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              },
+              "minItems": 1,
+              "maxItems": 200
+            }
+          },
+          "required": [
+            "protocol",
+            "method",
+            "path",
+            "auth",
+            "parameters",
+            "schema",
+            "examples"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "protocol": {
+              "enum": [
+                "function",
+                "rpc",
+                "event",
+                "cli"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000
+            },
+            "signature": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000
+            },
+            "auth": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000
+            },
+            "parameters": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100000
+                  },
+                  "in": {
+                    "enum": [
+                      "path",
+                      "query",
+                      "header",
+                      "cookie",
+                      "body",
+                      "argument",
+                      "message",
+                      "option"
+                    ]
+                  },
+                  "type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100000
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100000
+                  }
+                },
+                "required": [
+                  "name",
+                  "in",
+                  "type",
+                  "required",
+                  "description"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 0,
+              "maxItems": 200
+            },
+            "schema": {
+              "type": "object"
+            },
+            "examples": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "request",
+                      "response",
+                      "error"
+                    ]
+                  },
+                  "status": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 599
+                  },
+                  "body": {}
+                },
+                "required": [
+                  "kind",
+                  "body"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "maxItems": 200
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100000
+              },
+              "minItems": 1,
+              "maxItems": 200
+            }
+          },
+          "required": [
+            "protocol",
+            "name",
+            "signature",
+            "auth",
+            "parameters",
+            "schema",
+            "examples"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ApiComparison": {
+      "type": "object",
+      "properties": {
+        "before": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "protocol": {
+                  "enum": [
+                    "http"
+                  ]
+                },
+                "method": {
+                  "enum": [
+                    "GET",
+                    "POST",
+                    "PUT",
+                    "PATCH",
+                    "DELETE",
+                    "HEAD",
+                    "OPTIONS"
+                  ]
+                },
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100000
+                },
+                "auth": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100000
+                },
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      },
+                      "in": {
+                        "enum": [
+                          "path",
+                          "query",
+                          "header",
+                          "cookie",
+                          "body",
+                          "argument",
+                          "message",
+                          "option"
+                        ]
+                      },
+                      "type": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      },
+                      "required": {
+                        "type": "boolean"
+                      },
+                      "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "in",
+                      "type",
+                      "required",
+                      "description"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 0,
+                  "maxItems": 200
+                },
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "request",
+                          "response",
+                          "error"
+                        ]
+                      },
+                      "status": {
+                        "type": "integer",
+                        "minimum": 100,
+                        "maximum": 599
+                      },
+                      "body": {}
+                    },
+                    "required": [
+                      "kind",
+                      "body"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1,
+                  "maxItems": 200
+                }
+              },
+              "required": [
+                "protocol",
+                "method",
+                "path",
+                "auth",
+                "parameters",
+                "schema",
+                "examples"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "protocol": {
+                  "enum": [
+                    "function",
+                    "rpc",
+                    "event",
+                    "cli"
+                  ]
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100000
+                },
+                "signature": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100000
+                },
+                "auth": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100000
+                },
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      },
+                      "in": {
+                        "enum": [
+                          "path",
+                          "query",
+                          "header",
+                          "cookie",
+                          "body",
+                          "argument",
+                          "message",
+                          "option"
+                        ]
+                      },
+                      "type": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      },
+                      "required": {
+                        "type": "boolean"
+                      },
+                      "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "in",
+                      "type",
+                      "required",
+                      "description"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 0,
+                  "maxItems": 200
+                },
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "request",
+                          "response",
+                          "error"
+                        ]
+                      },
+                      "status": {
+                        "type": "integer",
+                        "minimum": 100,
+                        "maximum": 599
+                      },
+                      "body": {}
+                    },
+                    "required": [
+                      "kind",
+                      "body"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1,
+                  "maxItems": 200
+                }
+              },
+              "required": [
+                "protocol",
+                "name",
+                "signature",
+                "auth",
+                "parameters",
+                "schema",
+                "examples"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "after": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "protocol": {
+                  "enum": [
+                    "http"
+                  ]
+                },
+                "method": {
+                  "enum": [
+                    "GET",
+                    "POST",
+                    "PUT",
+                    "PATCH",
+                    "DELETE",
+                    "HEAD",
+                    "OPTIONS"
+                  ]
+                },
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100000
+                },
+                "auth": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100000
+                },
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      },
+                      "in": {
+                        "enum": [
+                          "path",
+                          "query",
+                          "header",
+                          "cookie",
+                          "body",
+                          "argument",
+                          "message",
+                          "option"
+                        ]
+                      },
+                      "type": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      },
+                      "required": {
+                        "type": "boolean"
+                      },
+                      "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "in",
+                      "type",
+                      "required",
+                      "description"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 0,
+                  "maxItems": 200
+                },
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "request",
+                          "response",
+                          "error"
+                        ]
+                      },
+                      "status": {
+                        "type": "integer",
+                        "minimum": 100,
+                        "maximum": 599
+                      },
+                      "body": {}
+                    },
+                    "required": [
+                      "kind",
+                      "body"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1,
+                  "maxItems": 200
+                }
+              },
+              "required": [
+                "protocol",
+                "method",
+                "path",
+                "auth",
+                "parameters",
+                "schema",
+                "examples"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "protocol": {
+                  "enum": [
+                    "function",
+                    "rpc",
+                    "event",
+                    "cli"
+                  ]
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100000
+                },
+                "signature": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100000
+                },
+                "auth": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100000
+                },
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      },
+                      "in": {
+                        "enum": [
+                          "path",
+                          "query",
+                          "header",
+                          "cookie",
+                          "body",
+                          "argument",
+                          "message",
+                          "option"
+                        ]
+                      },
+                      "type": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      },
+                      "required": {
+                        "type": "boolean"
+                      },
+                      "description": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100000
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "in",
+                      "type",
+                      "required",
+                      "description"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 0,
+                  "maxItems": 200
+                },
+                "schema": {
+                  "type": "object"
+                },
+                "examples": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "request",
+                          "response",
+                          "error"
+                        ]
+                      },
+                      "status": {
+                        "type": "integer",
+                        "minimum": 100,
+                        "maximum": 599
+                      },
+                      "body": {}
+                    },
+                    "required": [
+                      "kind",
+                      "body"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1,
+                  "maxItems": 200
+                }
+              },
+              "required": [
+                "protocol",
+                "name",
+                "signature",
+                "auth",
+                "parameters",
+                "schema",
+                "examples"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "minItems": 1,
+          "maxItems": 200
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100000
+          },
+          "minItems": 1,
+          "maxItems": 200
+        }
+      },
+      "required": [
+        "before",
+        "after",
+        "changes"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "example": "all-components.mdx"
+}

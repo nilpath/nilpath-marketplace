@@ -1,0 +1,52 @@
+---
+name: visual-plan
+description: Create a rich local MDX review document for proposed engineering work, with diagrams, annotated code, file maps, decisions, questions, wireframes, and proposed API contracts. Use when a user wants to see or review a plan visually rather than read a Markdown wall.
+allowed-tools: Read, Write, Edit, Glob, Grep
+---
+
+# Visual plan
+
+Turn a proposed change into a document the user can inspect in a browser. MDX is the source. The shared local viewer renders the document. Do not substitute a long Markdown answer, a screenshot, or a JSON-only file.
+
+Read [the shared viewer workflow](references/viewer.md) first. It owns viewer startup, component discovery, publication, feedback, and browser access. Both visual skills use that workflow.
+
+## 1. Ground the proposal
+
+Identify the problem, affected callers, constraints, and the decision the user needs to make. Inspect the relevant code before describing it.
+
+Reuse an existing architect design, API sketch, or decision trail when available. Do not run a second planning engine or invent a parallel decision log. If the architecture is still undecided, use the `nstack:architect` skill and visualize its resulting alternatives.
+
+Separate current behavior from the proposal. Label existing reference material `context` and changes `proposed`. A diagram or example is not evidence that code exists.
+
+## 2. Compose the MDX
+
+Write a `.mdx` artifact in the current session's artifact directory, or the user's requested repository location. Keep its absolute path. Use a stable, project-specific document ID such as `checkout-retry-plan`. Use a separate ID for a recap.
+
+When continuing a review in another session, reuse its original canonical MDX path. Do not copy it into the new session under the same document ID. For a review that must outlive session artifacts, use a stable repository path agreed with the user. Moving a document's source identity is not supported in v1.
+
+Start with a `Document` element whose `kind` is `plan`. Use headings and short prose to connect rich blocks, not to reproduce a design spec as a Markdown wall.
+
+Choose blocks that answer the actual review question:
+
+- Show a proposed runtime flow with `Diagram` and affected paths with `FileMap`.
+- Explain a small code change with `AnnotatedCode` or `BeforeAfter`.
+- Compare options with `Decision`. Use a `Question` only when a human choice remains.
+- Show screens with `Wireframe` and transitions with `StateSequence`.
+- Render proposed HTTP routes or function, RPC, event, or CLI signatures with `ApiContract`. Include authentication, parameters, schemas, and request, response, and error examples where relevant.
+- Use `ApiComparison` for a contract change. Show compatibility consequences explicitly.
+
+Read the viewer's component reference and all-components sample before authoring payloads. Use literal attributes and fenced JSON data. Never add imports, exports, JavaScript expressions, raw HTML, event handlers, credentials, or external embeds. Give every rich block a stable unique ID and an honest status.
+
+Include real evidence references for current constraints. Mark synthetic API examples and wireframes as proposals. Do not invent measurements, test results, or approval.
+
+## 3. Publish and review
+
+Validate and publish through the shared workflow. Fix every compiler diagnostic before sharing the URL. Open the same document URL in the available browser or optional app Browser canvas.
+
+Inspect the rendered result. Confirm the proposed API, diagrams, labels, and questions render correctly. Read persisted answers before revising the proposal. Keep a question's ID when its meaning stays the same. If its prompt or options change, treat the previous answer as stale.
+
+Saved feedback is input to the next design pass. It is not automatic approval to implement, merge, deploy, or send a request to an API.
+
+## 4. Hand back the document
+
+Return the browser link, the canonical MDX path, the proposal's key choice, and any open questions or unverified claims. Keep the chat response short. The review content belongs in the rendered document.

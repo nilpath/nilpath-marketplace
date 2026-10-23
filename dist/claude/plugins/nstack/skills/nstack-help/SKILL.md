@@ -47,6 +47,8 @@ If cost is the worry, say where the tokens go and how to spend fewer. nstack spe
 
 nstack supports Claude Code, GitHub Copilot CLI, and Codex. Native Copilot use inside VS Code is unsupported; Copilot CLI in a VS Code terminal remains CLI usage. It needs Python 3.11+ for its model hook and setup. Read the README's requirements and limits before diagnosing a failed launch.
 
+Visual plans and recaps also need Node.js 20+ on macOS or Linux for their local MDX viewer. Native Windows hosting needs WSL or another Linux host in v1. Session start ensures the viewer without installing packages. A viewer warning does not disable model routing. Both visual skills have an explicit startup fallback.
+
 ## Start a task with `/nstack:nstack-flow`
 
 `/nstack:nstack-flow` matches the task to a playbook, copies the playbook's steps into the `TodoWrite` tool, and runs the other skills as the steps need them. A step it skips stays in the list with a one-line reason. A good prompt states the goal and how to tell it's done. It doesn't list skills, because a hand-written sequence tends to drop or reorder steps the playbook would keep. Read [`references/prompting.md`](references/prompting.md) before you help word one.
@@ -66,6 +68,8 @@ The default answer is `/nstack:nstack-flow`, which runs most of the others when 
 | Get several attempts at one brief, merged into the best one | [`/nstack:candidate-graft`](../candidate-graft/SKILL.md) |
 | Run parallel checks over slices, or race workers | [`/nstack:swarm`](../swarm/SKILL.md) |
 | Have different models review a diff and try to break it | [`/nstack:review-panel`](../review-panel/SKILL.md) |
+| Review proposed work visually, including proposed APIs | [`/nstack:visual-plan`](../visual-plan/SKILL.md) |
+| Inspect actual changes visually, with evidence and API comparisons | [`/nstack:visual-recap`](../visual-recap/SKILL.md) |
 | Fix a bug test-first when a cheap local test exists | [`/nstack:tdd`](../tdd/SKILL.md) |
 | Apply TypeScript rules to `.ts` or `.tsx` work | [`/nstack:typescript-best-practices`](../typescript-best-practices/SKILL.md) |
 | Apply repository-first Python guidance, including contract docstrings | [`/nstack:python-best-practices`](../python-best-practices/SKILL.md) |
@@ -126,6 +130,7 @@ Principles are one-rule skills that `nstack-flow` reads and cites in its replies
 | Parallel agents overwrote each other | Give each writing agent its own worktree or disjoint file ownership. |
 | An unattended run moved but finished nothing | Give it a check that can pass or fail, not a duration, and route the run through `figure-it-out`. |
 | The reply claims success from a green build | Ask for the real command, flow, stored value, or profile. That's the prove-it-works principle. |
+| The local visual viewer did not start | Read either visual skill's shared viewer workflow. Resolve its installed helper, run `ensure`, and report its error and repair. Do not expose the server publicly or install packages from a hook. |
 
 For a run that drifts, [`references/prompting.md`](references/prompting.md) has one-line steers.
 

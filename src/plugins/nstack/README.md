@@ -17,6 +17,8 @@ An explicit coordinator picks a playbook (feature, bug fix, or investigation), g
 | candidate-graft | Automatic or explicit | pstack's arena: independent candidates, a blind cross-judge, a chosen base, and grafted strengths from the others |
 | swarm | Automatic or explicit | Bounded parallel coverage or races with a declared completion or selection rule |
 | review-panel | Automatic or explicit | pstack's interrogate: independent adversarial reviewers plus a lead judgment (Act on, Consider, Noted, Dismissed) |
+| visual-plan | Automatic or explicit | Proposed work as a rich local MDX document with diagrams, API contracts, wireframes, and review questions |
+| visual-recap | Automatic or explicit | Actual changes as a rich local MDX document with evidence, comparisons, API contracts, and honest inference labels |
 | 24 `principle-*` skills | Explicit only | pstack's principles, indexed in nstack-flow's Principles section and read in full when applied |
 | unslop, technical-writing, no-comments, deslop | Explicit only | Prose and code cleanup triggered by nstack-flow's non-negotiables |
 | control-cli, control-ui, benchmark-checklist, tdd | Explicit only | Driving real surfaces, vetting measurements, failing-test-first bug fixes |
@@ -66,9 +68,46 @@ nstack works without setup: every delegated role has a built-in default model, a
 
 Defaults are suggestions: an account may not have every model. A model the client rejects fails the launch visibly; nstack never falls back to another model.
 
+## Visual review documents
+
+`visual-plan` explains proposed work. `visual-recap` explains actual changes and distinguishes implemented, inferred, contextual, and proposed follow-up content. They reuse architect outputs and existing decision trails rather than adding another planning engine.
+
+Both skills author `.mdx` files and publish through one bundled local viewer. The viewer supports diagrams, annotated code, file maps, before-and-after comparisons, decisions, review questions, wireframes, and UI state sequences. API contracts are first-class blocks. They display HTTP method and path or non-HTTP signatures, authentication, parameters, expandable schemas, request and response examples, errors, and contract comparisons. API blocks never send requests or collect credentials.
+
+Diagrams open fitted to the document width. Switch to **Actual size** to inspect labels and scroll. API parameters and file maps adapt to labeled rows in narrow panels. The document outline starts collapsed on small screens.
+
+The MDX compiler uses a standard AST parser and an allowlisted component vocabulary. Rich blocks carry literal attributes and fenced JSON data. Imports, exports, JavaScript expressions, raw HTML, and unknown components are rejected. The browser renders data rather than executing MDX. Graph diagrams use nodes and edges, not Mermaid source. The `components` command and bundled `all-components.mdx` are the authoring reference.
+
+The session-start hook starts or reconnects to the viewer. It preserves model context and reports viewer failures as warnings. It needs Node.js 20+ on `PATH`, but no runtime `npm install`. V1 viewer hosting requires macOS or Linux with POSIX private-directory permissions. Native Windows hosting is unsupported; use WSL or a Linux host. This viewer limit does not change the other nstack skills or model hook. Missing Node does not stop model configuration. Set `NSTACK_VIEWER=off` to disable hook startup.
+
+The skills resolve the installed helper and use the same fallback when hooks do not run:
+
+```bash
+node "<installed-viewer>/viewer.mjs" ensure
+node "<installed-viewer>/viewer.mjs" components
+node "<installed-viewer>/viewer.mjs" check "/absolute/path/review.mdx"
+node "<installed-viewer>/viewer.mjs" open "/absolute/path/review.mdx"
+node "<installed-viewer>/viewer.mjs" answers "<document-id>"
+node "<installed-viewer>/viewer.mjs" stop
+```
+
+`open` returns a private local document URL. Open that complete URL in an ordinary browser on any supported client. The viewer exchanges its access capability for an HttpOnly, SameSite cookie and redirects to a clean address. Unauthenticated local clients cannot read documents or obtain the write token. Treat access URLs as private, and use `open` again to open another browser. In the Copilot app, the existing Browser canvas can display the same URL. A custom SDK canvas adapter is not included. Its guide and scaffold tooling were unavailable during implementation. Browser rendering does not depend on the app.
+
+Canonical MDX belongs in the current session's artifacts or a user-selected repository path. Reuse the original canonical path when continuing a review in another session. Use a stable repository path for a review that must outlive session artifacts. Mutable viewer state belongs under `$NSTACK_HOME/viewer/`, or `~/.nstack/viewer/`. Use stable project-specific document IDs and block IDs. The viewer rejects accidental document-ID reuse from another source path. Source-identity migration is not supported in v1. Saved answers survive reload and server restart, and the CLI can read them without starting a server. A changed question marks its old answer stale instead of treating it as the current choice.
+
+The server binds to `127.0.0.1` on an assigned port and verifies its build identity before reuse. It does not depend on end-hook delivery. Closing a tab or canvas does not stop it. The explicit `stop` command checks the matching viewer's identity. Do not kill processes by name or delete shared runtime state.
+
+The capability protects against unauthenticated local accounts and cross-site browser requests. It is not a sandbox against another process running as your operating-system user, which can read your private runtime files.
+
+Local means the agent's host. A remote agent needs a private forwarded port or tunnel for a browser on your machine. Do not bind the viewer publicly. The server is a single-user local review tool, not a hosted collaboration service.
+
+The installed layouts, compiler, hook adapter, lifecycle, and HTTP boundaries have automated checks. Those checks are not proof that every client discovers and invokes its installed hook. Codex hook discovery and the manual skill-invocation caveats below still apply.
+
 ## Requirements and limits
 
 - Python 3.11+ for the model hook and `setup-nstack`.
+- Node.js 20+ for visual document publication and the optional session-start viewer. Other nstack skills do not need Node.
+- macOS or Linux for viewer hosting in v1. Native Windows needs WSL or another Linux host; the viewer does not pretend POSIX mode bits verify Windows ACLs.
 - **Codex:** trust nstack's plugin hook once with `/hooks`. Until then, nstack agents reply that the hook did not run, and delegation stops.
 - Read access to the plugin's install directory: skills and subagents read their reference files there. Interactive sessions ask for approval; non-interactive runs must pre-approve it (for example, Copilot CLI's `--add-dir`).
 - The model hook is verified for Copilot CLI and Claude Code plugins, and with the same hook command in Codex. Codex loading it from an installed plugin is not yet verified. Native Copilot use inside VS Code is unsupported. Copilot CLI in a VS Code terminal remains CLI usage.
@@ -80,6 +119,8 @@ Defaults are suggestions: an account may not have every model. A model the clien
 - Read-only roles run on `nstack-reader`, whose tools are limited to reading and searching (and a read-only sandbox in Codex). The `why` roles run on `nstack-agent` with full tool access for MCP evidence sources; their no-write rule is an instruction only.
 
 ## Attribution
+
+The visual workflow idea is inspired by Builder.io's [visual-plan and visual-recap skills](https://github.com/BuilderIO/skills/tree/fecf1ffac18165d165bef520b5c6bd49553c7968/skills) and [Agent Native Plan](https://github.com/BuilderIO/agent-native/tree/main/templates/plan). This viewer and its skill text are an independent implementation. They do not use Builder.io's hosted renderer or vendor its application. Bundled parser dependency notices ship beside the viewer.
 
 The Python best-practices skill is an original summary linking to the Google Python Style Guide, not copied guide text. Its repository-first guidance and the Python-aware cleanup policy are nstack additions.
 
