@@ -1,0 +1,28 @@
+---
+name: principle-own-coherent-responsibilities
+description: "Apply when you create or split a module, decide where state belongs, or consider extracting shared code."
+targets: [claude, copilot, codex]
+{% if harness in ["claude", "copilot"] %}
+disable-model-invocation: true
+{% endif %}
+---
+
+# Own coherent responsibilities
+
+**Modularity and the single responsibility principle, SRP.** Give each module one coherent responsibility and one reason to change. Put unrelated responsibilities in separate modules. Keep a responsibility's operations together even when they include loading, validation, transformation, and saving.
+
+**Encapsulation.** Keep state with the operations that preserve its invariants. Keep that state private. Do not expose mutable fields or scatter related state. The module must enforce its own rules rather than ask callers to coordinate them.
+
+**Don't repeat yourself, DRY.** Share a rule when the same change or bug fix must apply to every copy. Keep similar code separate when the copies change independently. Similar text alone does not justify an abstraction.
+
+Long parameter lists, unrelated parameters or imports, changes across several responsibilities, and unclear names are reasons to review ownership. They do not prove that a module needs splitting.
+
+When a feature needs a different responsibility boundary, restructure the modules first. Verify that change separately before adding the feature. Use [Sequence Work into Verifiable Units](../principle-sequence-verifiable-units/SKILL.md) to order those checks.
+
+Ask:
+
+- Which rules and operations change together?
+- Which operations must protect this state?
+- Can another implementation replace the module without changes to its callers?
+- Would one fix require changing every copy?
+- Do imports, parameters, edits, or names make the module's responsibility unclear?

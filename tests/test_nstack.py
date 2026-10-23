@@ -47,11 +47,15 @@ SKILLS = {
     "principle-minimize-reader-load",
     "principle-model-the-domain",
     "principle-never-block-on-the-human",
+    "principle-own-coherent-responsibilities",
     "principle-outcome-oriented-execution",
     "principle-prove-it-works",
     "principle-redesign-from-first-principles",
     "principle-separate-before-serializing-shared-state",
     "principle-sequence-verifiable-units",
+    "principle-depend-on-caller-contracts",
+    "principle-extend-at-evidenced-seams",
+    "principle-preserve-substitution-contracts",
     "principle-subtract-before-you-add",
     "principle-test-behavior-not-implementation",
     "principle-type-system-discipline",
@@ -242,10 +246,36 @@ def test_help_catalog_covers_bundled_skills(harness):
     targets = set(re.findall(r"\]\(\.\./([^/]+)/SKILL\.md\)", text))
     expected = {name for name in SKILLS if not name.startswith("principle-")} - {"nstack-help"}
     assert targets == expected
+    principle_count = len({path.parent.name for path in (plugin_dir(harness) / "skills").glob("principle-*/SKILL.md")})
+    assert f"lists all {principle_count}." in text
+    readme = (plugin_dir(harness) / "README.md").read_text()
+    assert f"{principle_count} `principle-*` skills" in readme
     assert "For a help question, don't start the work." in text
     assert "https://github.com/nilpath/nilpath-marketplace/blob/main/src/plugins/nstack/" in text
     assert "skills/<name>/SKILL.md.j2" in text
     assert "draft pull request" in text
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_principle_index_matches_bundled_principles(harness):
+    root = plugin_dir(harness)
+    flow = (root / "skills" / "nstack-flow" / "SKILL.md").read_text()
+    principles = flow.split("**Core**", 1)[1].split("## Autonomy", 1)[0]
+    principle_entries = re.findall(
+        r"^- \*\*(.+?)(?:\.\*\*|\*\* \(\*\*(principle-[a-z0-9-]+)\*\*\)\.)",
+        principles,
+        re.M,
+    )
+    principle_bullets = re.findall(r"^- .+$", principles, re.M)
+    assert len(principle_entries) == len(principle_bullets)
+    destinations = [
+        override or f"principle-{re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')}"
+        for title, override in principle_entries
+    ]
+    assert len(destinations) == len(set(destinations))
+    indexed = set(destinations)
+    discovered = {path.parent.name for path in (root / "skills").glob("principle-*/SKILL.md")}
+    assert indexed == discovered
 
 
 @pytest.mark.parametrize("harness", HARNESSES)
