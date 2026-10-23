@@ -1,6 +1,6 @@
 # Rationale template
 
-The prose that ships alongside the type sketch. One page. Sentence-case headings, no boilerplate. Replace the italic notes with actual content.
+The prose alongside the scratch type sketch. Keep it proportionate to the change. Sentence-case headings, no boilerplate. Replace the italic notes with actual content. This package informs approval. It does not authorize implementation.
 
 ## Problem
 
@@ -10,9 +10,17 @@ The prose that ships alongside the type sketch. One page. Sentence-case headings
 
 *Write this first, before the type sketch. Show the README or quickstart the consumer reads, plus two or three realistic call sites in their own code. What they import, what they call, what comes back. The type sketch in [Shape](#shape) is derived from this. The two must agree. When they diverge, reconcile the sketch to the usage, not the reverse. The caller's experience is the spec. The types serve it.*
 
+*Show current and desired behavior in a concrete example.*
+
+## Change map
+
+*Name the actual files and functions to change, why each changes, and the scope excluded from this proposal. Do not describe illustrative edits as already applied.*
+
 ## Shape
 
 *The recommended architecture. Data structures first. Then how data flows through the signatures. Name the load-bearing decisions. State which invariants are encoded in types, where validation lives, and what the system deliberately does not do. Judge interface depth explicitly. State what complexity the public surface hides, what remains exposed to callers, and why the interface is no larger than needed. Cite the principle behind each decision (e.g., `per boundary-discipline`). Don't restate it.*
+
+*Include the central illustrative diff. Keep it in scratch, not product files.*
 
 ## Synthesis decision
 
@@ -32,4 +40,8 @@ The prose that ships alongside the type sketch. One page. Sentence-case headings
 
 ## Next implementation step
 
-*The first thing to build against the sketch. One sentence. What you'd start writing immediately after synthesis (or after Phase D sign-off, if a checkpoint was opted into).*
+*The first thing to build after Phase C or caller approval, or within an explicit covering implementation grant. A nested architect returns this package to its caller without implementing.*
+
+## Verification
+
+*Name observable behavior checks, the smallest covering tests, and known limits. Distinguish existing evidence from checks planned after approval.*

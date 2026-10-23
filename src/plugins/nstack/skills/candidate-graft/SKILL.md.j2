@@ -18,18 +18,22 @@ tools:
 
 Open a todolist with one entry per phase (Frame, Fan out, Cross-judge, Pick, Graft, Verify) before launching anything.
 
+Read the [sign-off contract](../nstack-flow/references/sign-off.md) before framing or fan-out. A caller's approved or granted scope can cover this run. Do not ask independently for approval already owned by that caller.
+
 ## Phase A: Frame
 
 Every candidate gets the same prompt, so the prompt is the contract.
 
-1. State the artifact each candidate is producing.
+1. State whether the artifact is design-only or code-producing. Design-only runs permit assigned scratch sketches and illustrative diffs, not product edits or production implementations. Code-producing runs require covering approval or an explicit grant before fan-out, including in isolated worktrees. For standalone code-producing use, present a proportionate proposal and stop by default. An ordinary request to run candidates is not a waiver.
 2. Derive the rubric, 3-6 concrete gradeable criteria for what success looks like on *this* task. It is the picker's tool in Phase D. Candidates only see the task.
 3. Pick the runners: one per `candidate-graft-runner` seat in the `nstack panels` line in your session context. A caller may substitute its own runner role.
-4. Give each candidate its own output location (a git worktree where possible, otherwise `/tmp/candidate-graft-<slug>/candidate-<n>/`), per the **separate-before-serializing-shared-state** principle skill.
+4. Give each candidate its own output location, per the **separate-before-serializing-shared-state** principle skill. Use assigned scratch directories outside product source for design-only work. For authorized code-producing work, use a git worktree where possible, otherwise `/tmp/candidate-graft-<slug>/candidate-<n>/`. Isolation prevents shared writes. It does not supply consent.
 
 ## Phase B: Fan out
 
-Spawn all N subagents in one message, in the background, each launched with {{ launch('nstack:implementation:nstack-agent', '[nstack role=candidate-graft-runner seat=<n>]') }} and the task, the path to the shared grounding, its own output path, and instructions to produce the artifact and a short rationale naming the alternatives it considered and what it rejected.
+Check authority before launching code-producing candidates. Each brief must carry the approved or granted scope, exclusions, and stop conditions. Design-only briefs must explicitly limit writes to scratch artifacts and prohibit production implementation, product edits, scaffolds, commits, and publication.
+
+Spawn all N subagents in one message, in the background, each launched with {{ launch('nstack:implementation:nstack-agent', '[nstack role=candidate-graft-runner seat=<n>]') }} and the task, the path to the shared grounding, its own output path, those limits, and instructions to produce the artifact and a short rationale naming the alternatives it considered and what it rejected.
 
 If a candidate produces no output, proceed with N-1 and note the dropout.
 
@@ -45,9 +49,11 @@ Pick the base a future maintainer can extend most easily without breaking invari
 
 ## Phase E: Graft
 
+Before applying or promoting artifacts into product files, check that matching authority still covers the result. A judge's verdict is not approval. Stop and re-present material changes unless a grant covers them. Design-only synthesis stays in scratch and returns to the caller without implementation or an independent approval request.
+
 Walk each losing candidate once more for what is worth porting into the base, usually one or two things per candidate, not most of it. Fold each graft in by hand, per the **redesign-from-first-principles** principle skill, so the result stays coherent under one mental model. Don't paste mechanically.
 
-If the candidates converge on one shape, that is strong agreement. Note it and ship the consensus shape. No graft is needed. If they wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
+If the candidates converge on one shape, that is strong agreement. Note it and return the consensus artifact within the assignment's limits. No graft is needed. If they wildly diverge, Phase A was under-specified. Reframe and re-run rather than averaging the divergence.
 
 ## Phase F: Verify
 

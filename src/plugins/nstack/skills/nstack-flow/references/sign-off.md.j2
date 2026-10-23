@@ -1,0 +1,81 @@
+# Design-to-implementation sign-off
+
+This contract governs nstack-flow code changes, figure-it-out, standalone architect, and code-producing candidate-graft. Helpers inside those workflows inherit the same limits. Read-only Investigation stays read-only and needs no implementation-approval ceremony.
+
+## Authority and ownership
+
+The outer coordinator owns user consent and implementation. A nested architect returns design only, even when the outer task has an autonomy waiver. It neither asks the user again nor implements the design. A standalone architect owns its own checkpoint.
+
+These concepts explain authority. They are not runtime types, an API, or a database:
+
+- **Proposal** describes the intended behavior, change map, proposed shape, exclusions, and checks.
+- **DesignOnly** permits an isolated design package, not implementation.
+- **Awaiting** means the coordinator has presented a proposal but has no matching execution authority.
+- **Approved** means an attributable user decision authorizes implementation of the presented proposal.
+- **Waived** means an attributable user instruction explicitly grants autonomous implementation without the ordinary checkpoint for a stated scope.
+
+Record the proposal, user decision or grant, covered scope, exclusions, and stop conditions in the existing conversation, todos, or decision trail. No approval file, sentinel, magic reply word, or permission setting is required.
+
+## Delegated execution
+
+The coordinator validates the matching proposal and attributable user approval or grant before assigning implementation. It conveys that approval or grant context or evidence, the covered scope, exclusions, and stop conditions in the delegate's brief.
+
+The delegate executes that bounded assignment without requesting user approval again. Its lack of a direct human reply channel is not a fresh checkpoint. Missing, conflicting, or out-of-scope authority means return BLOCKED to the coordinator. The delegate cannot self-authorize or expand the assignment.
+
+## Default checkpoint
+
+An ordinary request to implement is not a waiver. Ground the task, design the change, and plan execution. Present one proportionate proposal, then stop before implementation unless matching authority already exists.
+
+Ask for the user's decision with {{ ask_user }}. Accept an unambiguous, attributable user approval or grant, including an ordinary chat reply, for the displayed scope. A tool permission prompt only authorizes that tool operation, not the workflow.
+
+Delegate or judge verdicts, tool availability, tool permissions, silence, questions, requested revisions, and rejection do not count as approval. Do not infer consent from them. Answer questions or revise the proposal as needed. Re-present meaningful revisions and wait for approval of the changed proposal.
+
+While the coordinator is Awaiting, end the turn without launching implementing workers in the background. If the coordinator has no user reply channel, return the pending proposal and stop. An authorized delegate follows the bounded handoff above instead. Repeated presentation adds no authority.
+
+## Explicit grants and independent limits
+
+An explicit, scoped instruction such as "skip sign-off for this migration" or "implement this migration autonomously" may waive the ordinary checkpoint. Still show or record the plan and execute only within the grant.
+
+"Going to bed" alone does not waive sign-off. A named stop, "plan only", or "design only" overrides broader autonomy. Only a later explicit user instruction changing that restriction can release it. Do not convert a request for a revised design into implementation authority.
+
+Approval and autonomy do not waive independent irreversible-action pauses or draft-only delivery limits. Honor no-commit, no-push, no-PR, and local-only restrictions. Never mark a pull request ready, merge, or enable auto-merge. This contract does not extend publishing authority.
+
+## Preparation before authority
+
+Allowed preparation must not mutate the product, shared services, or user data:
+
+- Read source and existing evidence. Run safe existing checks.
+- Write design documents, pseudocode, and illustrative diffs only in assigned scratch paths outside product source.
+- Create disposable diagnostic-only copies and reproductions outside the product tree. Do not implement a production candidate there.
+
+Before covering approval or a grant, do not edit product source, configuration, tests, or documentation. Do not create product scaffolds or scaffold commits, change shipping verification harnesses, launch implementing delegates, or run code-producing candidate-graft. A production candidate in another worktree is still implementation. Isolation is not consent.
+
+If diagnosis needs product instrumentation or another in-product edit, first propose that bounded diagnostic scope and obtain approval. The later fix needs approval too unless the user's grant explicitly covers both. Editing the product and reverting it before presenting the proposal is not a workaround.
+
+Design assignments must name artifact-only scratch outputs and prohibit product edits, implementation, commits, and publication. Implementation assignments must carry coordinator-established authority as described in Delegated execution. Neither assignment can authorize itself.
+
+## Proportionate proposals
+
+A same-function fix needs a few lines covering current and desired behavior, cause and evidence, actual edit location, scope, and the observable check. Do not add architecture fan-out just to obtain approval. Existing architecture-routing thresholds still apply.
+
+Compact proposals avoid only unnecessary preapproval architecture fan-out. They do not waive the playbook's required implementer delegation, verification, or review-panel steps during authorized implementation. A blocked delegate does not permit inline fallback.
+
+For substantial changes, present:
+
+1. Current and desired behavior, with caller usage.
+2. The actual files and functions to change, and why.
+3. Proposed data and interface shapes, with the central illustrative diff.
+4. The smallest approach, alternatives, tradeoffs, and excluded cleanup.
+5. Observable checks and known verification limits.
+
+Combine design and execution planning into this proposal. The throughput checkpoint remains execution planning, not user approval. The coordinator presents one default sign-off, not a second checkpoint inside each helper.
+
+## Execution, changes, and continuation
+
+Within matching approval or a grant, execute reversible implementation details and corrective review fixes autonomously. Do not ask for each edit. Optional review suggestions do not silently expand the task.
+
+Stop before a material change not covered by authority. Re-present changed behavior, public contracts, dependencies, ownership boundaries, or meaningful scope expansion. Continue only after approval of that changed scope or an explicit grant that covers the decision.
+
+On continuation or restart, the coordinator must recover the actual proposal, attributable user approval or grant, completed work, and current workspace before further implementation. Match the authority to the current scope. Missing, stale, or ambiguous authority fails closed. Return the pending or revised proposal rather than inferring consent from tool permissions, previous worker activity, or a bare claim that the work was approved.
+
+A continuing delegate recovers its bounded brief and current workspace. If the brief's authority is missing, conflicting, or no longer covers the work, return BLOCKED to the coordinator rather than asking the user or granting itself permission.

@@ -2,7 +2,9 @@
 
 A portable engineering backbone for Claude Code, GitHub Copilot CLI, and Codex, adapted from [pstack](https://github.com/cursor/plugins/tree/dbf49813a39c1a5389c5e28cb8e4c1c2379e2454/pstack).
 
-An explicit coordinator picks a playbook (feature, bug fix, or investigation), grounds the work in the existing code and its history, compares alternative designs, delegates bounded implementation, proves the result against the real artifact, has it reviewed independently, and ends a code change as a draft pull request.
+Version 0.0.5 changes the implementation default. The coordinator presents a proposal and stops for user approval before product edits unless an explicit grant covers autonomous implementation.
+
+An explicit coordinator picks a playbook (feature, bug fix, or investigation), grounds the work in the existing code and its history, compares alternative designs, obtains implementation authority, delegates bounded implementation, proves the result against the real artifact, has it reviewed independently, and ends a code change as a draft pull request.
 
 ## Skills
 
@@ -44,7 +46,21 @@ nstack-agent and nstack-reader have no model. nstack's model hook sets the model
 | Bug fix | Reproduced-then-fixed change, same proof before and after, published as a **draft** pull request |
 | Investigation | A cited answer or recommendation. No edits, no pull request |
 
-The coordinator continues from design into implementation unless you ask for a checkpoint. It never marks a pull request ready, merges, enables auto-merge, or monitors CI.
+The coordinator never marks a pull request ready, merges, enables auto-merge, or monitors CI. User no-push, no-PR, and local-only limits still apply.
+
+## Implementation sign-off
+
+An ordinary code-changing request to `nstack-flow` now ends its design turn with a proposal. Review the intended behavior, actual edit locations, proposed shape, exclusions, and checks before approving implementation. A same-function bug fix gets a short cause, edit, and check proposal without mandatory architecture fan-out. Approval covers execution and corrective review fixes within that scope, not permission for every edit.
+
+The same boundary applies to `figure-it-out`, standalone `architect`, and code-producing `candidate-graft`. A nested architect returns design only to the coordinator, even under an outer autonomy waiver. The coordinator asks once and owns implementation. Read-only Investigation stays read-only without an approval ceremony.
+
+To waive the ordinary checkpoint for a scope, explicitly grant it, for example, "implement this migration autonomously" or "skip sign-off for this fix." An ordinary request to implement, tool permission approval, silence, or "going to bed" alone is not a waiver. Named stops and plan-only requests still stop. Questions and requested revisions do not authorize implementation.
+
+Before authority exists, preparation can read source, run safe existing checks, and write isolated scratch designs or diagnostic-only reproductions. It cannot edit product files, create product scaffolds or shipping tests, launch implementing delegates, or produce production candidates in another worktree. Product instrumentation also needs covering approval before the edit, even if it would later be reverted.
+
+Material scope changes need new approval unless a grant covers them. On continuation, the coordinator recovers the matching proposal and attributable user approval or grant. Missing or ambiguous authority, or no reply channel, means stop. Irreversible-action pauses and delivery limits remain independent.
+
+The [sign-off contract](skills/nstack-flow/references/sign-off.md) owns these rules. This is an instruction-level boundary, not technical write enforcement. Rendered-document tests check packaging and handoffs, not runtime stopping or reduced rework.
 
 ## Model configuration
 

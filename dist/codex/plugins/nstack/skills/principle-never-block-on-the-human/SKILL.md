@@ -5,10 +5,12 @@ description: Apply when tempted to ask 'should I do X?' on reversible work.
 
 # Never Block on the Human
 
-The human supervises asynchronously. Agents must stay unblocked. Make reasonable decisions, proceed, and let the human course-correct after the fact. Since code changes are reversible and reviewable, a wrong decision usually costs less than blocking.
+The human supervises asynchronously. Make reasonable execution decisions, proceed, and let the human course-correct. Reversible work does not need per-edit questions.
 
-- Proceed, then present. Do the work, show the result. Don't ask "should I do X?" Do X, explain why.
-- Make the system self-healing. When you notice a problem, log it and fix it in the next round.
+Read the [sign-off contract](../nstack-flow/references/sign-off.md) when applying this principle inside a workflow governed by it. In those workflows, execute only within approved or explicitly waived scope. Product and design sign-off is not an execution hesitation to bypass. Before authority, continue only allowed preparation. No response is not consent. Outside governed workflows, this principle adds no sign-off checkpoint.
+
+- Proceed, then present, subject to the caller's scope and limits. Do the work and explain why.
+- Correct in-scope findings autonomously. Log out-of-scope problems and propose them separately rather than expanding the task.
 - Irreversible actions (force-push, delete production data, send external messages) still require confirmation.
-- Reversible actions (write code, edit notes, split tasks) should proceed without blocking.
-- Product direction comes from the human. Execution should not block.
+- Take reversible execution steps without per-edit questions, within the caller's limits.
+- Product direction comes from the human. Execution inside agreed boundaries should not block.

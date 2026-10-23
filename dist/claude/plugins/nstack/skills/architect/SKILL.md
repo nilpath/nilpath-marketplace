@@ -7,11 +7,13 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, TodoWrite
 
 # Architect
 
-Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across multiple model perspectives, then fill in code against the chosen sketch.
+Sketch types, function signatures, class shapes, and module boundaries with `not implemented` bodies and pseudocode. Synthesize across multiple model perspectives in scratch artifacts. Implementation is a separate, authorized step.
+
+Read the [sign-off contract](../nstack-flow/references/sign-off.md) before preparation or implementation. A nested invocation is always design only. Standalone use has a default approval checkpoint.
 
 ## Start
 
-Open a todolist with one entry per phase before starting.
+Open a todolist with one entry per phase before starting. A design-only assignment ends after returning the Phase C package. Mark implementation phases inapplicable rather than starting them.
 
 1. Ground
 2. Sketch
@@ -27,7 +29,7 @@ Skip Phase A only when the work is genuinely greenfield with no surrounding syst
 
 ## Phase B: Sketch
 
-Run the **candidate-graft** skill with the design-sketch task and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt.
+Run the **candidate-graft** skill with an explicit design-only assignment and the Phase A grounding artifacts. Pass `references/runner-prompt.md` as each runner's prompt. Assign artifact-only scratch outputs outside product source. No product edits, production candidates, scaffolds, commits, or publication.
 
 Runners use the `architect-runner` role in place of `candidate-graft-runner`, tagged `[nstack role=architect-runner seat=<n>]`.
 
@@ -39,19 +41,19 @@ Compare viable candidates on interface depth. Prefer the design that hides more 
 
 Candidate-graft returns one synthesized design package. Its synthesis decision fills the rationale's "Synthesis decision" section.
 
-## Phase C: Agree (opt-in)
+## Phase C: Agree
 
-Default: proceed directly to implementation with the synthesized design. No human checkpoint.
+When nested in another workflow, return the design only to the outer coordinator. This holds even under an outer autonomy waiver. Include the assessable proposal fields and remaining choices. Do not ask the user for a second approval or enter Phase D. The caller owns sign-off and implementation.
 
-Opt in to a checkpoint when the invoker explicitly asks: "/architect with checkpoint," "stop and show me before implementing," or similar. Then surface the synthesized design and pause for sign-off.
+When standalone, present the synthesized proposal per the sign-off contract and stop by default. Proceed only with matching user approval or an explicit covering implementation grant. A plan-only or design-only request still ends with the package.
 
-The synthesis can ship as its own commit either way, as the "scaffold first" mode of the **foundational-thinking** principle skill. Planned and scoped breakage during fill-in is fine, per the **outcome-oriented-execution** principle skill. For adversarial pressure on the design before implementing, run the **review-panel** skill on the synthesized sketch.
+Product scaffolds and scaffold commits require that same authority. The **foundational-thinking** principle skill sequences authorized work, not preapproval edits. Within authorized implementation, planned and scoped breakage during fill-in is fine, per the **outcome-oriented-execution** principle skill. For adversarial pressure before approval, run the **review-panel** skill on the scratch sketch. Its verdict is design evidence, not user consent.
 
-If the human pushes back on the shape (in a checkpoint or after the fact), treat that as Phase A evidence. Re-ground and re-run Phase B before writing more code.
+If the human pushes back on the shape, treat that as Phase A evidence. Re-ground and re-run Phase B. Re-present meaningful revisions before implementation. A requested revision is not approval.
 
 ## Phase D: Implement against the sketch
 
-Replace `not implemented` bodies with code, pseudocode with logic. The synthesized sketch is the contract. Deviations from it are signal to surface, not friction to absorb silently. If a function needs a parameter the sketch didn't anticipate, ask whether the sketch was wrong, the requirement was missed, or the implementation is overreaching.
+Only a standalone architect with covering authority enters this phase. Replace `not implemented` bodies with code, pseudocode with logic. The approved sketch defines scope. Continue in-scope details and corrective review fixes autonomously. Carry authority, exclusions, and stop conditions into any implementing brief. Stop before material deviations not covered by the approval or grant, per the sign-off contract. On continuation, recover matching authority before resuming.
 
 ## Phase E: Scrap when the architecture is wrong
 
@@ -73,8 +75,8 @@ When you scrap:
 1. Re-run the **how** skill over what's been built.
 2. Redesign as if the new constraints had been day-one assumptions, per redesign-from-first-principles.
 3. Subtract before adding, per the **subtract-before-you-add** principle skill. The new sketch should be smaller than the old one before it grows.
-4. Return to Phase B and re-run candidate-graft.
+4. Return to Phase B and re-run design-only candidate-graft. Re-present material changes before further implementation unless a grant explicitly covers them.
 
 ## Outputs
 
-The caller's usage is written first and the type sketch derived from it. One file with new types and signatures for small changes. Module map plus type definitions for larger work. The rationale ships alongside, shaped per `references/rationale-template.md`, including the usage sketch and the synthesis decision.
+Write the caller's usage first and derive the type sketch from it. Produce one scratch file with new types and signatures for small changes. Produce a module map plus type definitions for larger work. Put the rationale alongside, shaped per `references/rationale-template.md`, including the usage sketch and synthesis decision. These are design artifacts until authorized implementation promotes them into product files.
