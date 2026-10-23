@@ -115,7 +115,7 @@ The Playbooks section of [`nstack-flow`](../nstack-flow/SKILL.md) lists every bu
 
 nstack has no standalone planning skill. For a design question, `/nstack:architect` settles the shape in scratch artifacts before the default sign-off. Ask for design only when the user wants no implementation.
 
-Principles are one-rule skills that `nstack-flow` reads and cites in its replies. The user rarely invokes one. They steer with the names instead, as in "apply prove it works. show me the real output." Typing `/nstack:principle-<name>` still loads one on demand. The Principles section of `nstack-flow` lists all 24.
+Principles are one-rule skills that `nstack-flow` reads and cites in its replies. The user rarely invokes one. They steer with the names instead, as in "apply prove it works. show me the real output." Typing `/nstack:principle-<name>` still loads one on demand. The Principles section of `nstack-flow` lists all 28.
 
 ## Fix a run that went wrong
 

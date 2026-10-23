@@ -47,11 +47,15 @@ SKILLS = {
     "principle-minimize-reader-load",
     "principle-model-the-domain",
     "principle-never-block-on-the-human",
+    "principle-own-coherent-responsibilities",
     "principle-outcome-oriented-execution",
     "principle-prove-it-works",
     "principle-redesign-from-first-principles",
     "principle-separate-before-serializing-shared-state",
     "principle-sequence-verifiable-units",
+    "principle-depend-on-caller-contracts",
+    "principle-extend-at-evidenced-seams",
+    "principle-preserve-substitution-contracts",
     "principle-subtract-before-you-add",
     "principle-test-behavior-not-implementation",
     "principle-type-system-discipline",
@@ -246,6 +250,24 @@ def test_help_catalog_covers_bundled_skills(harness):
     assert "https://github.com/nilpath/nilpath-marketplace/blob/main/src/plugins/nstack/" in text
     assert "skills/<name>/SKILL.md.j2" in text
     assert "draft pull request" in text
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_principle_index_matches_bundled_principles(harness):
+    root = plugin_dir(harness)
+    flow = (root / "skills" / "nstack-flow" / "SKILL.md").read_text()
+    principles = flow.split("**Core**", 1)[1].split("## Autonomy", 1)[0]
+    principle_entries = re.findall(
+        r"^- \*\*(.+?)(?:\.\*\*|\*\* \(\*\*(principle-[a-z0-9-]+)\*\*\)\.)",
+        principles,
+        re.M,
+    )
+    indexed = {
+        override or f"principle-{re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')}"
+        for title, override in principle_entries
+    }
+    discovered = {path.parent.name for path in (root / "skills").glob("principle-*/SKILL.md")}
+    assert indexed == discovered
 
 
 @pytest.mark.parametrize("harness", HARNESSES)

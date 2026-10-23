@@ -19,7 +19,7 @@ An explicit coordinator picks a playbook (feature, bug fix, or investigation), g
 | candidate-graft | Automatic or explicit | pstack's arena: independent candidates, a blind cross-judge, a chosen base, and grafted strengths from the others |
 | swarm | Automatic or explicit | Bounded parallel coverage or races with a declared completion or selection rule |
 | review-panel | Automatic or explicit | pstack's interrogate: independent adversarial reviewers plus a lead judgment (Act on, Consider, Noted, Dismissed) |
-| 24 `principle-*` skills | Explicit only | pstack's principles, indexed in nstack-flow's Principles section and read in full when applied |
+| 28 `principle-*` skills | Explicit only | 24 pstack principles plus 4 nstack-local additions, indexed in nstack-flow's Principles section and read in full when applied |
 | unslop, technical-writing, no-comments, deslop | Explicit only | Prose and code cleanup triggered by nstack-flow's non-negotiables |
 | control-cli, control-ui, benchmark-checklist, tdd | Explicit only | Driving real surfaces, vetting measurements, failing-test-first bug fixes |
 | show-me-your-work, figure-it-out, typescript-best-practices | Explicit only | Decision trails, bespoke playbooks when none fits, TypeScript patterns |
@@ -102,6 +102,8 @@ The Python best-practices skill is an original summary linking to the Google Pyt
 `nstack-help` and its prompting and recipe references are adapted from [pstack's poteto-help](https://github.com/cursor/plugins/tree/8b3326d99fd4b993cb33a24dad8af03175c642c5/pstack/skills/poteto-help) at commit `8b3326d99fd4b993cb33a24dad8af03175c642c5` (pstack 0.15.30), under the same Lauren Tan MIT License below. Wording is retained where it applies; commands, setup, public source links, and the inventory match nstack's three clients and bundled playbooks. Unsupported pstack-only workflows are not offered.
 
 nstack adapts workflows, prompts, and principles from pstack by Lauren Tan (poteto), and the deslop, control-cli, and control-ui skills from Cursor's cursor-team-kit. Both are published in [cursor/plugins](https://github.com/cursor/plugins) at commit `dbf49813a39c1a5389c5e28cb8e4c1c2379e2454` (pstack 0.15.23) under the MIT License. Most skill text is copied verbatim; nstack replaces Cursor-specific mechanics (the Task tool, model rule files, cloud workers) with its own launch tags and model hook. nstack is not affiliated with or endorsed by the pstack author or Cursor.
+
+`principle-own-coherent-responsibilities`, `principle-depend-on-caller-contracts`, `principle-preserve-substitution-contracts`, and `principle-extend-at-evidenced-seams` are nstack-local additions adapted from engineering-workflow's `engineering-principles` skill. They do not change that skill, its consumers, or the 24 imported principle leaves. They are not claimed to match an upstream source byte for byte.
 
 ```text
 MIT License

@@ -1,7 +1,7 @@
 {
   "name": "nstack",
-  "version": "0.0.6",
-  "description": "Portable engineering backbone adapted from pstack. An explicit coordinator with feature, bug-fix, and investigation playbooks; how/why grounding; architect, candidate-graft, swarm, and review-panel delegation; prove-it-works verification; and code-managed per-role model configuration.",
+  "version": "0.1.0",
+  "description": "Portable engineering backbone adapted from pstack. An explicit coordinator with feature, bug-fix, and investigation playbooks; how/why grounding; architect, candidate-graft, swarm, and review-panel delegation; 28 focused principles; prove-it-works verification; and code-managed per-role model configuration.",
   "author": {
     "name": "Christoffer Ahrling",
     "url": "https://github.com/nilpath"

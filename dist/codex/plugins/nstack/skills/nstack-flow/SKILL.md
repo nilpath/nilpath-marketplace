@@ -53,7 +53,11 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 **Architecture**
 
 - **Model the Domain.** Writing stateful logic, or code that branches a lot or repeats a shape assumption across files. Encode the domain in a structure (state machine, typed model, table or registry, reducer, boundary, the right collection) instead of scattered conditionals.
+- **Own Coherent Responsibilities.** Creating or splitting a module, placing state, or consolidating repeated rules. Give each module one coherent responsibility, keep state private with its operations, and extract only conceptual duplication.
 - **Boundary Discipline.** Wiring validation, error handling, or framework adapters. Guards at system boundaries, trust internal types, keep business logic pure.
+- **Depend on Caller Contracts.** Designing a collaborator dependency or contract, or reaching through a collaborator's collaborators. Depend on caller-needed capabilities, keep policy independent of mechanism, and avoid cycles.
+- **Preserve Substitution Contracts.** Adding or replacing an implementation behind an established contract. Preserve caller-visible inputs, results, invariants, errors, and effects.
+- **Extend at Evidenced Seams.** Adding demonstrated variation or deciding whether to introduce an extension point. Extend earned seams, edit closed variants exhaustively, and redesign changed contracts.
 - **Type System Discipline.** Designing types or a signature in any typed language. Make illegal states unrepresentable, brand primitives, parse external data at boundaries.
 - **Make Operations Idempotent.** Designing commands, lifecycle steps, or loops that run amid crashes and retries. Converge to the same end state.
 - **Migrate Callers Then Delete Legacy APIs.** Introducing a new internal API while old callers exist. Migrate and delete in one wave.

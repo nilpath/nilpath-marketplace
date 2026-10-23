@@ -36,6 +36,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **publish_draft.py** — pushes without force, reuses an existing open pull request, creates drafts only, and verifies head SHA and draft state.
 - **Plugin hooks in buildkit** — a plugin can ship `hooks/hooks.json.j2`, rendered per harness to the harness's `hooks_path` (`hooks/hooks.json` for Claude and Codex, `com.github.copilot/hooks/hooks.json` for Copilot) and validated as JSON; renders that are empty for a harness are skipped. Other files in the plugin's `hooks/` directory (scripts, data) ship next to the rendered hooks file.
 
+## [nstack 0.1.0] - 2026-10-23
+
+Only nstack is bumped to 0.1.0. Other plugin versions and the marketplace version are unchanged.
+
+### Added
+
+- Four explicit-only nstack-local principles adapted from engineering-workflow's `engineering-principles`: `principle-own-coherent-responsibilities`, `principle-depend-on-caller-contracts`, `principle-preserve-substitution-contracts`, and `principle-extend-at-evidenced-seams`. The existing engineering-workflow skill, its consumers, and the 24 imported principle leaves are unchanged.
+- Architecture routing in `nstack-flow` for responsibility ownership, collaborator contracts, behavioral substitution, and evidenced extension seams.
+
 ## [nstack 0.0.5] - 2026-10-23
 
 Only **nstack** is bumped to 0.0.5; other plugin versions and the marketplace version are unchanged.
