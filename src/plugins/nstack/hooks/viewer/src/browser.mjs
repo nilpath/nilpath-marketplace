@@ -1,3 +1,5 @@
+import { ANSWER_MAX_LENGTH, validAnswer } from './answer.mjs';
+
 const root = () => document.getElementById('document');
 const append = (node, children) => {
   for (const child of children.flat(Infinity)) if (child !== undefined && child !== null && child !== false) node.append(typeof child === 'string' || typeof child === 'number' ? document.createTextNode(String(child)) : child);
@@ -21,11 +23,12 @@ const list = (items) => e('ul', {}, items.map((item) => e('li', {}, item)));
 const titleCase = (value) => value[0].toUpperCase() + value.slice(1);
 const statusLabel = (status, kind) => ({ proposed: kind === 'recap' ? 'Proposed follow-up' : 'Proposed', context: 'Existing context', implemented: 'Implemented', inferred: 'Inferred' })[status];
 
-async function api(path, body, token) {
+async function api(path, body) {
   let response;
   try {
     response = await fetch(path, {
-      ...(body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Nstack-Token': token }, body: JSON.stringify(body) }),
+      credentials: 'same-origin',
+      ...(body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
       signal: AbortSignal.timeout(6000),
     });
   } catch (error) {
@@ -58,14 +61,20 @@ function diagram(data, block) {
   const cols = sequence ? data.nodes.length : Math.min(4, data.nodes.length);
   const nodeIndex = new Map(data.nodes.map((node, index) => [node.id, index]));
   const rowEdges = new Map();
-  const lanes = data.edges.map((edge) => {
-    const row = Math.floor(nodeIndex.get(edge.from) / cols);
+  const nextLane = (row) => {
     const lane = rowEdges.get(row) ?? 0;
     rowEdges.set(row, lane + 1);
     return lane;
+  };
+  let exteriorChannels = 0;
+  const lanes = data.edges.map((edge) => {
+    const fromRow = Math.floor(nodeIndex.get(edge.from) / cols);
+    const toRow = Math.floor(nodeIndex.get(edge.to) / cols);
+    const from = nextLane(fromRow);
+    return { from, to: fromRow === toRow ? from : nextLane(toRow), channel: fromRow === toRow ? null : exteriorChannels++ };
   });
-  const rowGap = Math.max(145, 110 + Math.max(0, ...rowEdges.values()) * 28);
-  const width = Math.max(620, cols * 190 + 30);
+  const rowGap = Math.max(145, 100 + Math.max(0, ...rowEdges.values()) * 24);
+  const width = Math.max(620, cols * 190 + 30 + (sequence ? 0 : exteriorChannels * 18));
   const height = sequence ? 150 + data.edges.length * 65 : 65 + Math.ceil(data.nodes.length / cols) * rowGap;
   const markerId = `arrow-${block.id}`;
   const svg = svgNode('svg', { viewBox: `0 0 ${width} ${height}`, width, height, role: 'img', 'aria-labelledby': `diagram-title-${block.id}` },
@@ -78,17 +87,19 @@ function diagram(data, block) {
   data.edges.forEach((edge, index) => {
     const from = positions.get(edge.from);
     const to = positions.get(edge.to);
-    const y = sequence ? 115 + index * 65 : from.y + 86 + lanes[index] * 28;
+    const y = sequence ? 115 + index * 65 : from.y + 80 + lanes[index].from * 24;
     const startX = from.x + 80;
     const endX = to.x + 80;
+    const exteriorX = cols * 190 + 15 + (lanes[index].channel ?? 0) * 18;
+    const targetY = to.y + 80 + lanes[index].to * 24;
     let path;
     if (sequence && edge.from === edge.to) path = `M ${startX} ${y} h 45 v 25 h -45`;
     else if (sequence) path = `M ${startX} ${y} L ${endX} ${y}`;
-    else if (edge.from === edge.to) path = `M ${startX} ${from.y + 56} V ${y} h 100 V ${from.y + 28} H ${from.x + 160}`;
+    else if (edge.from === edge.to) path = `M ${startX} ${from.y + 56} V ${y} H ${from.x + 175} V ${from.y + 28} H ${from.x + 160}`;
     else if (from.y === to.y) path = `M ${startX} ${from.y + 56} V ${y} H ${endX} V ${to.y + 56}`;
-    else path = `M ${startX} ${from.y + 56} V ${y} H ${endX} V ${to.y}`;
+    else path = `M ${startX} ${from.y + 56} V ${y} H ${exteriorX} V ${targetY} H ${endX} V ${to.y + 56}`;
     svg.append(svgNode('path', { d: path, class: 'edge', 'marker-end': `url(#${markerId})` }));
-    if (edge.label) svg.append(svgNode('text', { x: (startX + endX) / 2, y: y - 9, class: 'edge-label', 'text-anchor': 'middle' }, svgNode('title', {}, edge.label), edge.label.length > 35 ? `${edge.label.slice(0, 32)}...` : edge.label));
+    if (edge.label) svg.append(svgNode('text', { x: (startX + (!sequence && from.y !== to.y ? exteriorX : endX)) / 2, y: y - 9, class: 'edge-label', 'text-anchor': 'middle' }, svgNode('title', {}, edge.label), edge.label.length > 35 ? `${edge.label.slice(0, 32)}...` : edge.label));
   });
   data.nodes.forEach((node) => {
     const { x, y } = positions.get(node.id);
@@ -131,7 +142,7 @@ function jsonTree(value, label, depth = 0) {
   if (value === null || typeof value !== 'object') return e('div', { className: 'schema-leaf' }, e('span', {}, `${label} `), e('code', {}, pretty(value)));
   const entries = Object.entries(value);
   return e('details', { className: 'schema-node', ...(depth === 0 ? { open: true } : {}) },
-    e('summary', {}, label, e('span', { className: 'schema-type' }, Array.isArray(value) ? ` array, ${entries.length} items` : value.type ? ` ${value.type}` : ` ${entries.length} fields`)),
+    e('summary', {}, label, e('span', { className: 'schema-type' }, Array.isArray(value) ? ` array, ${entries.length} items` : typeof value.type === 'string' ? ` ${value.type}` : ` ${entries.length} fields`)),
     e('div', { className: 'schema-children' }, entries.length ? entries.map(([key, child]) => jsonTree(child, key, depth + 1)) : e('p', { className: 'muted' }, 'No schema fields specified.')),
   );
 }
@@ -161,7 +172,7 @@ function question(data, block, context) {
   const selected = answer?.active ? answer.value : '';
   const field = data.options
     ? e('fieldset', {}, e('legend', {}, data.prompt), data.options.map((option, index) => e('label', { className: 'option', for: `${inputId}-${index}` }, e('input', { type: 'radio', id: `${inputId}-${index}`, name: inputId, value: option, checked: selected === option, required: true }), e('span', {}, option))))
-    : e('div', {}, e('label', { for: inputId, className: 'question-prompt' }, data.prompt), e('textarea', { id: inputId, name: inputId, rows: '4', maxlength: '10000', required: true }, selected));
+    : e('div', {}, e('label', { for: inputId, className: 'question-prompt' }, data.prompt), e('textarea', { id: inputId, name: inputId, rows: '4', maxlength: ANSWER_MAX_LENGTH, required: true }, selected));
   const button = e('button', { type: 'submit' }, 'Save answer');
   function showSaved(value) {
     saved.replaceChildren();
@@ -171,7 +182,7 @@ function question(data, block, context) {
   const form = e('form', { onsubmit: async (event) => {
     event.preventDefault();
     const choice = data.options ? form.querySelector('input:checked')?.value : form.querySelector('textarea').value;
-    if (!choice?.trim()) { feedback.textContent = 'Enter an answer or choose an option before saving.'; feedback.className = 'answer-feedback error'; return; }
+    if (!validAnswer(choice)) { feedback.textContent = `Enter a nonblank answer of up to ${ANSWER_MAX_LENGTH} characters or choose an option before saving.`; feedback.className = 'answer-feedback error'; return; }
     button.disabled = true;
     button.textContent = 'Saving...';
     feedback.className = 'answer-feedback';
@@ -243,7 +254,7 @@ export function renderDocument(doc, context) {
 
 export async function start() {
   try {
-    const session = await api('/api/session');
+    await api('/api/session');
     const id = /^\/documents\/([a-zA-Z0-9][a-zA-Z0-9_-]{0,95})$/.exec(location.pathname)?.[1];
     if (!id) {
       const result = await api('/api/documents');
@@ -251,7 +262,7 @@ export async function start() {
       document.getElementById('outline').replaceChildren();
     } else {
       const [doc, answers] = await Promise.all([api(`/api/documents/${id}`), api(`/api/answers/${id}`)]);
-      renderDocument(doc, { answers: answers.answers, save: (blockId, body) => api(`/api/answers/${id}/${blockId}`, body, session.token) });
+      renderDocument(doc, { answers: answers.answers, save: (blockId, body) => api(`/api/answers/${id}/${blockId}`, body) });
     }
     document.getElementById('connection').textContent = 'Local viewer';
   } catch (error) {

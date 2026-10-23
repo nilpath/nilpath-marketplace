@@ -23,6 +23,8 @@ Collect file and line references, commit IDs, command results, and existing veri
 
 Write a `.mdx` artifact in the current session's artifact directory, or the user's requested repository location. Keep its absolute path. Use a stable project-specific ID separate from the plan, such as `checkout-retry-recap`.
 
+When revisiting this recap in another session, reuse its original canonical MDX path. Do not copy it into a new artifact directory under the same ID. Use a stable user-selected repository path for a review that must outlive session artifacts. Source-identity migration is not supported in v1.
+
 Start with a `Document` element whose `kind` is `recap`. Use short prose to explain the consequence for the user and the next maintainer.
 
 Choose rich blocks that expose the change:

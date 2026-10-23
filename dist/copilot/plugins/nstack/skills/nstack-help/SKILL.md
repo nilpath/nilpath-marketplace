@@ -47,7 +47,7 @@ If cost is the worry, say where the tokens go and how to spend fewer. nstack spe
 
 nstack supports Claude Code, GitHub Copilot CLI, and Codex. Native Copilot use inside VS Code is unsupported; Copilot CLI in a VS Code terminal remains CLI usage. It needs Python 3.11+ for its model hook and setup. Read the README's requirements and limits before diagnosing a failed launch.
 
-Visual plans and recaps also need Node.js 20+ for their local MDX viewer. Session start ensures the viewer without installing packages. A viewer warning does not disable model routing. Both visual skills have an explicit startup fallback.
+Visual plans and recaps also need Node.js 20+ on macOS or Linux for their local MDX viewer. Native Windows hosting needs WSL or another Linux host in v1. Session start ensures the viewer without installing packages. A viewer warning does not disable model routing. Both visual skills have an explicit startup fallback.
 
 Copilot CLI namespaces these commands under `nstack:`. In non-interactive prompt mode (`copilot -p`), slash commands are not expanded into skills, so start the workflow and setup interactively. Keep the manual-only flag even if a client version fails to invoke a skill; do not remove it as a workaround.
 

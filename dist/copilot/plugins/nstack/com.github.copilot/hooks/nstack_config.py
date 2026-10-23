@@ -740,7 +740,7 @@ def viewer_context() -> str:
             check=False,
         )
     except subprocess.TimeoutExpired:
-        return "nstack viewer warning (startup_timeout). Viewer ensure exceeded the 7.5 second hook bound. Run the viewer ensure command to inspect its owner and retry. No process was signalled. Model configuration remains available."
+        return "nstack viewer warning (startup_timeout). Viewer ensure exceeded the 7.5 second hook bound. Run the viewer ensure command to inspect its owner and retry. The hook stopped its own ensure command. No existing viewer or unrelated process was signalled. Model configuration remains available."
     except OSError as exc:
         return f"nstack viewer warning (node_failed). {exc}. Check Node >=20 and plugin file permissions, then run viewer ensure. Model configuration remains available."
     try:

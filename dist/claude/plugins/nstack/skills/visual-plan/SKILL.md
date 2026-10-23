@@ -22,6 +22,8 @@ Separate current behavior from the proposal. Label existing reference material `
 
 Write a `.mdx` artifact in the current session's artifact directory, or the user's requested repository location. Keep its absolute path. Use a stable, project-specific document ID such as `checkout-retry-plan`. Use a separate ID for a recap.
 
+When continuing a review in another session, reuse its original canonical MDX path. Do not copy it into the new session under the same document ID. For a review that must outlive session artifacts, use a stable repository path agreed with the user. Moving a document's source identity is not supported in v1.
+
 Start with a `Document` element whose `kind` is `plan`. Use headings and short prose to connect rich blocks, not to reproduce a design spec as a Markdown wall.
 
 Choose blocks that answer the actual review question:

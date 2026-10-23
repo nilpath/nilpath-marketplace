@@ -6571,7 +6571,7 @@ var require_helpers = __commonJS({
       this.base = base;
       this.schemas = schemas;
     };
-    SchemaContext.prototype.resolve = function resolve3(target) {
+    SchemaContext.prototype.resolve = function resolve2(target) {
       return (() => resolveUrl(this.base, target))();
     };
     SchemaContext.prototype.makeChild = function makeChild(schema, propertyName) {
@@ -7676,7 +7676,7 @@ var require_validator = __commonJS({
       }
       return schema;
     };
-    Validator2.prototype.resolve = function resolve3(schema, switchSchema, ctx) {
+    Validator2.prototype.resolve = function resolve2(schema, switchSchema, ctx) {
       switchSchema = ctx.resolve(switchSchema);
       if (ctx.schemas[switchSchema]) {
         return { subschema: ctx.schemas[switchSchema], switchSchema };
@@ -7760,7 +7760,7 @@ var require_lib = __commonJS({
 
 // src/plugins/nstack/hooks/viewer/src/cli.mjs
 import { readFile, realpath } from "node:fs/promises";
-import { resolve as resolve2, isAbsolute as isAbsolute2 } from "node:path";
+import { isAbsolute as isAbsolute3 } from "node:path";
 import { fileURLToPath as fileURLToPath2 } from "node:url";
 
 // tools/visual-viewer/node_modules/mdast-util-to-string/lib/index.js
@@ -10466,10 +10466,10 @@ function resolveAll(constructs2, events, context) {
   const called = [];
   let index2 = -1;
   while (++index2 < constructs2.length) {
-    const resolve3 = constructs2[index2].resolveAll;
-    if (resolve3 && !called.includes(resolve3)) {
-      events = resolve3(events, context);
-      called.push(resolve3);
+    const resolve2 = constructs2[index2].resolveAll;
+    if (resolve2 && !called.includes(resolve2)) {
+      events = resolve2(events, context);
+      called.push(resolve2);
     }
   }
   return events;
@@ -22655,6 +22655,11 @@ function mdxFromMarkdown() {
 var import_jsonschema = __toESM(require_lib(), 1);
 import { createHash } from "node:crypto";
 
+// src/plugins/nstack/hooks/viewer/src/answer.mjs
+var ANSWER_MAX_LENGTH = 1e4;
+var answerSchema = { type: "string", minLength: 1, maxLength: ANSWER_MAX_LENGTH, pattern: "\\S", description: `Nonblank. The viewer enforces a maximum of ${ANSWER_MAX_LENGTH} UTF-16 code units, as in browser text controls.` };
+var validAnswer = (value) => typeof value === "string" && value.length <= ANSWER_MAX_LENGTH && /\S/.test(value);
+
 // src/plugins/nstack/hooks/viewer/src/registry.mjs
 var string3 = { type: "string", minLength: 1, maxLength: 1e5 };
 var boolean = { type: "boolean" };
@@ -22678,7 +22683,7 @@ var components = {
   FileMap: payload({ files: array(object({ path: string3, change: { enum: ["added", "modified", "deleted", "context"] }, note: string3 })) }),
   BeforeAfter: payload({ before: code, after: code }),
   Decision: payload({ options: array(object({ label: string3, reason: string3, selected: boolean })) }),
-  Question: payload({ prompt: string3, options: array(string3, 2) }, ["prompt"]),
+  Question: payload({ prompt: string3, options: array(answerSchema, 2) }, ["prompt"]),
   Wireframe: payload({ regions }),
   StateSequence: payload({ states: array(optional({ name: string3, description: string3, regions }, ["name", "description"])) }),
   ApiContract: { oneOf: apiSchema.oneOf.map((schema) => ({ ...schema, properties: { ...schema.properties, evidence } })) },
@@ -22727,8 +22732,9 @@ function validatePayload(name2, value) {
   if (name2 === "AnnotatedCode" && value.annotations.some((note) => note.line > value.code.split("\n").length)) {
     throw new ViewerError("invalid_annotation", "An annotation names a line outside the code block.", "Use one-based line numbers within the code.");
   }
-  if (name2 === "Question" && value.options && new Set(value.options).size !== value.options.length) {
-    throw new ViewerError("invalid_options", "Question options must be distinct.", "Give each option a unique label.");
+  if (name2 === "Question" && value.options) {
+    if (value.options.some((option) => !validAnswer(option))) throw new ViewerError("invalid_payload", `Question options must be nonblank and at most ${ANSWER_MAX_LENGTH} UTF-16 code units.`, "Shorten each Question option to a persistable nonblank answer.");
+    if (new Set(value.options).size !== value.options.length) throw new ViewerError("invalid_options", "Question options must be distinct.", "Give each option a unique label.");
   }
   return value;
 }
@@ -22810,34 +22816,86 @@ function compile(source) {
 
 // src/plugins/nstack/hooks/viewer/src/runtime.mjs
 import { createServer } from "node:http";
-import { spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync, renameSync, rmSync, rmdirSync, statSync, existsSync, linkSync, unlinkSync, readdirSync } from "node:fs";
-import { join, dirname, isAbsolute, resolve } from "node:path";
+import { spawn, execFileSync } from "node:child_process";
+import { randomBytes as randomBytes2 } from "node:crypto";
+import { mkdirSync, readFileSync as readFileSync2, writeFileSync as writeFileSync2, renameSync as renameSync2, rmSync, statSync, linkSync, unlinkSync, readdirSync } from "node:fs";
+import { join as join2, dirname, isAbsolute as isAbsolute2, resolve } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
-var PROTOCOL = 1;
-var START_MS = 6e3;
-var MAX_BODY = 21e5;
-var random = () => randomBytes(24).toString("hex");
-var sleep = (ms) => new Promise((resolve3) => setTimeout(resolve3, ms));
-var stateRoot = () => join(resolve(process.env.NSTACK_HOME || join(homedir(), ".nstack")), "viewer");
-var claimPath = (root) => join(root, "runtime");
-var readJSON = (file) => {
+
+// src/plugins/nstack/hooks/viewer/src/store.mjs
+import { readFileSync, writeFileSync, renameSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { join, isAbsolute } from "node:path";
+var corrupt = (file) => new ViewerError("corrupt_state", `Invalid saved state in ${file}.`, "Preserve the file for recovery, move it aside, then reopen the original MDX source.");
+function readJSON(file) {
   try {
     return JSON.parse(readFileSync(file, "utf8"));
   } catch (error) {
     if (error.code === "ENOENT") return null;
-    if (error instanceof SyntaxError) throw new ViewerError("corrupt_state", `Invalid JSON in ${file}.`, "Move the corrupt state file aside, then retry. Preserve documents and answers you need.");
+    if (error instanceof SyntaxError) throw corrupt(file);
     throw error;
   }
-};
-var atomicJSON = (file, data2) => {
-  const tmp = `${file}.${process.pid}.${random()}.tmp`;
+}
+function atomicJSON(file, data2) {
+  const tmp = `${file}.${process.pid}.${randomBytes(24).toString("hex")}.tmp`;
   writeFileSync(tmp, `${JSON.stringify(data2)}
 `, { mode: 384, flag: "wx" });
   renameSync(tmp, file);
-};
+}
+var documentPath = (root, id) => join(root, "documents", `${id}.json`);
+function readDocument(root, id) {
+  const file = documentPath(root, id);
+  const value = readJSON(file);
+  if (!value) throw Object.assign(new ViewerError("document_not_found", `No published document "${id}".`, "Run open with the original source MDX path."), { status: 404 });
+  if (typeof value.sourcePath !== "string" || !isAbsolute(value.sourcePath) || typeof value.source !== "string" || typeof value.publishedAt !== "string" || !Number.isFinite(Date.parse(value.publishedAt))) throw corrupt(file);
+  const { document: document3 } = value;
+  if (!document3 || document3.version !== 1 || document3.docId !== id || document3.revision !== digest(value.source) || typeof document3.title !== "string" || !document3.title.trim() || !["plan", "recap"].includes(document3.kind) || !Array.isArray(document3.blocks) || document3.blocks.some((block) => !block || typeof block !== "object" || typeof block.type !== "string")) throw corrupt(file);
+  const questions = document3.blocks.filter((block) => block.type === "component" && block.name === "Question");
+  if (new Set(questions.map((question) => question.id)).size !== questions.length || questions.some((question) => !ID.test(question.id ?? "") || !question.data || typeof question.data.prompt !== "string" || question.data.options !== void 0 && (!Array.isArray(question.data.options) || question.data.options.some((option) => typeof option !== "string")) || question.questionDigest !== questionDigest(question.data))) throw corrupt(file);
+  return value;
+}
+function readAnswers(root, id) {
+  const file = join(root, "answers", `${id}.json`);
+  const answers = readJSON(file) ?? {};
+  if (typeof answers !== "object" || Array.isArray(answers) || Object.entries(answers).some(([blockId, answer]) => !ID.test(blockId) || !answer || !validAnswer(answer.value) || !/^[a-f0-9]{64}$/.test(answer.digest ?? "") || typeof answer.savedAt !== "string" || !Number.isFinite(Date.parse(answer.savedAt)) || Object.keys(answer).some((key) => !["value", "digest", "savedAt"].includes(key)))) throw corrupt(file);
+  return answers;
+}
+function answersFor(root, id) {
+  const { document: document3 } = readDocument(root, id);
+  return {
+    ok: true,
+    docId: id,
+    revision: document3.revision,
+    answers: Object.entries(readAnswers(root, id)).map(([blockId, answer]) => {
+      const question = document3.blocks.find((block) => block.type === "component" && block.name === "Question" && block.id === blockId);
+      const stale = !question || answer.digest !== question.questionDigest;
+      return { blockId, ...answer, stale, active: !stale, removed: !question };
+    })
+  };
+}
+
+// src/plugins/nstack/hooks/viewer/src/runtime.mjs
+var PROTOCOL = 1;
+var START_MS = 6e3;
+var MAX_BODY = 21e5;
+var random = () => randomBytes2(24).toString("hex");
+var sleep = (ms) => new Promise((resolve2) => setTimeout(resolve2, ms));
+var stateRoot = () => join2(resolve(process.env.NSTACK_HOME || join2(homedir(), ".nstack")), "viewer");
+var runtimeEnvironment = () => Object.fromEntries(
+  ["HOME", "USERPROFILE", "NSTACK_HOME", "PATH", "TMPDIR", "TMP", "TEMP", "LANG", "LANGUAGE", "LC_ALL", "LC_CTYPE", "TZ", "SystemRoot", "WINDIR"].filter((key) => process.env[key] !== void 0).map((key) => [key, process.env[key]])
+);
+var claimPath = (root) => join2(root, "runtime");
+var cachedBootIdentity;
+function bootIdentity() {
+  if (cachedBootIdentity !== void 0) return cachedBootIdentity;
+  if (process.platform === "linux") return cachedBootIdentity = `linux:${readFileSync2("/proc/sys/kernel/random/boot_id", "utf8").trim()}`;
+  if (process.platform === "darwin") {
+    const value = execFileSync("/usr/sbin/sysctl", ["-n", "kern.bootsessionuuid"], { encoding: "utf8" }).trim().toLowerCase();
+    if (/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(value)) return cachedBootIdentity = `darwin:${value}`;
+  }
+  return cachedBootIdentity = null;
+}
 function privateDir(path) {
   mkdirSync(path, { recursive: true, mode: 448 });
   const stat = statSync(path);
@@ -22857,36 +22915,45 @@ function alive(pid) {
   }
 }
 function owner(root) {
-  const value = readJSON(join(claimPath(root), "owner.json"));
-  if (value && (!Number.isInteger(value.pid) || value.pid <= 0 || !/^[a-f0-9]{48}$/.test(value.nonce ?? ""))) {
+  const value = readJSON(join2(claimPath(root), "owner.json"));
+  if (value && (!validWriter(value) || !/^[a-f0-9]{48}$/.test(value.nonce ?? ""))) {
     throw new ViewerError("invalid_owner", "The runtime claim has an invalid owner identity.", "Inspect the viewer runtime claim before removing only a verified stale runtime directory.");
   }
   return value;
 }
-var record = (root) => readJSON(join(claimPath(root), "ready.json"));
+var record = (root) => readJSON(join2(claimPath(root), "ready.json"));
 var owns = (root, nonce) => owner(root)?.nonce === nonce;
-function release(root, nonce) {
-  if (owns(root, nonce)) rmSync(claimPath(root), { recursive: true });
+var validWriter = (value) => value && Number.isInteger(value.pid) && value.pid > 0 && (value.bootId == null || typeof value.bootId === "string" && Boolean(value.bootId));
+function writerIsDead(writer) {
+  if (!validWriter(writer)) throw new ViewerError("invalid_owner", "A runtime writer has an invalid identity.", "Inspect the runtime claim. Preserve unknown records and live processes.");
+  const bootId = bootIdentity();
+  return Boolean(bootId && writer.bootId && writer.bootId !== bootId) || !alive(writer.pid);
 }
-function reap(root, expected) {
+function release(root, nonce) {
+  if (owns(root, nonce)) {
+    try {
+      rmSync(claimPath(root), { recursive: true });
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
+}
+function claimReaperGeneration(root) {
   let tmp;
   try {
     const generations = readdirSync(claimPath(root)).map((file) => /^reaper-(\d+)\.json$/.exec(file)?.[1]).filter(Boolean).map(Number);
     const generation = generations.length ? Math.max(...generations) : -1;
     if (generation >= 0) {
-      const reaper = readJSON(join(claimPath(root), `reaper-${generation}.json`));
-      if (!reaper || alive(reaper.pid)) return;
+      const reaper = readJSON(join2(claimPath(root), `reaper-${generation}.json`));
+      if (!reaper || !writerIsDead(reaper)) return false;
     }
-    tmp = join(claimPath(root), `reaper-${random()}.tmp`);
-    writeFileSync(tmp, JSON.stringify({ pid: process.pid }), { flag: "wx", mode: 384 });
-    linkSync(tmp, join(claimPath(root), `reaper-${generation + 1}.json`));
-    if (owns(root, expected.nonce) && !alive(owner(root).pid)) {
-      const retired = join(root, `retired-${expected.nonce}-${random()}`);
-      renameSync(claimPath(root), retired);
-      rmSync(retired, { recursive: true });
-    }
+    tmp = join2(claimPath(root), `reaper-${random()}.tmp`);
+    writeFileSync2(tmp, JSON.stringify({ pid: process.pid, bootId: bootIdentity() }), { flag: "wx", mode: 384 });
+    linkSync(tmp, join2(claimPath(root), `reaper-${generation + 1}.json`));
+    return true;
   } catch (error) {
     if (!["ENOENT", "EEXIST"].includes(error.code)) throw error;
+    return false;
   } finally {
     if (tmp) {
       try {
@@ -22897,6 +22964,76 @@ function reap(root, expected) {
     }
   }
 }
+function retireClaim(root) {
+  const retired = join2(root, `retired-${random()}`);
+  try {
+    renameSync2(claimPath(root), retired);
+  } catch (error) {
+    if (error.code === "ENOENT") return;
+    throw error;
+  }
+  rmSync(retired, { recursive: true });
+}
+function recoverDeadOwner(root, expected) {
+  if (!knownRuntimeContents(root) || !claimReaperGeneration(root)) return;
+  const current2 = owner(root);
+  if (current2?.nonce === expected.nonce && writerIsDead(current2) && knownRuntimeContents(root)) retireClaim(root);
+}
+function knownRuntimeContents(root) {
+  let files;
+  try {
+    files = readdirSync(claimPath(root), { withFileTypes: true });
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
+  return files.every((file) => file.isFile() && /^(?:(?:owner|ready|failure)\.json(?:\.\d+\.[a-f0-9]{48}\.tmp)?|reaper-(?:\d+\.json|[a-f0-9]{48}\.tmp))$/.test(file.name));
+}
+function orphanInitializers(root) {
+  let files;
+  try {
+    files = readdirSync(claimPath(root), { withFileTypes: true });
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
+  for (const file of files) {
+    if (!file.isFile()) return false;
+    if (/^reaper-(?:\d+\.json|[a-f0-9]{48}\.tmp)$/.test(file.name)) continue;
+    const initializer = /^owner\.json\.(\d+)\.[a-f0-9]{48}\.tmp$/.exec(file.name);
+    if (!initializer) return false;
+    const pid = Number(initializer[1]);
+    let value;
+    try {
+      value = JSON.parse(readFileSync2(join2(claimPath(root), file.name), "utf8"));
+    } catch (error) {
+      if (error.code === "ENOENT") continue;
+      if (!(error instanceof SyntaxError)) throw error;
+    }
+    const writer = validWriter(value) && value.pid === pid && /^[a-f0-9]{48}$/.test(value.nonce ?? "") ? value : { pid };
+    if (!writerIsDead(writer)) return false;
+  }
+  return true;
+}
+function recoverUninitializedClaim(root) {
+  let stat;
+  try {
+    stat = statSync(claimPath(root));
+  } catch (error) {
+    if (error.code === "ENOENT") return;
+    throw error;
+  }
+  if (Date.now() - stat.mtimeMs <= 2e3 || owner(root) || !orphanInitializers(root)) return;
+  if (!claimReaperGeneration(root)) return;
+  let currentStat;
+  try {
+    currentStat = statSync(claimPath(root));
+  } catch (error) {
+    if (error.code === "ENOENT") return;
+    throw error;
+  }
+  if (currentStat.dev === stat.dev && currentStat.ino === stat.ino && !owner(root) && orphanInitializers(root)) retireClaim(root);
+}
 function checkedRecord(value, root) {
   if (!value || value.protocol !== PROTOCOL || !Number.isInteger(value.port) || value.port < 1 || value.port > 65535 || !/^[a-f0-9]{48}$/.test(value.nonce ?? "") || !/^[a-f0-9]{48}$/.test(value.token ?? "") || value.rootHash !== digest(root) || !Number.isInteger(value.pid)) {
     throw new ViewerError("invalid_runtime", "The viewer readiness record is invalid.", "Inspect the viewer runtime state. Remove only a verified dead runtime claim, then retry ensure.");
@@ -22906,7 +23043,7 @@ function checkedRecord(value, root) {
 async function probe(value, root) {
   checkedRecord(value, root);
   try {
-    const response = await fetch(`http://127.0.0.1:${value.port}/health?nonce=${value.nonce}`, { signal: AbortSignal.timeout(350), redirect: "error" });
+    const response = await fetch(`http://127.0.0.1:${value.port}/health?nonce=${value.nonce}`, { headers: { "X-Nstack-Token": value.token }, signal: AbortSignal.timeout(350), redirect: "error" });
     if (!response.ok) return false;
     const health = await response.json();
     return health.protocol === PROTOCOL && health.nonce === value.nonce && health.pid === value.pid && health.buildId === value.buildId && health.rootHash === digest(root);
@@ -22921,19 +23058,19 @@ function readyResult(value) {
 async function ensure(buildId, entry) {
   const root = stateRoot();
   privateDir(root);
-  privateDir(join(root, "documents"));
-  privateDir(join(root, "answers"));
+  privateDir(join2(root, "documents"));
+  privateDir(join2(root, "answers"));
   const deadline = Date.now() + START_MS;
   let mine;
   while (Date.now() < deadline) {
     try {
       mkdirSync(claimPath(root), { mode: 448 });
       mine = random();
-      atomicJSON(join(claimPath(root), "owner.json"), { nonce: mine, pid: process.pid, createdAt: Date.now(), buildId });
-      const child = spawn(process.execPath, [entry, "_serve", mine], { detached: true, stdio: "ignore", env: process.env });
-      if (child.pid) atomicJSON(join(claimPath(root), "owner.json"), { nonce: mine, pid: child.pid, createdAt: Date.now(), buildId });
+      atomicJSON(join2(claimPath(root), "owner.json"), { nonce: mine, pid: process.pid, bootId: bootIdentity(), createdAt: Date.now(), buildId });
+      const child = spawn(process.execPath, [entry, "_serve", mine], { detached: true, stdio: "ignore", env: runtimeEnvironment() });
+      if (child.pid) atomicJSON(join2(claimPath(root), "owner.json"), { nonce: mine, pid: child.pid, bootId: bootIdentity(), createdAt: Date.now(), buildId });
       child.on("error", (error) => {
-        if (owns(root, mine)) atomicJSON(join(claimPath(root), "failure.json"), { code: "spawn_failed", message: error.message, repair: "Check the Node executable and retry ensure." });
+        if (owns(root, mine)) atomicJSON(join2(claimPath(root), "failure.json"), { code: "spawn_failed", message: error.message, repair: "Check the Node executable and retry ensure." });
       });
       child.unref();
     } catch (error) {
@@ -22941,7 +23078,7 @@ async function ensure(buildId, entry) {
     }
     const currentOwner = owner(root);
     const current2 = record(root);
-    const failure = readJSON(join(claimPath(root), "failure.json"));
+    const failure = readJSON(join2(claimPath(root), "failure.json"));
     if (failure && currentOwner?.nonce === mine) {
       release(root, mine);
       throw new ViewerError(failure.code, failure.message, failure.repair);
@@ -22950,19 +23087,12 @@ async function ensure(buildId, entry) {
       if (current2.buildId !== buildId) throw new ViewerError("build_mismatch", "A viewer from another build is running.", "Run stop using the installed viewer, then run ensure with the new build. Documents and answers are retained.");
       return readyResult(current2);
     }
-    if (currentOwner && !alive(currentOwner.pid)) {
-      reap(root, currentOwner);
+    if (currentOwner && writerIsDead(currentOwner)) {
+      recoverDeadOwner(root, currentOwner);
       await sleep(20);
       continue;
     }
-    if (!currentOwner && existsSync(claimPath(root)) && Date.now() - statSync(claimPath(root)).mtimeMs > 2e3) {
-      try {
-        rmdirSync(claimPath(root));
-      } catch (error) {
-        if (!["ENOENT", "ENOTEMPTY", "EEXIST"].includes(error.code)) throw error;
-      }
-      continue;
-    }
+    if (!currentOwner) recoverUninitializedClaim(root);
     await sleep(70);
   }
   throw new ViewerError("startup_timeout", "The runtime claim did not prove viewer readiness within six seconds.", "Retry ensure. If it remains unresponsive, inspect the recorded owner. Do not kill an unrelated process or remove a live owner claim.");
@@ -22970,7 +23100,7 @@ async function ensure(buildId, entry) {
 async function request(value, route, body) {
   const response = await fetch(`http://127.0.0.1:${value.port}${route}`, {
     method: body === void 0 ? "GET" : "POST",
-    headers: body === void 0 ? {} : { Origin: `http://127.0.0.1:${value.port}`, "Content-Type": "application/json", "X-Nstack-Token": value.token },
+    headers: { "X-Nstack-Token": value.token, ...body === void 0 ? {} : { Origin: `http://127.0.0.1:${value.port}`, "Content-Type": "application/json" } },
     ...body === void 0 ? {} : { body: JSON.stringify(body) },
     signal: AbortSignal.timeout(2e3),
     redirect: "error"
@@ -22985,13 +23115,13 @@ async function request(value, route, body) {
 async function publish(buildId, entry, sourcePath, source) {
   const document3 = compile(source);
   await ensure(buildId, entry);
-  const result = await request(checkedRecord(record(stateRoot()), stateRoot()), "/api/publish", { sourcePath, source });
-  return { ok: true, docId: document3.docId, title: document3.title, url: `${result.url}/documents/${document3.docId}`, revision: document3.revision };
+  const current2 = checkedRecord(record(stateRoot()), stateRoot());
+  const result = await request(current2, "/api/publish", { sourcePath, source });
+  return { ok: true, docId: document3.docId, title: document3.title, url: `${result.url}/documents/${document3.docId}?capability=${current2.token}`, revision: document3.revision };
 }
-async function getAnswers(buildId, entry, id) {
+async function getAnswers(id) {
   if (!ID.test(id ?? "")) throw new ViewerError("invalid_id", "A valid document ID is required.", "Use the document ID returned by open.");
-  await ensure(buildId, entry);
-  return request(checkedRecord(record(stateRoot()), stateRoot()), `/api/answers/${id}`);
+  return answersFor(stateRoot(), id);
 }
 async function stop() {
   const root = stateRoot();
@@ -23026,28 +23156,6 @@ function send(res, status, value, type = "application/json; charset=utf-8") {
   res.end(type.startsWith("application/json") ? JSON.stringify(value) : value);
 }
 var httpError = (code2, message, repair, status = 400) => Object.assign(new ViewerError(code2, message, repair), { status });
-function documentPath(root, id) {
-  return join(root, "documents", `${id}.json`);
-}
-function readDocument(root, id) {
-  const value = readJSON(documentPath(root, id));
-  if (!value) throw httpError("document_not_found", `No published document "${id}".`, "Run open with the source MDX path.", 404);
-  return value;
-}
-function answersFor(root, id) {
-  const { document: document3 } = readDocument(root, id);
-  const answers = readJSON(join(root, "answers", `${id}.json`)) ?? {};
-  return {
-    ok: true,
-    docId: id,
-    revision: document3.revision,
-    answers: Object.entries(answers).map(([blockId, answer]) => {
-      const question = document3.blocks.find((block) => block.type === "component" && block.name === "Question" && block.id === blockId);
-      const stale = !question || answer.digest !== question.questionDigest;
-      return { blockId, ...answer, stale, active: !stale, removed: !question };
-    })
-  };
-}
 async function readBody(req) {
   if (!/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(req.headers["content-type"] ?? "")) throw httpError("content_type", "Writes require application/json.", "Send JSON with Content-Type: application/json.", 415);
   let size = 0;
@@ -23080,7 +23188,7 @@ async function serve(buildId, nonce) {
   let current2;
   let lastActivity = Date.now();
   let closing = false;
-  const assetRoot = join(dirname(fileURLToPath(import.meta.url)), "assets");
+  const assetRoot = join2(dirname(fileURLToPath(import.meta.url)), "assets");
   async function handle(req, res) {
     const origin = `http://127.0.0.1:${current2.port}`;
     if (req.headers.host !== `127.0.0.1:${current2.port}`) throw httpError("host_rejected", "The Host header is not the literal viewer address.", "Use the exact 127.0.0.1 URL returned by ensure.", 403);
@@ -23088,25 +23196,38 @@ async function serve(buildId, nonce) {
     if (!req.url || req.url.length > 500) throw httpError("invalid_route", "The request URL is invalid.", "Use a known viewer route.", 404);
     const url = new URL(req.url, origin);
     const path = url.pathname;
+    const navigation = path === "/" || /^\/documents\/[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$/.test(path);
+    const cookieName = `nstack_viewer_${current2.port}`;
+    if (req.method === "GET" && navigation && url.searchParams.get("capability") === token) {
+      if (path !== "/") readDocument(root, path.split("/")[2]);
+      res.writeHead(303, { ...securityHeaders, Location: path, "Set-Cookie": `${cookieName}=${token}; Path=/; HttpOnly; SameSite=Strict` });
+      res.end();
+      return;
+    }
+    if (req.method === "GET" && path === "/health" && url.searchParams.get("nonce") === nonce) return send(res, 200, { protocol: PROTOCOL, nonce, buildId, pid: process.pid, rootHash: digest(root) });
+    if (req.method === "GET" && ["/assets/browser.js", "/assets/style.css"].includes(path)) return send(res, 200, readFileSync2(join2(assetRoot, path.split("/")[2])), path.endsWith(".js") ? "text/javascript; charset=utf-8" : "text/css; charset=utf-8");
     if (req.method === "POST") {
       if (req.headers.origin !== origin) throw httpError("origin_required", "Writes require the exact same Origin.", "Send the viewer Origin header.", 403);
-      if (req.headers["x-nstack-token"] !== token) throw httpError("token_rejected", "The mutation token is missing or invalid.", "Reload the viewer to obtain a fresh session.", 403);
     } else if (req.method !== "GET") throw httpError("method_rejected", "Only GET and guarded POST are supported.", "Use the documented viewer operations.", 405);
+    const cookieAuthorized = (req.headers.cookie ?? "").split(";").some((part) => part.trim() === `${cookieName}=${token}`);
+    if (!cookieAuthorized && req.headers["x-nstack-token"] !== token) {
+      if (req.method === "GET" && navigation) return send(res, 403, '<!doctype html><html lang="en"><meta charset="utf-8"><title>Viewer access required</title><h1>Viewer access required</h1><p>Run the viewer open command with the original absolute MDX source path, then open its complete returned URL unchanged. It grants access on this device.</p></html>', "text/html; charset=utf-8");
+      if (path === "/health") throw httpError("not_found", "No matching viewer readiness.", "Use ensure to verify readiness.", 404);
+      throw httpError("access_required", "Private viewer access is required.", "Run open with the original MDX source path and open the complete returned URL unchanged.", 403);
+    }
     lastActivity = Date.now();
-    if (req.method === "GET" && path === "/health" && url.searchParams.get("nonce") === nonce) return send(res, 200, { protocol: PROTOCOL, nonce, buildId, pid: process.pid, rootHash: digest(root) });
-    if (req.method === "GET" && path === "/api/session") return send(res, 200, { ok: true, token, buildId });
+    if (req.method === "GET" && path === "/api/session") return send(res, 200, { ok: true, buildId });
     if (req.method === "GET" && path === "/api/documents") {
-      const documents = readdirSync(join(root, "documents")).filter((file) => /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}\.json$/.test(file)).map((file) => {
-        const value = readJSON(join(root, "documents", file));
+      const documents = readdirSync(join2(root, "documents")).filter((file) => /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}\.json$/.test(file)).map((file) => {
+        const value = readDocument(root, file.slice(0, -5));
         return { docId: value.document.docId, title: value.document.title, kind: value.document.kind, publishedAt: value.publishedAt };
       });
       return send(res, 200, { ok: true, documents });
     }
-    if (req.method === "GET" && (path === "/" || /^\/documents\/[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$/.test(path))) {
+    if (req.method === "GET" && navigation) {
       if (path !== "/") readDocument(root, path.split("/")[2]);
       return send(res, 200, html, "text/html; charset=utf-8");
     }
-    if (req.method === "GET" && ["/assets/browser.js", "/assets/style.css"].includes(path)) return send(res, 200, readFileSync(join(assetRoot, path.split("/")[2])), path.endsWith(".js") ? "text/javascript; charset=utf-8" : "text/css; charset=utf-8");
     const docMatch = /^\/api\/documents\/([a-zA-Z0-9][a-zA-Z0-9_-]{0,95})$/.exec(path);
     if (req.method === "GET" && docMatch) {
       const value = readDocument(root, docMatch[1]);
@@ -23116,10 +23237,10 @@ async function serve(buildId, nonce) {
     if (req.method === "GET" && answersMatch && !answersMatch[2]) return send(res, 200, answersFor(root, answersMatch[1]));
     if (req.method === "POST" && path === "/api/publish") {
       const body = await readBody(req);
-      if (Object.keys(body).some((key) => !["source", "sourcePath"].includes(key)) || typeof body.source !== "string" || typeof body.sourcePath !== "string" || !isAbsolute(body.sourcePath) || body.sourcePath.length > 4096) throw httpError("invalid_publish", "Publication requires source and an absolute sourcePath.", "Use the open CLI command with an absolute MDX path.");
+      if (Object.keys(body).some((key) => !["source", "sourcePath"].includes(key)) || typeof body.source !== "string" || typeof body.sourcePath !== "string" || !isAbsolute2(body.sourcePath) || body.sourcePath.length > 4096) throw httpError("invalid_publish", "Publication requires source and an absolute sourcePath.", "Use the open CLI command with an absolute MDX path.");
       const document3 = compile(body.source);
       const previous2 = readJSON(documentPath(root, document3.docId));
-      if (previous2 && previous2.sourcePath !== body.sourcePath) throw httpError("source_conflict", `Document ID "${document3.docId}" already belongs to ${previous2.sourcePath}.`, "Use a distinct Document ID for another source. To move a document, deliberately migrate its stored source identity.", 409);
+      if (previous2 && previous2.sourcePath !== body.sourcePath) throw httpError("source_conflict", `Document ID "${document3.docId}" already belongs to ${previous2.sourcePath}.`, "Reopen the original canonical MDX source path to continue this document, or use a distinct Document ID for another source. Source-identity migration is not supported.", 409);
       atomicJSON(documentPath(root, document3.docId), { sourcePath: body.sourcePath, source: body.source, publishedAt: (/* @__PURE__ */ new Date()).toISOString(), document: document3 });
       return send(res, 200, { ok: true, url: origin, docId: document3.docId, revision: document3.revision });
     }
@@ -23129,9 +23250,9 @@ async function serve(buildId, nonce) {
       const question = document3.blocks.find((block) => block.type === "component" && block.name === "Question" && block.id === answersMatch[2]);
       if (!question) throw httpError("question_not_found", "The question no longer exists in this published document.", "Reload the document before answering.", 404);
       if (body.digest !== question.questionDigest) throw httpError("stale_question", "The question changed after this page loaded.", "Reload the page and answer the current question.", 409);
-      if (Object.keys(body).some((key) => !["value", "digest"].includes(key)) || typeof body.value !== "string" || !body.value.trim() || body.value.length > 1e4 || question.data.options && !question.data.options.includes(body.value)) throw httpError("invalid_answer", "The answer must be a nonempty string or one of the current options.", "Choose a current option or enter up to 10000 characters.");
-      const file = join(root, "answers", `${document3.docId}.json`);
-      const answers = readJSON(file) ?? {};
+      if (Object.keys(body).some((key) => !["value", "digest"].includes(key)) || !validAnswer(body.value) || question.data.options && !question.data.options.includes(body.value)) throw httpError("invalid_answer", "The answer must be a nonblank string or one of the current options.", "Choose a current option or enter up to 10000 characters.");
+      const file = join2(root, "answers", `${document3.docId}.json`);
+      const answers = readAnswers(root, document3.docId);
       answers[question.id] = { value: body.value, digest: question.questionDigest, savedAt: (/* @__PURE__ */ new Date()).toISOString() };
       atomicJSON(file, answers);
       return send(res, 200, answersFor(root, document3.docId));
@@ -23176,30 +23297,31 @@ async function serve(buildId, nonce) {
   process.once("SIGTERM", shutdown);
   process.once("SIGINT", shutdown);
   try {
-    await new Promise((resolve3, reject) => {
+    await new Promise((resolve2, reject) => {
       server.once("error", reject);
-      server.listen(0, "127.0.0.1", resolve3);
+      server.listen(0, "127.0.0.1", resolve2);
     });
     if (!owns(root, nonce)) throw new ViewerError("lost_claim", "The startup claim changed before readiness.", "Run ensure again.");
     current2 = { protocol: PROTOCOL, nonce, token, pid: process.pid, buildId, port: server.address().port, rootHash: digest(root) };
-    atomicJSON(join(claimPath(root), "ready.json"), current2);
+    atomicJSON(join2(claimPath(root), "ready.json"), current2);
   } catch (error) {
     clearInterval(idle);
     server.close();
-    if (owns(root, nonce)) atomicJSON(join(claimPath(root), "failure.json"), { code: error.code ?? "listen_failed", message: error.message, repair: "Check loopback availability and state permissions, then retry ensure." });
+    if (owns(root, nonce)) atomicJSON(join2(claimPath(root), "failure.json"), { code: error.code ?? "listen_failed", message: error.message, repair: "Check loopback availability and state permissions, then retry ensure." });
     throw error;
   }
 }
 
 // src/plugins/nstack/hooks/viewer/src/cli.mjs
-var BUILD_ID = "9610a5176909ea90ddcd266b";
+var BUILD_ID = "b8202ab18bc9369565576a3c";
 async function main(args) {
   args = args.filter((arg) => arg !== "--json");
   const [command, target] = args;
+  if (process.platform === "win32") throw new ViewerError("unsupported_platform", "The local viewer requires a POSIX platform with user-only state permissions.", "Run the viewer in WSL, Linux, or macOS. Native Windows viewer support is not available.");
   if (Number(process.versions.node.split(".")[0]) < 20) throw new ViewerError("unsupported_node", "The viewer requires Node 20 or newer.", "Install Node >=20 and retry.");
   if (command === "components" && args.length === 1) return componentReference();
   if (["open", "check"].includes(command) && args.length === 2) {
-    if (!isAbsolute2(target)) throw new ViewerError("absolute_path_required", "The source path must be absolute.", "Pass the absolute path to an MDX document.");
+    if (!isAbsolute3(target)) throw new ViewerError("absolute_path_required", "The source path must be absolute.", "Pass the absolute path to an MDX document.");
     const sourcePath = await realpath(target);
     const source = await readFile(sourcePath, "utf8");
     if (command === "open") return publish(BUILD_ID, fileURLToPath2(import.meta.url), sourcePath, source);
@@ -23207,7 +23329,7 @@ async function main(args) {
     return { ok: true, docId: document3.docId, title: document3.title, revision: document3.revision, document: document3 };
   }
   if (command === "ensure" && args.length === 1) return ensure(BUILD_ID, fileURLToPath2(import.meta.url));
-  if (command === "answers" && args.length === 2) return getAnswers(BUILD_ID, fileURLToPath2(import.meta.url), target);
+  if (command === "answers" && args.length === 2) return getAnswers(target);
   if (command === "stop" && args.length === 1) return stop();
   if (command === "_serve" && args.length === 2) {
     await serve(BUILD_ID, target);
@@ -23215,7 +23337,7 @@ async function main(args) {
   }
   throw new ViewerError("usage", "Unknown command or invalid arguments.", "Use check/open /absolute/document.mdx, ensure, answers DOCUMENT_ID, components, or stop.");
 }
-if (process.argv[1] && resolve2(process.argv[1]) === fileURLToPath2(import.meta.url)) {
+if (process.argv[1] && await realpath(process.argv[1]) === await realpath(fileURLToPath2(import.meta.url))) {
   try {
     const result = await main(process.argv.slice(2));
     if (result) process.stdout.write(`${JSON.stringify(result)}

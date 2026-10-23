@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Validator } from 'jsonschema';
 import { components } from './registry.mjs';
+import { ANSWER_MAX_LENGTH, validAnswer } from './answer.mjs';
 export { components, apiSchema, componentReference } from './registry.mjs';
 
 export class ViewerError extends Error {
@@ -37,8 +38,9 @@ export function validatePayload(name, value) {
   if (name === 'AnnotatedCode' && value.annotations.some((note) => note.line > value.code.split('\n').length)) {
     throw new ViewerError('invalid_annotation', 'An annotation names a line outside the code block.', 'Use one-based line numbers within the code.');
   }
-  if (name === 'Question' && value.options && new Set(value.options).size !== value.options.length) {
-    throw new ViewerError('invalid_options', 'Question options must be distinct.', 'Give each option a unique label.');
+  if (name === 'Question' && value.options) {
+    if (value.options.some((option) => !validAnswer(option))) throw new ViewerError('invalid_payload', `Question options must be nonblank and at most ${ANSWER_MAX_LENGTH} UTF-16 code units.`, 'Shorten each Question option to a persistable nonblank answer.');
+    if (new Set(value.options).size !== value.options.length) throw new ViewerError('invalid_options', 'Question options must be distinct.', 'Give each option a unique label.');
   }
   return value;
 }

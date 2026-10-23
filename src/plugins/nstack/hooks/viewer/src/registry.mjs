@@ -1,3 +1,5 @@
+import { answerSchema } from './answer.mjs';
+
 const string = { type: 'string', minLength: 1, maxLength: 100000 };
 const boolean = { type: 'boolean' };
 const array = (items, minItems = 1) => ({ type: 'array', items, minItems, maxItems: 200 });
@@ -21,7 +23,7 @@ export const components = {
   FileMap: payload({ files: array(object({ path: string, change: { enum: ['added', 'modified', 'deleted', 'context'] }, note: string })) }),
   BeforeAfter: payload({ before: code, after: code }),
   Decision: payload({ options: array(object({ label: string, reason: string, selected: boolean })) }),
-  Question: payload({ prompt: string, options: array(string, 2) }, ['prompt']),
+  Question: payload({ prompt: string, options: array(answerSchema, 2) }, ['prompt']),
   Wireframe: payload({ regions }),
   StateSequence: payload({ states: array(optional({ name: string, description: string, regions }, ['name', 'description'])) }),
   ApiContract: { oneOf: apiSchema.oneOf.map((schema) => ({ ...schema, properties: { ...schema.properties, evidence } })) },

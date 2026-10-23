@@ -10,6 +10,12 @@ This document is the canonical authoring example. Every rich block contains one 
 ```
 </Diagram>
 
+<Diagram id="refresh-recovery-flow" title="Refresh recovery across rows" status="proposed">
+```json
+{"layout":"flow","nodes":[{"id":"request","label":"Receive request"},{"id":"validate","label":"Validate session"},{"id":"rotate","label":"Rotate token"},{"id":"respond","label":"Return tokens"},{"id":"retry","label":"Wait before retry"},{"id":"reject","label":"Ask for sign in"},{"id":"audit","label":"Record outcome"},{"id":"expire","label":"Expire old token"},{"id":"done","label":"Finish review"}],"edges":[{"from":"request","to":"validate","label":"Start"},{"from":"validate","to":"rotate","label":"Valid"},{"from":"rotate","to":"respond","label":"Rotated"},{"from":"validate","to":"reject","label":"Rejected"},{"from":"rotate","to":"retry","label":"Conflict"},{"from":"retry","to":"request","label":"Retry request"},{"from":"respond","to":"done","label":"Success"},{"from":"reject","to":"audit","label":"Record rejection"},{"from":"audit","to":"done","label":"Complete"},{"from":"rotate","to":"expire","label":"Retire old token"}]}
+```
+</Diagram>
+
 <AnnotatedCode id="rotation-code" title="Rotate only after validation" status="proposed">
 ```json
 {"language":"typescript","code":"async function refresh(token: string) {\n  const session = await validate(token);\n  return rotate(session);\n}","annotations":[{"line":2,"text":"Reject an expired or revoked session before writing."},{"line":3,"text":"Rotate the refresh token atomically."}]}

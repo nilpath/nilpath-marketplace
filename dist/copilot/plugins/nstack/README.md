@@ -76,7 +76,7 @@ Both skills author `.mdx` files and publish through one bundled local viewer. Th
 
 The MDX compiler uses a standard AST parser and an allowlisted component vocabulary. Rich blocks carry literal attributes and fenced JSON data. Imports, exports, JavaScript expressions, raw HTML, and unknown components are rejected. The browser renders data rather than executing MDX. Graph diagrams use nodes and edges, not Mermaid source. The `components` command and bundled `all-components.mdx` are the authoring reference.
 
-The session-start hook starts or reconnects to the viewer. It preserves model context and reports viewer failures as warnings. It needs Node.js 20+ on `PATH`, but no runtime `npm install`. Missing Node does not stop model configuration. Set `NSTACK_VIEWER=off` to disable hook startup.
+The session-start hook starts or reconnects to the viewer. It preserves model context and reports viewer failures as warnings. It needs Node.js 20+ on `PATH`, but no runtime `npm install`. V1 viewer hosting requires macOS or Linux with POSIX private-directory permissions. Native Windows hosting is unsupported; use WSL or a Linux host. This viewer limit does not change the other nstack skills or model hook. Missing Node does not stop model configuration. Set `NSTACK_VIEWER=off` to disable hook startup.
 
 The skills resolve the installed helper and use the same fallback when hooks do not run:
 
@@ -89,11 +89,13 @@ node "<installed-viewer>/viewer.mjs" answers "<document-id>"
 node "<installed-viewer>/viewer.mjs" stop
 ```
 
-`open` returns a verified local document URL. Use it in an ordinary browser on any supported client. In the Copilot app, the existing Browser canvas can display the same URL. A custom SDK canvas adapter is not included. Its guide and scaffold tooling were unavailable during implementation. Browser rendering does not depend on the app.
+`open` returns a private local document URL. Open that complete URL in an ordinary browser on any supported client. The viewer exchanges its access capability for an HttpOnly, SameSite cookie and redirects to a clean address. Unauthenticated local clients cannot read documents or obtain the write token. Treat access URLs as private, and use `open` again to open another browser. In the Copilot app, the existing Browser canvas can display the same URL. A custom SDK canvas adapter is not included. Its guide and scaffold tooling were unavailable during implementation. Browser rendering does not depend on the app.
 
-Canonical MDX belongs in the current session's artifacts or a user-selected repository path. Mutable viewer state belongs under `$NSTACK_HOME/viewer/`, or `~/.nstack/viewer/`. Use stable project-specific document IDs and block IDs. The viewer rejects accidental document-ID reuse from another source path. Saved answers survive reload and server restart. A changed question marks its old answer stale instead of treating it as the current choice.
+Canonical MDX belongs in the current session's artifacts or a user-selected repository path. Reuse the original canonical path when continuing a review in another session. Use a stable repository path for a review that must outlive session artifacts. Mutable viewer state belongs under `$NSTACK_HOME/viewer/`, or `~/.nstack/viewer/`. Use stable project-specific document IDs and block IDs. The viewer rejects accidental document-ID reuse from another source path. Source-identity migration is not supported in v1. Saved answers survive reload and server restart, and the CLI can read them without starting a server. A changed question marks its old answer stale instead of treating it as the current choice.
 
 The server binds to `127.0.0.1` on an assigned port and verifies its build identity before reuse. It does not depend on end-hook delivery. Closing a tab or canvas does not stop it. The explicit `stop` command checks the matching viewer's identity. Do not kill processes by name or delete shared runtime state.
+
+The capability protects against unauthenticated local accounts and cross-site browser requests. It is not a sandbox against another process running as your operating-system user, which can read your private runtime files.
 
 Local means the agent's host. A remote agent needs a private forwarded port or tunnel for a browser on your machine. Do not bind the viewer publicly. The server is a single-user local review tool, not a hosted collaboration service.
 
@@ -103,6 +105,7 @@ The installed layouts, compiler, hook adapter, lifecycle, and HTTP boundaries ha
 
 - Python 3.11+ for the model hook and `setup-nstack`.
 - Node.js 20+ for visual document publication and the optional session-start viewer. Other nstack skills do not need Node.
+- macOS or Linux for viewer hosting in v1. Native Windows needs WSL or another Linux host; the viewer does not pretend POSIX mode bits verify Windows ACLs.
 - **Codex:** trust nstack's plugin hook once with `/hooks`. Until then, nstack agents reply that the hook did not run, and delegation stops.
 - Read access to the plugin's install directory: skills and subagents read their reference files there. Interactive sessions ask for approval; non-interactive runs must pre-approve it (for example, Copilot CLI's `--add-dir`).
 - The model hook is verified for Copilot CLI and Claude Code plugins, and with the same hook command in Codex. Codex loading it from an installed plugin is not yet verified. Native Copilot use inside VS Code is unsupported. Copilot CLI in a VS Code terminal remains CLI usage.

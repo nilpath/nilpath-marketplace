@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const tool = dirname(fileURLToPath(import.meta.url));
 const root = resolve(tool, '../..');
 const viewer = join(root, 'src/plugins/nstack/hooks/viewer');
+const outputRoot = process.env.NSTACK_VIEWER_OUTPUT_DIR ? resolve(process.env.NSTACK_VIEWER_OUTPUT_DIR) : viewer;
 const check = process.argv.includes('--check');
 const hash = (value) => createHash('sha256').update(value).digest('hex');
 const inputs = {};
@@ -63,7 +64,7 @@ outputs.set('THIRD-PARTY-NOTICES', Buffer.from(`${notices.join('\n').trimEnd()}\
 const hashes = Object.fromEntries([...outputs].map(([name, value]) => [name, hash(value)]));
 outputs.set('manifest.json', Buffer.from(`${JSON.stringify({ version: 1, buildId, inputs, outputs: hashes }, null, 2)}\n`));
 for (const [file, value] of outputs) {
-  const path = join(viewer, file);
+  const path = join(outputRoot, file);
   if (check) {
     let existing;
     try { existing = await readFile(path); } catch (error) { if (error.code !== 'ENOENT') throw error; }

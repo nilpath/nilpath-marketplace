@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { compile } from '../src/plugins/nstack/hooks/viewer/viewer.mjs';
+import { pathToFileURL } from 'node:url';
+import { join } from 'node:path';
+const { compile } = await import(process.env.NSTACK_VIEWER_OUTPUT_DIR ? pathToFileURL(join(process.env.NSTACK_VIEWER_OUTPUT_DIR, 'viewer.mjs')) : '../src/plugins/nstack/hooks/viewer/viewer.mjs');
 
 const wrap = (body, kind = 'plan') => `<Document id="test" title="Test" kind="${kind}">\n\n${body}\n\n</Document>\n`;
 const rich = (name, data, extra = '') => `<${name} id="block" title="Block" status="proposed" ${extra}>\n\n\`\`\`json\n${JSON.stringify(data)}\n\`\`\`\n\n</${name}>`;
@@ -26,4 +28,17 @@ test('validates payloads, evidence, uniqueness and graph endpoints', () => {
   assert.throws(() => compile(wrap(`${rich('Question', { prompt: 'First' })}\n\n${rich('Question', { prompt: 'Second' })}`)), { code: 'duplicate_id' });
   assert.throws(() => compile(wrap(rich('Question', { prompt: 'Done?' }).replace('proposed', 'implemented'), 'recap')), { code: 'evidence_required' });
   assert.throws(() => compile(wrap(rich('Question', { prompt: 'Likely?' }).replace('proposed', 'inferred'), 'recap')), { code: 'reason_required' });
+});
+
+test('Question options obey the same nonblank 10000-character limit as saved answers', () => {
+  for (const option of [' \n\t', 'x'.repeat(10001), '😀'.repeat(5001)]) {
+    assert.throws(() => compile(wrap(rich('Question', { prompt: 'Choose?', options: ['Other', option] }))), (error) => {
+      assert.equal(error.code, 'invalid_payload');
+      assert.equal(typeof error.line, 'number');
+      assert.match(error.repair, /Question/);
+      return true;
+    });
+  }
+  const doc = compile(wrap(rich('Question', { prompt: 'Choose?', options: ['x', 'y'.repeat(10000)] })));
+  assert.equal(doc.blocks[0].data.options[1], 'y'.repeat(10000));
 });

@@ -638,6 +638,8 @@ def test_session_viewer_timeout_is_bounded_and_does_not_claim_readiness(env):
     assert "nstack panels" in context
     assert "viewer warning (startup_timeout)" in context
     assert "7.5 second hook bound" in context
+    assert "The hook stopped its own ensure command." in context
+    assert "No existing viewer or unrelated process was signalled." in context
     assert "viewer ready" not in context
 
 

@@ -16,7 +16,7 @@ Native Copilot use inside VS Code is not supported. Copilot CLI in a VS Code ter
 
 ¹ The orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are adapted per harness: subagent dispatch, todo tracking, and user questions render in each harness's native mechanism. They degrade gracefully on Copilot/Codex (chat questions instead of structured question UI, no parallel exploration fan-out).
 
-² nstack is independent of the other plugins. A plugin hook applies the model, and effort where supported, for each delegated role from built-in defaults or your overrides; it needs Python 3.11+, and Codex users must trust the hook once with `/hooks`. The visual viewer needs Node.js 20+, starts or reconnects at session start, and also has an explicit startup fallback. Missing Node does not disable model routing. See [the nstack README](src/plugins/nstack/README.md).
+² nstack is independent of the other plugins. A plugin hook applies the model, and effort where supported, for each delegated role from built-in defaults or your overrides; it needs Python 3.11+, and Codex users must trust the hook once with `/hooks`. The visual viewer needs Node.js 20+ on macOS or Linux, starts or reconnects at session start, and also has an explicit startup fallback. Native Windows viewer hosting requires WSL in v1. Missing Node does not disable model routing. See [the nstack README](src/plugins/nstack/README.md).
 
 Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-writer agent from `documentation` — install them together.
 

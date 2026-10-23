@@ -364,7 +364,9 @@
           "items": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 100000
+            "maxLength": 10000,
+            "pattern": "\\S",
+            "description": "Nonblank. The viewer enforces a maximum of 10000 UTF-16 code units, as in browser text controls."
           },
           "minItems": 2,
           "maxItems": 200
