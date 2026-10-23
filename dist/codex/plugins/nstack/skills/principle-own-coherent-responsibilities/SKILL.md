@@ -11,6 +11,8 @@ Keep state with the operations that preserve its invariants. Enforce privacy. Do
 
 Consolidate duplication when the same future change or bug fix must reach every site. Keep similar-looking code separate when the sites evolve independently. Textual resemblance alone does not justify an abstraction.
 
+Treat unrelated imports, excessive or unrelated parameters, change fan-out across responsibilities, and names that hide intent as signals to investigate ownership. They do not prove that a module must split.
+
 When a feature conflicts with an existing responsibility boundary, restructure first and check that change separately from the feature. Follow [Sequence Work into Verifiable Units](../principle-sequence-verifiable-units/SKILL.md) for the checked sequence.
 
 Ask:
@@ -19,3 +21,4 @@ Ask:
 - Which operations must protect this state?
 - Could a replacement preserve neighboring callers without taking on unrelated work?
 - Would one future change or bug fix need to update every duplicated site?
+- Do imports, parameters, changes, or names point to unrelated work or hidden intent?

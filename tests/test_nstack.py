@@ -246,6 +246,10 @@ def test_help_catalog_covers_bundled_skills(harness):
     targets = set(re.findall(r"\]\(\.\./([^/]+)/SKILL\.md\)", text))
     expected = {name for name in SKILLS if not name.startswith("principle-")} - {"nstack-help"}
     assert targets == expected
+    principle_count = len({path.parent.name for path in (plugin_dir(harness) / "skills").glob("principle-*/SKILL.md")})
+    assert f"lists all {principle_count}." in text
+    readme = (plugin_dir(harness) / "README.md").read_text()
+    assert f"{principle_count} `principle-*` skills" in readme
     assert "For a help question, don't start the work." in text
     assert "https://github.com/nilpath/nilpath-marketplace/blob/main/src/plugins/nstack/" in text
     assert "skills/<name>/SKILL.md.j2" in text
@@ -262,10 +266,14 @@ def test_principle_index_matches_bundled_principles(harness):
         principles,
         re.M,
     )
-    indexed = {
+    principle_bullets = re.findall(r"^- .+$", principles, re.M)
+    assert len(principle_entries) == len(principle_bullets)
+    destinations = [
         override or f"principle-{re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')}"
         for title, override in principle_entries
-    }
+    ]
+    assert len(destinations) == len(set(destinations))
+    indexed = set(destinations)
     discovered = {path.parent.name for path in (root / "skills").glob("principle-*/SKILL.md")}
     assert indexed == discovered
 
