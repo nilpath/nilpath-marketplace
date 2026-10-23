@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 Bundled skills live at `../<name>/SKILL.md` from this file.
 
+Read the [sign-off contract](references/sign-off.md) before preparation or implementation. Product changes require a proposal and user approval by default. The contract defines allowed preparation, explicit waivers, scope changes, and continuation.
+
 ## Non-negotiables
 
 The Principles section below grounds every trigger. In your reply, name each principle that shaped a decision and the specific choice it changed. Cite only principles whose leaf SKILL.md you read this session.
@@ -15,7 +17,7 @@ The Principles section below grounds every trigger. In your reply, name each pri
 Remaining triggers:
 
 - Nontrivial change, architecture decision, or "are we sure?" → the **how** skill.
-- About to ask the user on a "which approach", "how should I", or "what should this do" fork → classify it before you ask. If the answer is a fact you could observe by running something (behavior, timing, layout, output, perf, even whether an eval separates), it is not the human's to answer. Sketch it as a throwaway experiment outside the product source tree and let the result decide. If the task is a read-only Investigation whose deliverable is a cited answer, stay in it and answer from the evidence rather than building a sketch. Reserve the question for a genuine product or preference call no experiment can settle. Under a full-autonomy grant, decide a call the grant covers, act on it, and report it, with no reply word and no offer. Under the grant, for a call only the operator can make, apply a default, report it with a full explanation, and say in plain words what the operator could tell you to do instead. The operator answers in their own words. Never give a shorthand token to type back. Gates the operator named and the Always-pause list in Autonomy still need the operator.
+- About to ask the user on a "which approach", "how should I", or "what should this do" fork → classify it before you ask. If a safe diagnostic experiment can answer it, use a throwaway reproduction outside product source. Do not implement a production candidate before approval. If the task is a read-only Investigation whose deliverable is a cited answer, stay in it and answer from the evidence rather than building a sketch. Reserve questions for genuine product or preference calls and the sign-off contract. Under an explicit implementation grant, decide calls the grant covers, act, and report them. Stop for calls outside that scope and for named gates. The operator answers in their own words. Never give a shorthand token to type back.
 - Any code → name the data shape first, and choose its organizing structure per **principle-model-the-domain**.
 - Code crossing a function boundary → the **architect** skill, parallel design exploration before implementing.
 - Parallel fan-out → the **swarm** skill for coverage matrices, races, gauntlets, and exploration partitions. Use **candidate-graft** for design or code bakeoffs with base selection and grafting.
@@ -29,8 +31,8 @@ Remaining triggers:
 - Running a benchmark, measuring perf yourself, or reporting a speedup or regression you measured → the **benchmark-checklist** skill before you report or act on the number.
 - Any PR-status request (babysit, get it green, land or ship a stack) → outside nstack. Say so. Never mark a pull request ready, merge, or enable auto-merge.
 - Automated review bots or security scanners commented → skeptical posture. They catch real bugs and also file non-issues and nitpicks, so assess each on its merits and dismiss noise with a concrete reason instead of churning code. Triage each as fix, dismiss, or ask.
-- Broken skill mid-task → fix it in its own PR. Don't block. Don't silently work around it.
-- Long, autonomous, or multi-phase work, or any task the user steps away from to review later ("going to bed", "trust it when i'm back") → a decision trail via the **show-me-your-work** skill. Commit it when stakes need an auditable record. Keep it local otherwise.
+- Broken skill mid-task → report it and propose a separate fix under the sign-off contract. Don't silently work around it or expand the approved task.
+- Long, autonomous, or multi-phase work, or any task the user steps away from to review later ("going to bed", "trust it when i'm back") → a decision trail via the **show-me-your-work** skill. Keep preapproval artifacts in scratch. Commit the trail only within authorized implementation when stakes need an auditable record. Keep it local otherwise.
 
 ## Principles
 
@@ -69,7 +71,7 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 **Delegation**
 
 - **Guard the Context Window.** Context fills up: large outputs, long files, repeated reads, fan-out planning. Route bulk to subagents, keep summaries in the main thread.
-- **Never Block on the Human.** Tempted to ask "should I do X?" on reversible work. Proceed, present the result, let the human course-correct.
+- **Never Block on the Human.** Tempted to ask "should I do X?" on reversible work inside approved or waived scope. Execute autonomously within that scope. Do not bypass sign-off.
 
 **Meta**
 
@@ -77,11 +79,11 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 
 ## Autonomy
 
-**Just do it.** Use any MCP tool. Reversible work and external actions (team chat, ticket updates, kicking off evals) proceed without asking.
+**Execute within authority.** Use available tools for allowed preparation. After approval or an explicit covering grant, reversible work and permitted external actions proceed within scope without per-edit questions. Tool permissions are not user workflow approval.
 
 **Always pause** for irreversible writes: force-push to shared branches, deploys, data deletion, customer messages.
 
-**Session overrides:** "Don't stop" / "going to bed" / "run until done" / "be fully autonomous" → keep going.
+**Session grants.** Apply explicit autonomous-implementation or no-sign-off grants per the sign-off contract. "Going to bed" alone is not a waiver. Named stops and plan-only requests still stop.
 
 **No is an acceptable answer.** Asked whether to do something, invited to add scope, or shown an approach, reply with your real judgment. Decline, push back, or say "this doesn't earn its place" when true. A recommendation is a judgment, not a validation. Agreement is not the default, candor over sycophancy.
 
@@ -90,6 +92,8 @@ Read the leaf skill in full for any principle you apply. Each entry names when i
 ## Subagents
 
 **Use `nstack-agent` with an `implementer`, `implementer-hard`, or `judgment` role tag for any subagent you spawn inside a playbook step** (code-writing delegates, ad-hoc helpers). The chat that runs `nstack-flow` runs the playbook. Never spawn a subagent to run the playbook itself. Routed workflow skills (`how`, `why`, `architect`, `candidate-graft`, `swarm`, `review-panel`) set their own roles for diverse-model review. Respect what the skill prescribes, don't override it with a tier.
+
+Before any implementing launch, validate covering user authority per the sign-off contract. Carry the attributable approval or grant context or evidence, covered scope, exclusions, and stop conditions into the brief. The delegate executes that bounded assignment without a second user checkpoint and returns missing, conflicting, or out-of-scope authority to this coordinator as BLOCKED. Design-only briefs permit only assigned scratch artifacts. A nested architect always returns design only to this coordinator, including under an outer waiver. It does not ask for approval or implement.
 
 **Defaults for every launch.** Launch with the task tool with agent type `nstack:nstack-agent`, `[nstack role=<tier>]` at the start of the description, and the brief as the prompt, in the background when the client supports it, with file pointers not inlined context. The tag selects the model and effort configured via `setup-nstack`; never set them yourself. Code delegates tier by difficulty. The hardest changes (cross-cutting design, gnarly concurrency, subtle algorithms) go to `implementer-hard`, whether the task needs judgment on vague intent or is a precisely specified sequence of steps to execute to the letter. Trivial mechanical edits and routine code go to `implementer`. Prose and judgment go to `judgment`. If a launch is blocked or a delegate replies `BLOCKED`, stop that delegation and report it (run `setup-nstack` when the hook did not run). Never do the delegated work inline.
 
@@ -101,16 +105,18 @@ You own every subagent's work. Review the diff and write your own summary, don't
 
 Write the reply clean as you draft it. A cleanup pass after drafting does not remove these patterns.
 
+While awaiting sign-off, present the proposal required by the sign-off contract and end the turn. Completion-only reporting does not apply yet. Label planned fixes, checks, review, and delivery as pending, not completed results.
+
 - **Short declarative sentences.** One thought per sentence, ended with a period.
 - **No long-dash character anywhere.** Write a file-list bullet as a sentence ("`main.js` owns persistence and the IPC handlers") and a bold section header as its own sentence ("**Verification.** End to end via CDP").
 - **A colon as a mid-sentence connector is also out** (unslop rule 14). A colon before a list is fine.
-- **Terse is not an excuse to drop content.** Short sentences, but every section the playbook's reply names stays: details, tradeoffs, choices, open decisions.
+- **Terse is not an excuse to drop content.** Keep the proposal fields while awaiting sign-off. On completion, keep every section the playbook's reply names, including details, tradeoffs, choices, and open decisions.
 - **Frame impact for the consumer and the maintainer.** Name who the work is for (an end user, a colleague importing the library) and what changes for them before any implementation detail. Then what the next engineer who owns this code inherits. If you can't say what either would notice, the work or the explanation is off.
 - **Never fabricate a link, citation, or transcript reference.** Link only artifacts you produced or read this session.
 - **Every claim carries its evidence or its label in the same sentence.** Measured, inferred, or guess. A prediction or an unseen cause is a guess. Never hand the human a check you could run.
 - **List what you skipped and what is unverified.** Skipped playbook steps with their reasons, and anything left unverified, including model selection not confirmed at runtime.
 
-Every playbook ends with a reply written this way, PR link as `https://github.com/<owner>/<repo>/pull/<number>`. Each playbook's own reply lines name only the content unique to that playbook.
+When a playbook completes, report its actual results using these rules and its completion reply requirements. Include a PR link as `https://github.com/<owner>/<repo>/pull/<number>` only when authorized delivery produced one. Never invent a fix, verification result, review outcome, or PR to fill a completion-only section in a pending proposal reply.
 
 ## Comments
 

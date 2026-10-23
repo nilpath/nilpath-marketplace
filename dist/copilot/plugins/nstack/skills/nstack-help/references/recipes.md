@@ -2,6 +2,8 @@
 
 Swap in the real paths, skills, and done checks. Informal wording works.
 
+Code-changing prompts below propose and stop for approval by default. The [sign-off contract](../../nstack-flow/references/sign-off.md) owns consent and continuation. Read it before adapting approval or autonomy wording.
+
 ## Understand
 
 - `/nstack:nstack-flow read <thread>. restate the underlying issue in your own words, in plain english.`
@@ -20,9 +22,9 @@ Swap in the real paths, skills, and done checks. Informal wording works.
 
 ## Design and plan
 
-- `/nstack:nstack-flow prototype a few options for <feature>. take screenshots or videos for me to compare.`
-- `/nstack:nstack-flow we need <feature>. /nstack:architect it first, and answer open questions with prototypes. let me review before proceeding.`
-- `/nstack:nstack-flow write a tutorial for how i would use <new package> first. then explain why it beats the current one.`
+- `/nstack:nstack-flow compare a few scratch designs for <feature>. keep diagnostic-only reproductions outside the product tree. propose any product prototype separately for approval.`
+- `/nstack:nstack-flow we need <feature>. /nstack:architect it for design only, and answer open questions with diagnostic-only reproductions outside product source. let me review before proceeding.`
+- `/nstack:nstack-flow draft a tutorial in scratch for how i would use <new package> first. then explain why it beats the current one.`
 - `ask /nstack:candidate-graft for a second opinion on this thread and our approach.`
 - `/nstack:architect with checkpoint: design <change>. stop and show me before implementing.`
 
@@ -34,5 +36,5 @@ Swap in the real paths, skills, and done checks. Informal wording works.
 
 ## Away and back
 
-- `/nstack:nstack-flow im going to bed. <goal> in a fresh worktree off <base>. done means <checks>. keep a decision log. don't ask me before committing. if you're truly stuck after a few hours, stop and write up why.` Unattended work routes through `figure-it-out`.
+- `/nstack:nstack-flow im going to bed. implement <goal> autonomously, without the default sign-off checkpoint, in a fresh worktree off <base>. done means <checks>. keep a decision log. don't ask me before committing. if you're truly stuck after a few hours, stop and write up why.` The explicit scoped implementation grant waives the default checkpoint, not stepping away. Unattended work routes through `figure-it-out`.
 - `/nstack:show-me-your-work catch me up on what you did last night.` Read its Attention section first.

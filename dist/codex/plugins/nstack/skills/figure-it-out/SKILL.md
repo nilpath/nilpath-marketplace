@@ -7,45 +7,50 @@ description: 'Design an auditable playbook when no narrower one fits: a large mi
 
 When the task matches no playbook, design one. The deliverable before any code is the workflow itself: a sequence of phases that scales rigor to the task, runs the scientific method, and leaves a decision trail a human can audit after stepping away.
 
+Read the [sign-off contract](../nstack-flow/references/sign-off.md) before preparation or execution. It governs product edits, scaffolds, shipping verification harnesses, and implementing delegates.
+
 ## Start
 
 Open a todolist whose first item is to read the Principles section of the **nstack-flow** skill. Then add the phases below as todos.
 
 ## Phase A: Frame
 
-Ground first, then commit. Don't start the run until you can state:
+Ground first. Don't start implementation until you can state:
 
 - The definition of done as a falsifiable predicate (the **prove-it-works** principle skill).
 - Scope, quantified: rough units and effort, plus the blockers grounding surfaced.
 - The rigor level, biased high. One-way doors and high blast radius get more. Reversible low-stakes steps get less. Rigor is gates and artifacts, not "try harder".
 
-Present the framing and tradeoffs before committing to a long run. Reversible work proceeds (the **never-block-on-the-human** principle skill), but a multi-hour run earns one checkpoint.
+Present the framing and tradeoffs as information, not a separate approval request. Continue allowed preparation. The one default sign-off follows the designed phase list in Phase B. A user stepping away does not itself waive that checkpoint.
 
 ## Phase B: Design the workflow
 
-Decompose into atomic, independently-landable units. Sequence riskiest-unknown-first. Scaffold and verification come before features (the **foundational-thinking** principle skill).
+Decompose into atomic, independently-landable units. Sequence riskiest-unknown-first. Within authorized implementation, scaffold and verification come before features (the **foundational-thinking** principle skill). This ordering does not authorize early product edits.
 
-- Build the verification harness before the work, with the baseline captured from the pre-change state, so the check reads as "old value vs new value".
-- For one-way-door design decisions, run the **architect** skill (it runs **candidate-graft**). Skip it for mechanical work whose shape is already concrete. A second candidate-graft over a settled design is over-engineering (the **laziness-protocol** principle skill).
-- Decide what fans out. Parallelize only across seams, and give each worker its own worktree or branch (the **separate-before-serializing-shared-state** principle skill). Don't over-fan.
-- Write the designed phase list down. That list is what the human reviews.
+- Capture the baseline with safe existing checks or scratch diagnostics. Plan shipping verification-harness edits now, but build them only after covering approval or a grant.
+- For one-way-door design decisions, run **architect** to return design only (it runs **candidate-graft** for scratch designs). The coordinator keeps consent and implementation ownership, including under a waiver. Skip architect for mechanical work whose shape is already concrete. A second candidate-graft over a settled design is over-engineering (the **laziness-protocol** principle skill).
+- Decide what fans out. Parallelize only across seams, and plan a separate worktree or branch for each implementing worker after authority exists (the **separate-before-serializing-shared-state** principle skill). Don't over-fan. Design workers get artifact-only scratch assignments.
+- Write the designed phase list in the existing conversation, todos, or scratch decision trail. Combine it with the proportionate proposal the sign-off contract requires.
 
-Then execute the design. Add its steps to the todolist as concrete items between the Phase C and Phase D entries. Run each under the Phase C loop discipline, and weave the Phase D log through them, a row as each step lands, rather than saving the whole trail for the end.
+Present that proposal and stop for approval unless matching authority or an explicit waiver covers execution. Do not build product scaffolds, shipping tests or harnesses, or launch implementing delegates before this boundary.
+
+After authority exists, add the designed steps to the todolist as concrete items between the Phase C and Phase D entries. Run each under the Phase C loop discipline, and weave the Phase D log through them, a row as each step lands, rather than saving the whole trail for the end.
 
 ## Phase C: Run the loop
 
 Each unit is an experiment. State the hypothesis, make the smallest change, measure against the predicate on the real artifact, keep it if it advanced, revert it if it didn't. Apply the **sequence-verifiable-units** principle skill, verifying each unit before starting the next instead of batching checks at the end.
 
+- Carry the attributable approval or grant context or evidence, covered scope, exclusions, and stop conditions into implementing briefs. Correct in-scope review findings autonomously. Stop and re-present material changes unless a grant covers them. Recover matching authority on continuation per the sign-off contract.
 - Verify by inspecting the artifact, never a self-report. When something passes too easily, suspect the observation method before the system.
-- Pair delegated work with a judge. If a worker games the gate, reset and harden the contract. If the gate itself is wrong, fix the gate in its own change rather than routing around it.
+- Pair delegated work with a judge. If a worker games the gate, reset and harden the contract within approved scope. If the gate itself is wrong, fix it in its own change only when covering authority includes that correction. Report and propose out-of-scope gate work separately. Do not route around a failed gate.
 - A verdict is VERIFIED, NOT VERIFIED, or INCONCLUSIVE. Inconclusive is not a pass. Don't hide a negative.
 
 ## Phase D: Keep the audit trail
 
-Log the run via the **show-me-your-work** skill. figure-it-out's work is usually ambitious enough to commit the trail so the reviewer can read it in the PR. The trail plus the diff is what lets the human come back and trust the work.
+Log the run via the **show-me-your-work** skill. Keep preapproval artifacts in scratch. During authorized implementation, figure-it-out's work is usually ambitious enough to commit the trail so the reviewer can read it in the PR, subject to the user's commit and delivery limits. The trail plus the diff is what lets the human come back and trust the work.
 
 ## Phase E: Verify and hand back
 
-Check the whole against the Phase A predicate on the real product, not just the harness. Encode any recurring correction as a gate, a lint rule, a check, or a script (the **encode-lessons-in-structure** principle skill).
+Check the whole against the Phase A predicate on the real product, not just the harness. Within approved scope, encode recurring corrections as a CI gate, a lint rule, a check, or a script (the **encode-lessons-in-structure** principle skill). Report and propose out-of-scope corrections separately rather than silently adding them.
 
 **Reply:** the playbook you designed, the rigor level and why, the decision-trail path, what's verified against the predicate, and what's still open.

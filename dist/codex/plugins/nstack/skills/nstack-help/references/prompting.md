@@ -2,6 +2,8 @@
 
 A prompt states the intent and the check for done. The playbook supplies the steps, so a few plain sentences beat a spec.
 
+Code-changing workflows propose and stop for approval by default. The [sign-off contract](../../nstack-flow/references/sign-off.md) owns consent, preparation limits, and continuation. Read it before advising on those boundaries.
+
 ## Put in
 
 - The goal. Say what is wrong or what the user wants.
@@ -25,19 +27,19 @@ A prompt states the intent and the check for done. The playbook supplies the ste
 
 ## Design before the plan
 
-- Never take the first design. Ask for prototypes of a few options, with screenshots or videos for UI, and pick from the evidence.
-- Let prototypes answer the open questions. Don't review an abstract plan adversarially, because reviewers invent risks that never happen.
-- For a shared package or API, ask for the README or a tutorial first, then work back to the code. The doc becomes the target the agent checks itself against.
+- Never take the first design. Compare scratch designs or disposable diagnostic-only reproductions first. Product prototypes, scaffolds, and production candidates need covering approval or an explicit grant, even in another worktree.
+- Let those scratch artifacts answer the open questions. Don't review an abstract plan adversarially, because reviewers invent risks that never happen.
+- For a shared package or API, ask for a scratch README or tutorial first, then work back to the code. The doc becomes the target the agent checks itself against.
 - Ask for the plan only after the design is settled. Each step of the plan ends in a check.
 
 ## Follow up short
 
-- "do it", "continue", and "keep going until done" are whole prompts once the chat holds the task.
+- Short follow-ups work when the chat holds the task. "Do it" can approve the displayed proposal when unambiguous. "Continue" alone is not a substitute for recovering matching authority under the sign-off contract.
 - Start with "new task" when the subject changes. Otherwise the workflow treats the message as the next step.
 
 ## Before stepping away
 
-- Say "im going to bed" or "im stepping away" so the agent stops asking.
+- Say when you are stepping away. That alone does not waive sign-off. To authorize implementation without the default checkpoint, explicitly grant it for a stated scope, such as "implement this migration autonomously."
 - Write done as checks every iteration can run. nstack routes unattended work through `figure-it-out`; it does not provide Cursor's `/loop`.
 - Ask for a fresh worktree off a named base.
 - Pre-answer what the agent would stop for, such as "don't ask me before committing".

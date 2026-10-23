@@ -10,12 +10,14 @@ A codemod, generator, or script does the work the same way every time and reruns
 
 Default to building the lever. Skip it only when the task is trivial, a couple of obvious edits you can see at a glance.
 
+Read the [sign-off contract](../nstack-flow/references/sign-off.md) when applying this principle inside a workflow governed by it. In those workflows, the first product edit, production lever, and any commit belong only to authorized implementation. Before authority, plan the lever or use allowed scratch diagnostics outside product source. Outside governed workflows, this principle adds no sign-off checkpoint.
+
 - Do the first unit by hand to learn the recipe, then build the tool. Prove it by rerunning it on that unit and diffing against your hand-done version. Make the lever safe to rerun.
 - Codemod or script for edits, generator for repetitive files, a dump-to-sqlite query for analysis, a rerunnable check for verification.
 - A deterministic lever beats fan-out. If the tool can process every unit in one pass, run it yourself. Don't fan out delegates to hand-apply what a script can do.
 - When you fan work out to subagents, write the lever as a skill they all read: the recipe, the verification contract, and the do-not-touch fences in one artifact. Keep it outside the delegates' write scope so they can't quietly edit the contract.
-- Applying this principle produces a file. If you cited it and there is no codemod, script, generator, or delegate skill in the diff, you didn't apply it.
-- Commit the lever when the work outlives the session.
+- During governed preparation, a lever plan or allowed scratch diagnostic is enough. No product diff is required then. Otherwise, applying this principle produces a file. If you cited it and there is no codemod, script, generator, or delegate skill in the diff, you didn't apply it.
+- Commit the lever when the work outlives the session, within the caller's commit limits and any covering implementation authority required above.
 
 The bar is triviality, not repetition. A one-off still earns a lever when the lever is what makes the work checkable. Per the [Laziness Protocol](../principle-laziness-protocol/SKILL.md), build the smallest script that does or proves the job, never a framework.
 

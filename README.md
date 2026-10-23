@@ -12,11 +12,13 @@ Native Copilot use inside VS Code is not supported. Copilot CLI in a VS Code ter
 | **engineering-workflow** | 0.8.2 | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
 | **documentation** | 0.8.0 | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | ✅¹ | ✅¹ |
 | **authoring-tools** | 0.8.1 | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
-| **nstack** | 0.0.5 | Engineering backbone adapted from pstack: nstack-flow coordinator with feature/bug-fix/investigation playbooks, 8 workflow skills plus pstack's 24 principles and 15 supporting skills (47 total), including nstack-help and TypeScript/Python best practices, 3 agents, per-role models via a hook² | ✅ | ✅ | ✅ |
+| **nstack** | 0.0.6 | Engineering backbone adapted from pstack: nstack-flow coordinator with feature/bug-fix/investigation playbooks, 8 workflow skills plus pstack's 24 principles and 15 supporting skills (47 total), including nstack-help and TypeScript/Python best practices, 3 agents, per-role models via a hook² | ✅ | ✅ | ✅ |
 
 ¹ The orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are adapted per harness: subagent dispatch, todo tracking, and user questions render in each harness's native mechanism. They degrade gracefully on Copilot/Codex (chat questions instead of structured question UI, no parallel exploration fan-out).
 
 ² nstack is independent of the other plugins. A plugin hook applies the model, and effort where supported, for each delegated role from built-in defaults or your overrides; it needs Python 3.11+, and Codex users must trust the hook once with `/hooks`. See [the nstack README](src/plugins/nstack/README.md).
+
+Nstack 0.0.6 instructs code-changing workflows to present a proposal and wait for approval before product changes by default. This is an instruction-level boundary, not technical write enforcement. Approve the displayed scope or explicitly grant autonomous implementation. "Going to bed" alone does not waive sign-off. Read-only investigations need no approval ceremony. Independent irreversible-action and delivery limits remain unchanged.
 
 Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-writer agent from `documentation` — install them together.
 

@@ -15,6 +15,8 @@ disable-model-invocation: true
 
 Keep one canonical log.
 
+Read the [sign-off contract](../nstack-flow/references/sign-off.md) when the caller's workflow is governed by it. Honor the caller's assigned paths and limits throughout this skill. Standalone use does not acquire a sign-off checkpoint.
+
 ## The format
 
 A single TSV file, one row per decision. Cells stay single-line. Evidence is a pointer, not prose.
@@ -53,9 +55,11 @@ A run is one agent conversation, including its later turns and any summary of it
 
 ## Where it lives
 
-By default the log is a working artifact, not committed. Keep it at `decisions.tsv` in the work dir, or `.audit/<task-slug>.tsv` when several efforts run at once, and leave it out of git.
+In governed workflows, keep preapproval logs in assigned scratch paths outside product source. A caller-assigned path takes precedence over the defaults below. Keep using that one log rather than starting a second trail.
 
-Commit it only when the work is ambitious enough that a reviewer needs the trail to trust the result.
+When no path is assigned and the caller permits it, the log defaults to a working artifact, not committed. Keep it at `decisions.tsv` in the work dir, or `.audit/<task-slug>.tsv` when several efforts run at once, and leave it out of git.
+
+In governed workflows, promote a scratch log into product files only during implementation with covering authority. Commit the log only when a reviewer needs the trail to trust the result and the caller's write, commit, and delivery limits permit it. In governed workflows, that commit also requires covering implementation authority.
 
 ## Rules
 

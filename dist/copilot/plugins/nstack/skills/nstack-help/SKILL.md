@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 Answer the user's question about nstack, hand them a prompt they can send, and link the file the answer came from. For a help question, don't start the work. The user asked how, and an nstack run spends real tokens, so let them send the prompt.
 
-A message that asks for work, such as "use nstack to fix this bug", is not a help question. Read [`nstack-flow`](../nstack-flow/SKILL.md) and do the work under it.
+A message that asks for work, such as "use nstack to fix this bug", is not a help question. Read [`nstack-flow`](../nstack-flow/SKILL.md) and handle the request through its playbook, including its default sign-off boundary. A request routed through help does not waive that checkpoint.
 
 This file maps questions to the skills and guide pages that hold the answers. Those files own the details. Read the file you route to before you quote it, and trust it when it disagrees with this map. The links here point into the installed plugin, which the user may not be able to open, so give the user the file's public copy: `https://github.com/nilpath/nilpath-marketplace/blob/main/src/plugins/nstack/` followed by its path. Source templates end in `.j2`: link `skills/<name>/SKILL.md.j2` for an installed `SKILL.md`, and check the source filename for other templates.
 
@@ -53,6 +53,8 @@ Copilot CLI namespaces these commands under `nstack:`. In non-interactive prompt
 
 `/nstack:nstack-flow` matches the task to a playbook, copies the playbook's steps into the todo list, and runs the other skills as the steps need them. A step it skips stays in the list with a one-line reason. A good prompt states the goal and how to tell it's done. It doesn't list skills, because a hand-written sequence tends to drop or reorder steps the playbook would keep. Read [`references/prompting.md`](references/prompting.md) before you help word one.
 
+Code-changing workflows present a proposal and stop for user approval by default. An explicit scoped implementation grant can waive that checkpoint. The [sign-off contract](../nstack-flow/references/sign-off.md) owns the consent and preparation rules. Read it before explaining those rules.
+
 Start each new task with `/nstack:nstack-flow`; nstack does not provide Cursor's persistent Custom Mode. Mid-chat, "new task" makes the coordinator match a fresh playbook. `nstack-flow` already uses `nstack-agent` for the subagents its playbook steps spawn. For subagents of your own, follow its Subagents section, including the role tag, rather than copying Cursor's launch syntax.
 
 ## Pick a skill
@@ -91,7 +93,7 @@ Close calls:
 
 - `/nstack:how` explains what the code does. `/nstack:why` explains the reasons.
 - `/nstack:candidate-graft` gives every worker the same brief and merges the best parts. `/nstack:swarm` splits work into slices or a race and returns one report.
-- `/nstack:architect` implements right after it settles the design. Add "with checkpoint" to review the design before it writes code.
+- Standalone `/nstack:architect` proposes the design and stops for approval by default. Nested architect returns design only to the coordinator, even under an outer autonomy waiver. The coordinator owns sign-off and implementation.
 - `/nstack:review-panel` reviews the diff. It does not apply fixes.
 - `/nstack:figure-it-out` designs one rigorous run when none of the bundled playbooks fits.
 
@@ -111,7 +113,7 @@ Playbooks are step lists inside `nstack-flow`, not skills, so they have no separ
 
 The Playbooks section of [`nstack-flow`](../nstack-flow/SKILL.md) lists every bundled playbook and when it applies. Large, cross-cutting, unattended, or otherwise unmatched work routes to `figure-it-out` for a bespoke playbook. [Draft delivery](../nstack-flow/references/delivery.md) covers opening the pull request, not landing it.
 
-nstack has no standalone planning skill. For a design question, `/nstack:architect` settles the shape in code first; ask for a checkpoint when the user wants to approve it before implementation.
+nstack has no standalone planning skill. For a design question, `/nstack:architect` settles the shape in scratch artifacts before the default sign-off. Ask for design only when the user wants no implementation.
 
 Principles are one-rule skills that `nstack-flow` reads and cites in its replies. The user rarely invokes one. They steer with the names instead, as in "apply prove it works. show me the real output." Typing `/nstack:principle-<name>` still loads one on demand. The Principles section of `nstack-flow` lists all 24.
 
