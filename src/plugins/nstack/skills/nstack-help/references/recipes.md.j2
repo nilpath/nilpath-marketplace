@@ -1,0 +1,39 @@
+{% set prefix = "$" if harness == "codex" else "/nstack:" -%}
+# Prompts worth copying
+
+Swap in the real paths, skills, and done checks. Informal wording works.
+
+## Understand
+
+- `{{ prefix }}nstack-flow read <thread>. restate the underlying issue in your own words, in plain english.`
+- `{{ prefix }}nstack-flow investigate why <symptom>. give me what we know, what data you used, and your best hypotheses. don't change any code yet.`
+- `use {{ prefix }}how to understand <subsystem>. then use {{ prefix }}why to find out why it broke recently.`
+- `{{ prefix }}nstack-flow read the decision log, find what's done on this branch, and continue. don't redo finished work.`
+
+## Build
+
+- Bug: `{{ prefix }}nstack-flow <symptom>. repro first, then fix and verify.`
+- Bug in an app: `{{ prefix }}nstack-flow repro this with {% if harness == "codex" %}$verify-<app>{% else %}/verify-<app>{% endif %}. if it repros on main, fix it and show me a video as proof.` Use the project's actual verification skill command.
+- Bug with a cheap test: `{{ prefix }}nstack-flow repro <bug> first. if there's a cheap test path, {{ prefix }}tdd it. then fix and rerun.`
+- Feature: `{{ prefix }}nstack-flow add <behavior>. <current output> stays byte-identical. verify both.`
+- Refactor: `{{ prefix }}nstack-flow move <code> into one module, zero behavior change. record the current output first and prove it's unchanged after.`
+- Perf: `{{ prefix }}nstack-flow <operation> takes <time> on <fixture>. trace it, fix the measured cause, show me before and after.`
+
+## Design and plan
+
+- `{{ prefix }}nstack-flow prototype a few options for <feature>. take screenshots or videos for me to compare.`
+- `{{ prefix }}nstack-flow we need <feature>. {{ prefix }}architect it first, and answer open questions with prototypes. let me review before proceeding.`
+- `{{ prefix }}nstack-flow write a tutorial for how i would use <new package> first. then explain why it beats the current one.`
+- `ask {{ prefix }}candidate-graft for a second opinion on this thread and our approach.`
+- `{{ prefix }}architect with checkpoint: design <change>. stop and show me before implementing.`
+
+## Review and deliver
+
+- `{{ prefix }}review-panel the whole branch, but skeptically. don't change anything yet. no nitpicks unless it's a real bug or regression.` Read the dismissals too.
+- `{{ prefix }}swarm check every package under <dir> against its check script. one worker per package. one report.`
+- `{{ prefix }}nstack-flow finish <change> as a draft pr. small ordered commits, evidence in the description.` nstack does not babysit or merge the pull request.
+
+## Away and back
+
+- `{{ prefix }}nstack-flow im going to bed. <goal> in a fresh worktree off <base>. done means <checks>. keep a decision log. don't ask me before committing. if you're truly stuck after a few hours, stop and write up why.` Unattended work routes through `figure-it-out`.
+- `{{ prefix }}show-me-your-work catch me up on what you did last night.` Read its Attention section first.
