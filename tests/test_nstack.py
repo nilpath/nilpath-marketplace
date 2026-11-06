@@ -101,7 +101,9 @@ SKILL_ROLES = {
     "maintain-verification-skill": {"how-explorer"},
 }
 LINK_RE = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
-PLAYBOOKS = {"feature.md", "bug-fix.md", "investigation.md"}
+def routed_playbooks(text: str) -> list[str]:
+    section = text.split("## Playbooks\n", 1)[1]
+    return re.findall(r"^- \[[^]]+\]\(playbooks/([a-z-]+\.md)\)", section, re.M)
 
 
 def plugin_dir(harness: str) -> Path:
@@ -115,7 +117,14 @@ def test_inventory(harness):
     assert skills == SKILLS
     for agent in AGENT_FILES[harness]:
         assert (root / agent).is_file()
-    assert {p.name for p in (root / "skills" / "nstack-flow" / "playbooks").iterdir()} == PLAYBOOKS
+    coordinator = root / "skills" / "nstack-flow"
+    routes = routed_playbooks((coordinator / "SKILL.md").read_text())
+    assert len(routes) == 15 and len(routes) == len(set(routes))
+    assert {p.name for p in (coordinator / "playbooks").iterdir()} == set(routes)
+    source = ROOT / "src" / "plugins" / "nstack" / "skills" / "nstack-flow"
+    authored = {p.name.removesuffix(".j2") for p in (source / "playbooks").iterdir()}
+    assert authored == set(routes)
+    assert routes == routed_playbooks((source / "SKILL.md.j2").read_text())
     assert (root / "README.md").is_file()
 
 
@@ -311,7 +320,11 @@ def test_no_template_or_foreign_harness_syntax(harness):
 @pytest.mark.parametrize("harness", HARNESSES)
 def test_scripts_are_executable(harness):
     root = plugin_dir(harness)
-    for path in (root / HOOK_DIRS[harness] / "nstack_config.py", root / "skills" / "nstack-flow" / "scripts" / "publish_draft.py"):
+    for path in (
+        root / HOOK_DIRS[harness] / "nstack_config.py",
+        root / "skills" / "nstack-flow" / "scripts" / "publish_draft.py",
+        root / "skills" / "nstack-flow" / "scripts" / "run_state.py",
+    ):
         assert path.is_file() and os.access(path, os.X_OK), path
 
 
@@ -370,6 +383,9 @@ def test_execution_entries_require_the_same_sign_off_contract(harness):
         "principle-never-block-on-the-human/SKILL.md": "- Proceed",
         "principle-foundational-thinking/SKILL.md": "**Scaffold first.**",
     }
+    for name in routed_playbooks((skills / "nstack-flow" / "SKILL.md").read_text()):
+        if name != "investigation.md":
+            entries.setdefault(f"nstack-flow/playbooks/{name}", "1. ")
     for relative, first_step in entries.items():
         path = skills / relative
         text = path.read_text()
@@ -572,3 +588,72 @@ def test_active_defaults_cannot_bypass_the_shared_contract(harness):
     readme = (plugin_dir(harness) / "README.md").read_text()
     assert "unless you ask for a checkpoint" not in readme
     assert "sign-off" in readme
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_expanded_methods_keep_one_index_and_shared_owners(harness):
+    skills = plugin_dir(harness) / "skills"
+    flow = skills / "nstack-flow"
+    text = (flow / "SKILL.md").read_text()
+    routes = routed_playbooks(text)
+    assert routes[:7] == [
+        "pause-safely.md", "session-pickup.md", "babysit.md", "opening-a-pr.md",
+        "worktree-cleanup.md", "multi-phase-plan.md", "orchestrate.md",
+    ]
+    assert "do not override a supported method" in text
+    assert "PR-status request (babysit" not in text
+    for path in (plugin_dir(harness) / "README.md", skills / "nstack-help" / "SKILL.md"):
+        document = path.read_text()
+        assert "nstack-flow/SKILL.md#playbooks" in document
+        assert "does not babysit" not in document
+        assert "or monitors CI" not in document
+    delivery = (flow / "references" / "delivery.md").read_text()
+    assert "The publisher never watches CI" in delivery
+    assert "../playbooks/babysit.md" in delivery
+    assert "Do not do any of those yourself either" not in delivery
+    for name in routes:
+        document = (flow / "playbooks" / name).read_text()
+        assert not re.search(r"\bgh pr (?:ready|merge|create)\b", document)
+        assert not re.search(r"\bgit (?:reset --hard|worktree remove --force)\b", document)
+        assert "grok-" not in document and "/loop" not in document
+    for name in ("perf-issue", "hillclimb", "refactoring", "orchestrate", "opening-a-pr", "babysit"):
+        document = (flow / "playbooks" / f"{name}.md").read_text()
+        assert "review-panel" in document
+        assert "approval" in document or "authority" in document
+        assert "draft delivery" in document or "opening-a-pr.md" in document
+    benchmark = (skills / "benchmark-checklist" / "SKILL.md").read_text()
+    assert "../nstack-flow/playbooks/perf-issue.md" in benchmark
+    assert "../nstack-flow/playbooks/hillclimb.md" in benchmark
+    assert "**Opening a PR** playbook" not in benchmark
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_method_outcomes_do_not_manufacture_authority_or_evidence(harness):
+    flow = plugin_dir(harness) / "skills" / "nstack-flow"
+    babysit = (flow / "playbooks" / "babysit.md").read_text()
+    for boundary in (
+        'generic "fix" or "get it green" request is not a waiver',
+        "Zero visible checks never mean green",
+        "explicit rerun authority",
+        "A changed head invalidates the pass",
+        "two fix waves",
+    ):
+        assert boundary in babysit
+    refactor = (flow / "playbooks" / "refactoring.md").read_text()
+    assert refactor.index("do not write the shipping pin yet") < refactor.index("Stop unless")
+    assert refactor.index("shipping behavior pin before any structural move") < refactor.index("5. Subtract")
+    evaluation = (flow / "playbooks" / "eval.md").read_text()
+    assert "comparison.md" in evaluation
+    assert "parent's transcript" in evaluation
+    assert "protocol adherence marked unverified" in evaluation
+    assert "Never graft or promote automatically" in evaluation
+    cleanup = (flow / "playbooks" / "worktree-cleanup.md").read_text()
+    assert cleanup.index("explicit approval of the eligible target set") < cleanup.index("4. Re-read")
+    assert cleanup.index("4. Re-read") < cleanup.index("5. For eligible")
+    assert "untracked and ignored file" in cleanup
+    assert "supported host lifecycle mechanism" in cleanup
+    assert "proof survives" in cleanup
+    orchestrate = (flow / "playbooks" / "orchestrate.md").read_text()
+    assert "reverifies" in orchestrate and "acceptance_receipts" in orchestrate
+    assert "original immutable `input_receipts`" in orchestrate
+    assert "same completed attempts" in orchestrate

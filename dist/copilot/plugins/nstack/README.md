@@ -2,15 +2,15 @@
 
 A portable engineering backbone for Claude Code, GitHub Copilot CLI, and Codex, adapted from [pstack](https://github.com/cursor/plugins/tree/dbf49813a39c1a5389c5e28cb8e4c1c2379e2454/pstack).
 
-Version 0.0.6 changes the implementation default. The coordinator presents a proposal and stops for user approval before product edits unless an explicit grant covers autonomous implementation.
+Version 0.1.0 expands the coordinator to fifteen native playbooks, including bounded PR monitoring, experiments, dependency-aware execution, recovery, and exact-target cleanup. Product changes still require a proposal and user approval unless an explicit scoped grant covers autonomous implementation.
 
-An explicit coordinator picks a playbook (feature, bug fix, or investigation), grounds the work in the existing code and its history, compares alternative designs, obtains implementation authority, delegates bounded implementation, proves the result against the real artifact, has it reviewed independently, and ends a code change as a draft pull request.
+The explicit coordinator selects a method from its [complete playbook index](skills/nstack-flow/SKILL.md#playbooks), grounds the work, obtains needed authority, delegates bounded units, and verifies actual results. Product delivery stays draft-only. Planning, experiments, monitoring and recovery have their own honest stopping points.
 
 ## Skills
 
 | Skill | Invocation | Purpose |
 | --- | --- | --- |
-| nstack-flow | Explicit only | Coordinator in poteto-mode's shape: non-negotiables, principles, autonomy, subagents, reply and comment rules, and the feature, bug-fix, and investigation playbooks |
+| nstack-flow | Explicit only | Coordinator with native engineering, experiment, PR, planning, orchestration, recovery, and cleanup methods; shared authority and evidence owners |
 | nstack-help | Explicit only | pstack's poteto-help adapted to nstack: setup, skill and playbook selection, troubleshooting, and copyable prompts |
 | setup-nstack | Explicit only (optional) | Reviews and overrides the model and effort per delegated role, and checks that the client runs them |
 | how | Automatic or explicit | Source-grounded explanation of how a subsystem works (explorers plus an explainer) |
@@ -41,13 +41,13 @@ nstack-agent and nstack-reader have no model. nstack's model hook sets the model
 
 ## Playbooks
 
-| Playbook | Ends with |
-| --- | --- |
-| Feature | Verified, independently reviewed change published as a **draft** pull request |
-| Bug fix | Reproduced-then-fixed change, same proof before and after, published as a **draft** pull request |
-| Investigation | A cited answer or recommendation. No edits, no pull request |
+The [coordinator's method index](skills/nstack-flow/SKILL.md#playbooks) is the single complete inventory. Playbooks are not separately invocable skills. Explicit intent selects the method before effort size or stepping away; unmatched work uses figure-it-out.
 
-The coordinator never marks a pull request ready, merges, enables auto-merge, or monitors CI. User no-push, no-PR, and local-only limits still apply.
+Babysit can check or watch CI/reviews and execute covering-approved fixes. Observation does not authorize product changes, pushes, CI reruns, replies, or thread resolution. Watches are bounded to the active session; a stopped chat requires pickup. The coordinator never marks ready, merges, or enables auto-merge. User no-commit, no-push, no-PR, and local-only limits still apply.
+
+Orchestrate uses a pilot and flat bounded workers, with verified dependency receipts. [Run accounting](skills/nstack-flow/references/run-contract.md) uses Python's standard-library SQLite outside product source to record attempts, receipts, uncertainty and handoffs. It is not an approval database, scheduler or native-action executor. Source pointers do not constitute consent. Evidence and original decisions still need actual inspection.
+
+Pause and pickup preserve dirty work and reconcile current facts. Worktree cleanup previews exact targets and requires exact approval plus fresh ownership/activity/content checks. Unknown, dirty, untracked/ignored, main/current and unsupported app-owned targets stay held; shared caches/simulators are report-only.
 
 ## Implementation sign-off
 
@@ -84,7 +84,7 @@ Defaults are suggestions: an account may not have every model. A model the clien
 
 ## Requirements and limits
 
-- Python 3.11+ for the model hook and `setup-nstack`.
+- Python 3.11+ for the model hook, `setup-nstack`, and the standard-library run-accounting helper.
 - **Codex:** trust nstack's plugin hook once with `/hooks`. Until then, nstack agents reply that the hook did not run, and delegation stops.
 - Read access to the plugin's install directory: skills and subagents read their reference files there. Interactive sessions ask for approval; non-interactive runs must pre-approve it (for example, Copilot CLI's `--add-dir`).
 - The model hook is verified for Copilot CLI and Claude Code plugins, and with the same hook command in Codex. Codex loading it from an installed plugin is not yet verified. Native Copilot use inside VS Code is unsupported. Copilot CLI in a VS Code terminal remains CLI usage.
@@ -100,6 +100,8 @@ Defaults are suggestions: an account may not have every model. A model the clien
 The Python best-practices skill is an original summary linking to the Google Python Style Guide, not copied guide text. Its repository-first guidance and the Python-aware cleanup policy are nstack additions.
 
 `nstack-help` and its prompting and recipe references are adapted from [pstack's poteto-help](https://github.com/cursor/plugins/tree/8b3326d99fd4b993cb33a24dad8af03175c642c5/pstack/skills/poteto-help) at commit `8b3326d99fd4b993cb33a24dad8af03175c642c5` (pstack 0.15.30), under the same Lauren Tan MIT License below. Wording is retained where it applies; commands, setup, public source links, and the inventory match nstack's three clients and bundled playbooks. Unsupported pstack-only workflows are not offered.
+
+The twelve added procedures and bot-triage guidance are adapted from [poteto-mode](https://github.com/cursor/plugins/tree/8b3326d99fd4b993cb33a24dad8af03175c642c5/pstack/skills/poteto-mode) at that same pin (pstack 0.15.30, MIT copyright Lauren Tan 2026). Native authority, draft publication, role dispatch, bounded execution and exact cleanup replace Cursor-specific mechanisms. The run-accounting helper and acceptance tests are nstack additions; they do not import upstream Bun/bootstrap services. Older component provenance below remains unchanged.
 
 nstack adapts workflows, prompts, and principles from pstack by Lauren Tan (poteto), and the deslop, control-cli, and control-ui skills from Cursor's cursor-team-kit. Both are published in [cursor/plugins](https://github.com/cursor/plugins) at commit `dbf49813a39c1a5389c5e28cb8e4c1c2379e2454` (pstack 0.15.23) under the MIT License. Most skill text is copied verbatim; nstack replaces Cursor-specific mechanics (the Task tool, model rule files, cloud workers) with its own launch tags and model hook. nstack is not affiliated with or endorsed by the pstack author or Cursor.
 

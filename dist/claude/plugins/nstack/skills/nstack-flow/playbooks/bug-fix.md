@@ -14,6 +14,6 @@ Read the [sign-off contract](../references/sign-off.md) before reproduction or d
 6. Within the user's commit and history limits, stage the commits so the failing repro lands before the fix in git history, on a feature branch, never the base branch (`references/delivery.md`, section 1). See the **tdd** skill for the failing-test-first cadence when the bug has a cheap local test path. Skip it when the test would be expensive, integration-heavy, or unclear.
    This is the canonical **sequence-verifiable-units** principle skill, the failing test first and the fix on top.
 7. Run the **review-panel** skill on the full change. Scope-check each Act-on finding. Send in-scope corrective fixes to a fresh `implementer` with consolidated authority, then re-verify with the original repro. Re-present material scope changes unless an explicit grant covers them. Do not treat optional cleanup as an approved fix.
-8. Deliver a draft pull request per `references/delivery.md`, honoring independent no-push, no-PR, and local-only limits.
+8. Deliver a draft pull request per `references/delivery.md`, honoring independent no-push, no-PR, and local-only limits. Use [Opening a PR](opening-a-pr.md) for evidence and body preparation, not a second publisher.
 
 **Reply:** what was broken, root cause, fix, how you verified, the review-panel outcome. Paste failing-then-passing repro output verbatim.

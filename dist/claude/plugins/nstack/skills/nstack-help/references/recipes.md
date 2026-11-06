@@ -32,9 +32,15 @@ Code-changing prompts below propose and stop for approval by default. The [sign-
 
 - `/nstack:review-panel the whole branch, but skeptically. don't change anything yet. no nitpicks unless it's a real bug or regression.` Read the dismissals too.
 - `/nstack:swarm check every package under <dir> against its check script. one worker per package. one report.`
-- `/nstack:nstack-flow finish <change> as a draft pr. small ordered commits, evidence in the description.` nstack does not babysit or merge the pull request.
+- `/nstack:nstack-flow finish <change> as a draft pr. small ordered commits, evidence in the description.` Publication stays draft-only.
+- `/nstack:nstack-flow babysit <repo>#<pr> for 20 minutes. check CI and reviews; propose uncovered fixes. do not post comments.` Ready and merge remain manual; observation does not grant fixing or rerun authority.
 
 ## Away and back
 
-- `/nstack:nstack-flow im going to bed. implement <goal> autonomously, without the default sign-off checkpoint, in a fresh worktree off <base>. done means <checks>. keep a decision log. don't ask me before committing. if you're truly stuck after a few hours, stop and write up why.` The explicit scoped implementation grant waives the default checkpoint, not stepping away. Unattended work routes through `figure-it-out`.
+- `/nstack:nstack-flow im going to bed. implement <goal> autonomously, without the default sign-off checkpoint, in a fresh worktree off <base>. done means <checks>. keep a decision log. don't ask me before committing. stop after 30 minutes or on a blocker.` The explicit scoped implementation grant waives the default checkpoint, not stepping away. The matching method remains selected; an inactive chat is not a durable worker service.
+- `/nstack:nstack-flow multi-phase-plan <migration>. plan only, with unit dependencies and evidence checks.`
+- `/nstack:nstack-flow orchestrate the approved <plan-path>, at most two workers. local verified commits only.`
+- `/nstack:nstack-flow pause-safely. preserve dirty files and proof, then write a pickup handoff.`
+- `/nstack:nstack-flow session-pickup from <handoff-path>. reconcile actual authority and current workspace before continuing.`
+- `/nstack:nstack-flow worktree-cleanup. preview targets only; do not remove anything without exact approval.`
 - `/nstack:show-me-your-work catch me up on what you did last night.` Read its Attention section first.

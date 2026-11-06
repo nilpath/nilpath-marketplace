@@ -1,6 +1,6 @@
 # Draft pull request delivery
 
-Feature and bug-fix runs end here, after the change is verified and reviewed. Investigation runs never reach this step.
+Code-producing runs use this shared owner after verification and review. [Opening a PR](../playbooks/opening-a-pr.md) prepares scope and evidence; it does not publish through another path. Read-only or scratch-only runs never reach this step.
 
 ## Before you start
 
@@ -45,7 +45,7 @@ python3 "{% if harness == "claude" %}{{ skill_root }}/scripts/publish_draft.py{%
 The publisher is `scripts/publish_draft.py` inside the `nstack-flow` skill directory, the parent of the directory containing this file. Use its absolute path.
 
 {% endif -%}
-It pushes without force, reuses an existing open pull request for the branch instead of creating another, creates new pull requests as **drafts** only, and verifies that the pull request's head matches your local HEAD. It never marks a pull request ready, merges, enables auto-merge, or watches CI. Do not do any of those yourself either.
+It pushes without force, reuses an existing open pull request for the branch instead of creating another, creates new pull requests as **drafts** only, and verifies that the pull request's head matches your local HEAD. The publisher never watches CI. Bounded observation and covered corrective work belong to [Babysit](../playbooks/babysit.md), not publication. Neither publisher nor coordinator ever marks a pull request ready, merges, or enables auto-merge.
 
 - `"ok": true` gives the verified URL, draft state, and head SHA. Report them.
 - `"ok": false` gives an error code, message, and repair. Report the blocked result honestly; your local commits remain in place. Never substitute a local result for the promised draft without saying so.

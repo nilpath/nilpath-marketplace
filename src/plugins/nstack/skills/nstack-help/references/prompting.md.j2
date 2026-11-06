@@ -40,7 +40,7 @@ Code-changing workflows propose and stop for approval by default. The [sign-off 
 ## Before stepping away
 
 - Say when you are stepping away. That alone does not waive sign-off. To authorize implementation without the default checkpoint, explicitly grant it for a stated scope, such as "implement this migration autonomously."
-- Write done as checks every iteration can run. nstack routes unattended work through `figure-it-out`; it does not provide Cursor's `/loop`.
+- Write done as checks every iteration can run, with a budget. Explicit methods remain selected when you step away. nstack provides bounded active-session work and explicit pickup, not Cursor's `/loop` or a persistent daemon.
 - Ask for a fresh worktree off a named base.
 - Pre-answer what the agent would stop for, such as "don't ask me before committing".
 - Ask for a decision log to audit later.
