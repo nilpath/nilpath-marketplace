@@ -82,7 +82,7 @@ The default answer is `/nstack:nstack-flow`, which runs most of the others when 
 | Drive a CLI or TUI on its real surface | [`/nstack:control-cli`](../control-cli/SKILL.md) |
 | Drive a browser or Electron app on its real surface | [`/nstack:control-ui`](../control-ui/SKILL.md) |
 | Vet a performance number before reporting or acting on it | [`/nstack:benchmark-checklist`](../benchmark-checklist/SKILL.md) |
-| Run a large or cross-cutting change, or one to review after stepping away | [`/nstack:figure-it-out`](../figure-it-out/SKILL.md) |
+| Design a bespoke workflow when no supported method fits | [`/nstack:figure-it-out`](../figure-it-out/SKILL.md) |
 | Keep a decision log during a run, and review it afterward | [`/nstack:show-me-your-work`](../show-me-your-work/SKILL.md) |
 | Pick a model for each role and a reasoning effort | [`/nstack:setup-nstack`](../setup-nstack/SKILL.md) |
 | Find their way around nstack | `/nstack:nstack-help` |
@@ -101,17 +101,13 @@ Not in nstack:
 
 - pstack-only skills and playbooks are not installed by nstack. Don't recommend an upstream command as if it shipped here.
 - Cursor's Custom Modes and `/loop` are not portable nstack features.
-- PR babysitting, marking ready, merging, and auto-merge are outside nstack. Feature and bug-fix runs stop at a draft pull request.
+- Marking ready, merging, and auto-merge remain manual. Publication ends as a draft pull request. Bounded PR babysitting is supported with observation, implementation, and external-action authority kept separate.
 
 ## Playbooks and principles
 
-Playbooks are step lists inside `nstack-flow`, not skills, so they have no separate command. Inside `nstack-flow`, describing the task picks one:
+Playbooks are step lists inside `nstack-flow`, not skills, so they have no separate command. Describing the task selects one from the complete [method index](../nstack-flow/SKILL.md#playbooks). Explicit supported methods win over size or stepping away; only unmatched work needs a bespoke `figure-it-out` workflow.
 
-- New or changed behavior runs [Feature](../nstack-flow/playbooks/feature.md).
-- A reported defect runs [Bug fix](../nstack-flow/playbooks/bug-fix.md).
-- A read-only question runs [Investigation](../nstack-flow/playbooks/investigation.md), ending in a cited answer without edits or a pull request.
-
-The Playbooks section of [`nstack-flow`](../nstack-flow/SKILL.md) lists every bundled playbook and when it applies. Large, cross-cutting, unattended, or otherwise unmatched work routes to `figure-it-out` for a bespoke playbook. [Draft delivery](../nstack-flow/references/delivery.md) covers opening the pull request, not landing it.
+For example, a measured defect selects Perf issue, a plan-only request selects Multi-phase plan, and executing approved dependent units selects Orchestrate. Babysit observes a named PR and performs only covered fixes/actions. Cleanup previews targets before exact deletion approval. [Draft delivery](../nstack-flow/references/delivery.md) covers publication, not landing; [run accounting](../nstack-flow/references/run-contract.md) preserves coordination facts without granting authority.
 
 nstack has no standalone planning skill. For a design question, `/nstack:architect` settles the shape in scratch artifacts before the default sign-off. Ask for design only when the user wants no implementation.
 
@@ -128,7 +124,7 @@ Principles are one-rule skills that `nstack-flow` reads and cites in its replies
 | A skill didn't load on its own | Explicit-only skills load when the user invokes them or the workflow reads their instructions. It doesn't run every skill. |
 | A delegate reports that the hook did not run, or rejects a model | Stop that delegation, show the error, and run `/nstack:setup-nstack`. Never silently fall back to another model or do the delegated work inline. |
 | Parallel agents overwrote each other | Give each writing agent its own worktree or disjoint file ownership. |
-| An unattended run moved but finished nothing | Give it a check that can pass or fail, not a duration, and route the run through `figure-it-out`. |
+| An unattended run moved but finished nothing | Give it falsifiable checks and a budget. Use the matching method; a dead chat needs explicit pickup, not an assumed persistent watcher. |
 | The reply claims success from a green build | Ask for the real command, flow, stored value, or profile. That's the prove-it-works principle. |
 
 For a run that drifts, [`references/prompting.md`](references/prompting.md) has one-line steers.

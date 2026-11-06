@@ -17,7 +17,7 @@ Read the [sign-off contract](../references/sign-off.md) before preparation or im
 7. Rebase into small, ordered commits within the user's history restrictions. Stack follow-ups.
    Use the **sequence-verifiable-units** principle skill, building, verifying, and committing each small unit before the next.
 8. Run the **review-panel** skill on the full change. Scope-check each Act-on finding. Send in-scope corrective fixes to a fresh `implementer` with consolidated authority, then re-verify. Stop and re-present material changes not covered by approval or a grant. Optional cleanup does not expand scope.
-9. Deliver a draft pull request per `references/delivery.md`, honoring independent no-push, no-PR, and local-only limits.
+9. Deliver a draft pull request per `references/delivery.md`, honoring independent no-push, no-PR, and local-only limits. Use [Opening a PR](opening-a-pr.md) for evidence and body preparation, not a second publisher.
 
 Code-coupled work (one feature, one migration) goes to a single owner with the checkpoint inline. That owner fans out internally after the blocking phase. Parent-level fan-out is for slices that produce independent artifacts (audits, cross-subsystem investigations, competing experiments). Rewrite the checkpoint at phase boundaries. Spawn a fresh owner rather than chaining interrupts.
 

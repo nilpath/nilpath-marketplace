@@ -1,0 +1,448 @@
+# Local run accounting
+
+`../scripts/run_state.py` records plans, attempts, verification receipts, native
+effect outcomes, and recovery handoffs in one local SQLite store. It requires
+Python 3.11 or newer and the standard library. It runs no Git or `gh` command,
+publisher, worker, deletion, or daemon.
+
+The coordinator owns implementation scope, consent, native operations, and
+evidence semantics under the [sign-off contract](sign-off.md). `source_refs`
+contain references only. A saved pointer does not establish user consent.
+The helper does not return action grants or permissions.
+
+## Store and ownership
+
+The caller creates an artifact directory outside every product workspace,
+exclusive output, and possible cleanup target. An explicit artifact directory
+is preferred. `~/.nstack/runs/<run-uuid>/` is another caller-selected location.
+The helper does not create parent directories, expire runs, or delete evidence.
+
+`context.protected_roots` is an explicit, nonempty list of absolute paths for
+product trees and all cleanup targets. The workspace and every plan output are
+also protected automatically. The store's entire directory must be disjoint
+from these roots, including ancestor containment and symlink aliases. Output
+reservations cannot contain the store directory. Every later write rechecks
+the recorded location. New activity also requires unchanged live path identity;
+recovery bookkeeping remains available during alias drift.
+Callers must include roots the helper cannot discover.
+
+Creation uses an exclusive, mode-0600 file and mints both the run UUID and owner
+nonce. An existing store is never overwritten. A failed initial creation can
+leave an unusable store, which reports an error rather than creating a new run
+over it. A caller preserves that artifact for diagnosis.
+Local SQLite-created WAL and SHM files inherit the private database mode.
+The helper does not repair externally changed file permissions.
+
+Each write compares the owner nonce and expected revision inside a SQLite
+`BEGIN IMMEDIATE` transaction. Exactly one conflicting revision can win.
+The state, incremented revision, and change-ID result commit together. The
+private version-2 database has `run(id, state)` and
+`changes(change_id, payload, result)` tables, a JSON run snapshot, WAL
+journaling, and `synchronous=FULL`. It has no public SQL editing interface.
+Version 2 separates dispatched inputs from acceptance receipts, records
+explicit re-verification lineage, and preserves irreversible finished
+observations. Version-1 stores are retained but rejected as unsupported.
+There is no silent migration or replacement of earlier audit artifacts.
+
+An identical request with the same change ID returns its original result
+without advancing the revision. The owner, expected revision, and normalized
+change all belong to the request identity. Conflicting reuse fails. A retry
+result is a snapshot of that earlier revision, not a fresh observation.
+`view` with new observations provides the current account.
+
+An explicit `adopt` compares the old owner and revision, mints a new owner, and
+records the actual previous owner, new owner, revision, references, and next
+route. It leaves the run paused and unresolved attempts unknown. An identical
+adoption retry can recover the newly minted nonce. Any later adoption fences
+all earlier requests, including accepted-request retries. A new chat adopts
+instead of inheriting the old nonce.
+
+Fencing is cooperative coordination, not authentication. Deliberate reuse of
+another instance's nonce is indistinguishable. It cannot revoke already-running
+native work or prevent writers outside this protocol.
+
+## Python and CLI boundary
+
+The module exports these functions and strict parsers:
+
+```python
+create(store: Path, plan: Plan, context: CoordinatorContext) -> RunView
+apply(store: Path, owner: str, expected_revision: int,
+      change_id: str, change: Change) -> RunView
+view(store: Path, observations: Observations | None = None) -> RunView
+
+parse_plan(value) -> Plan
+parse_context(value) -> CoordinatorContext
+parse_change(value) -> Change
+parse_observations(value) -> Observations
+```
+
+`Change` is the closed union described below, not a free-form update map. The
+API uses dataclasses for domain inputs and JSON-compatible dictionaries for
+views. Invalid domain data raises `StateError` with `code` and `message`.
+Filesystem and SQLite I/O failures also propagate from the API.
+
+Every CLI operation takes one UTF-8 JSON request file:
+
+```sh
+python3 "<nstack-flow skill directory>/scripts/run_state.py" create --request-file /absolute/create.json
+python3 "<nstack-flow skill directory>/scripts/run_state.py" apply --request-file /absolute/change.json
+python3 "<nstack-flow skill directory>/scripts/run_state.py" view --request-file /absolute/view.json
+```
+
+Resolve the installed `nstack-flow` skill directory to its absolute path.
+It is the parent of the directory containing this reference.
+Replace `<nstack-flow skill directory>` with that path without changing the
+product working directory.
+
+These commands retain ordinary tool approval. The helper adds no blanket
+approval or native action executor.
+
+The request envelopes have these fields:
+
+| Command | Required fields | Optional fields |
+| --- | --- | --- |
+| `create` | `store`, `plan`, `context` | None |
+| `apply` | `store`, `owner`, `expected_revision`, `change_id`, `change` | None |
+| `view` | `store` | `observations` |
+
+Success prints `{"ok":true,"run":{...}}` and exits zero. Failure prints
+`{"ok":false,"error":{"code":"...","message":"..."}}` and exits one.
+Argument errors also produce JSON. `--help` prints normal argparse help.
+Unknown fields, duplicate JSON keys, malformed JSON, nonfinite numbers, wrong
+types, empty strings, and invalid IDs fail explicitly. Nothing is truncated.
+New request paths must be absolute and are canonicalized. Stored paths are
+decoded lexically as normalized absolute identities, not resolved again.
+IDs use 1-128 ASCII letters,
+digits, dots, underscores, or hyphens and begin with a letter or digit.
+Revisions are nonnegative integers, not booleans.
+
+## Shared record shapes
+
+Fields listed below are required unless marked optional. Arrays can be empty
+except `protected_roots` and evidence for a proven result. ID arrays cannot
+contain duplicates. Digest fields use `sha256:` followed by 64 lowercase
+hexadecimal digits.
+
+| Record | Fields |
+| --- | --- |
+| `SourceRef` | `path_or_url`, `exact_locator`; optional `content_digest` |
+| `EvidenceRef` | `path`; optional `content_digest` |
+| `Workspace` | `repo_identity`, `canonical_path`, `branch`, `head`, `dirty_digest` |
+| `Unit` | `stable_id`, `definition_digest`, `dependencies`, `acceptance`, `exclusive_output`, `source_refs` |
+| `Plan` | `plan_ref` as a SourceRef, `units` as a Unit array |
+| `CoordinatorContext` | `workspace`, `protected_roots`, `source_refs`; optional `conversation_locator`, `budget_ref`, `decision_trail_ref` |
+| `WorkerObservation` | `attempt_id`, `state`, `evidence_refs`; optional `native_handle` |
+| `Observations` | `workspace`; optional `workers` as a WorkerObservation array |
+
+`budget_ref` and `decision_trail_ref` are SourceRefs. Optional record fields
+accept null, except `workers`, which must be an array when present.
+A native conversation locator is recorded only when available.
+References do not trigger network requests or source-file execution.
+
+The caller supplies fresh native facts in `Observations`. The helper does not
+run a secret shell, infer a repository identity from a path, or calculate a
+Git HEAD. `repo_identity` identifies the actual repository, not merely its
+branch name. The run binds one canonical workspace and branch. A different
+repository, canonical workspace, or branch requires a new run.
+
+`dirty_digest` binds contents, not a list of dirty filenames. The coordinator's
+documented observation procedure hashes a deterministic manifest of relevant
+tracked and untracked contents, deletions, file modes, and symlink targets.
+It includes relevant ignored contents or explicitly records coverage gaps in
+the evidence. The same manifest definition applies throughout the run.
+A clean workspace still has a concrete digest. Missing or incomplete native
+facts remain unknown to the coordinator, not invented values in this helper.
+The helper validates digest syntax, not completeness or truth of that manifest.
+
+`EvidenceRef.path` names an existing, nonempty local file. A supplied digest
+must match its bytes. The helper always binds the actual SHA-256 digest when
+recording proof, even if the caller omitted it. Freshness checks read those
+bytes again. URLs, absent files, empty files, and mismatched digests cannot
+prove success. The coordinator verifies the contents actually demonstrate the
+named attempt, native identity, acceptance checks, or effect outcome. Mere
+file existence does not establish those semantics.
+
+## Closed changes
+
+Every change has a `type` discriminator and exactly the listed fields.
+
+| `type` | Required fields besides `type` | Optional fields |
+| --- | --- | --- |
+| `replace_plan` | `plan`, `supersedes` as unit IDs | None |
+| `reserve_attempt` | `attempt_id`, `unit_id`, `input_receipts`, `brief_ref`, `output_location`, `observations` | None |
+| `record_worker` | `observation` as a WorkerObservation | None |
+| `abandon_attempt` | `attempt_id`, `evidence_refs` | None |
+| `record_receipt` | `receipt_id`, `unit_id`, `attempt_id`, `workspace`, `input_receipts`, `verifier`, `verdict`, `evidence_refs`, `observations` | `acceptance_receipts`, `reverifies` |
+| `prepare_effect` | `operation_id`, `kind`, `exact_target`, `expected_fingerprint`, `source_refs` | None |
+| `resolve_effect` | `operation_id`, `state`, `evidence_refs` | None |
+| `pause` | `source_refs`, `next_route` | `observations` |
+| `adopt` | `source_refs`, `next_route` | `conversation_locator`, `observations` |
+| `resume` | `observations` | None |
+
+`brief_ref` is a SourceRef. `input_receipts` contains receipt IDs. `verifier`,
+`exact_target`, and `expected_fingerprint` are nonempty strings.
+`expected_fingerprint` carries the exact native target facts appropriate to
+that effect, not a helper-generated permission.
+`acceptance_receipts` is an array of receipt IDs. `reverifies` is a receipt ID.
+Both optional fields accept null.
+Optional recovery `observations` also accepts null. Omission and null normalize
+to the same retry identity.
+
+### Plan and reservation invariants
+
+Creation validates unique stable unit IDs, dependency targets, an acyclic
+graph, and disjoint exclusive outputs. Empty plans are valid. A one-shot
+planning run needs no execution authority because creation only accounts for
+the plan.
+
+`replace_plan.supersedes` names exactly the removed or changed current unit
+IDs. A change to any Unit field counts as a definition change. A retired ID
+cannot be reused. Earlier plans and receipts survive. Changed units and their
+downstream units permanently supersede earlier receipts, including when a
+definition later returns to its old contents. Held attempts prevent changes
+to their definitions or dependency definitions and protect their output paths.
+
+`reserve_attempt` precedes every native launch. Its output location is equal
+to or contained within the unit's exclusive output. Held reservations conflict
+on equality or ancestor containment, including symlink aliases. Attempt IDs
+are never reused. A retry alongside unknown work requires a disjoint isolated
+output within that unit's output root. It does not release the old reservation
+or establish a fresh unit receipt while another attempt remains unresolved.
+
+The initial attempt state is `reserved`. A crash before handle recording does
+not establish that a launch never happened. Without caller worker observations,
+its current liveness is `unknown`. Persisted `running` is historical, not
+current liveness. A native handle records identity; a PID by itself is never
+sufficient evidence.
+
+`record_worker` accepts `running`, `finished`, `stopped`, or `unknown`.
+Every non-unknown state requires local evidence. A previously recorded native
+handle cannot silently change. Finished work cannot return to running.
+`stopped` cannot follow any finished fact, including through unknown liveness
+or recovery. Process exit does not mean deliberate abandonment of its output.
+The irreversible `finished_observed` fact and its first
+`finished_evidence_refs` survive later unknown liveness, pause, and adoption.
+Unknown liveness never permits a previously finished attempt to run again.
+Caller observations also reject running after any finished fact or an
+evidence-backed stopped state. Supplied worker proof digests are validated and
+bound into exported `current_observation` records, including evidence of an
+unknown outcome when provided.
+Reservations remain held for reserved, running, unknown, and unverified
+finished attempts. Evidence-backed `stopped` reconciliation releases a
+reservation for work never observed finished. A receipt reconciles finished
+work through verification. A saved stopped record with finished history still
+retains its hold; the finished fact takes precedence over generic process
+liveness. Terminal attempts cannot restart.
+
+`abandon_attempt` explicitly retires finished, unreconciled output. It requires
+confirmed finished work and nonempty local evidence that retirement is
+deliberate and native resources have been reconciled by the coordinator.
+Unknown or active workers cannot be abandoned to release their reservations.
+After pause or adoption, a fresh `record_worker` finished observation can
+reconfirm the work before abandonment.
+
+Abandonment sets the attempt state to `abandoned`, releases its reservation,
+and records retirement proof in `evidence_refs`. Its original
+`finished_observed`, `finished_evidence_refs`, definition, dispatched input
+lineage, and output location remain history. No acceptance receipt is created.
+An abandoned attempt cannot restart, verify, or re-verify. Further work uses
+a new attempt ID and fresh inputs.
+
+Abandonment is bookkeeping, not resource termination or artifact deletion.
+Output and proof bytes remain untouched. A stopped-process observation can
+still appear in a read-only view or recovery handoff without discarding
+finished work.
+
+A path alias can change after reservation. Historic plan, attempt, receipt,
+and evidence paths retain their recorded identity. Views report
+`output_path_state` as `unchanged`, `drifted`, or `unsafe` on each attempt.
+`unsafe_paths` lists current workspace, protected-root, unit-output, and held
+attempt paths whose live resolution changed or cannot be established.
+Active path drift holds readiness and prevents reservation, verification,
+effect preparation, and resume with `unsafe_path`. Pause, adoption, read-only
+view, and native-result reconciliation remain available. A real stopped
+observation releases the worker reservation but does not rewrite its path.
+A replacement plan can then name the correct new output, with supersession.
+
+### Verification and readiness
+
+`record_receipt.verdict` is `pass` or `fail`. Initial verification requires the
+unit's finished, unreconciled attempt and its current definition.
+Explicit re-verification can extend a reconciled attempt as described below.
+The receipt binds
+that attempt, repository and workspace identity, branch, current observed HEAD,
+dirty-content digest, dispatched dependency input receipts, current acceptance
+receipts, verifier, and nonempty
+local proof. Its workspace must equal the supplied current observation.
+Integration can change HEAD or dirty contents since reservation; the receipt
+describes the verified integrated snapshot, not the initial worker snapshot.
+
+`Attempt.input_receipts` and `Receipt.input_receipts` are immutable dispatched
+input lineage. Every receipt for an attempt retains those original IDs.
+For a passing verdict, `Receipt.acceptance_receipts` names exactly the fresh
+dependency proofs at the verified integrated snapshot.
+Omitting `acceptance_receipts` on a pass uses `input_receipts` for same-snapshot
+verification. It does not make stale inputs fresh.
+
+A failure receipt still binds the current observed workspace, finished attempt,
+original dispatched input IDs, verifier, and nonempty local failure evidence.
+It does not require successful upstream verification at a broken snapshot.
+Omitting `acceptance_receipts` on a fail records an empty array, with no current
+dependency acceptance claim. An explicitly empty array has the same meaning.
+If the caller supplies nonempty acceptance receipts on a fail, those claims
+must still contain the complete fresh proofs and preserve dispatched lineage.
+Previously recorded dependency claims remain immutable history.
+
+An initial failure receipt reconciles and releases its finished attempt's
+reservation. An explicit failed re-verification appends history and invalidates
+the earlier pass without rewriting its initial reconciliation receipt.
+Neither is verified success. Later acceptance requires a new work attempt,
+which still needs fresh upstream receipts before reservation.
+
+`record_receipt.reverifies` explicitly names the unit's latest unsuperseded
+passing receipt for the same attempt. A new receipt preserves the original
+definition and dispatched inputs and binds fresh local verification evidence
+and current observations. It records that prior receipt ID as `reverifies`;
+the earlier record is not modified. `Attempt.receipt_id` remains the initial
+reconciliation receipt, not a pointer rewritten for every later verification.
+A re-verification cannot branch from an older receipt, revive another attempt,
+upgrade a failed receipt, or bypass unresolved sibling work. A failed
+verification requires a new work attempt before later acceptance.
+
+Each acceptance receipt must be the original dispatched receipt or an explicit
+causal re-verification descendant of that same dependency attempt. A fresh
+receipt from a different work attempt is not equivalent. Changed definitions,
+superseded proof, unrelated replacement work, or missing fresh proof require
+reconciliation and a new dispatch, not lineage substitution.
+
+For `A -> B -> C`, integration can use this accounting sequence:
+
+1. Accept A at H1 and reserve B with A's H1 receipt.
+2. Integrate B at H2 and record its finished observation.
+3. Re-verify A's same attempt at H2 with new evidence and `reverifies`.
+4. Accept B with its original H1 input ID and A's fresh H2
+   `acceptance_receipts` ID.
+5. Reserve C with B's H2 receipt and integrate C at H3.
+6. Re-verify A at H3, then B at H3 with A's H3 acceptance receipt.
+7. Accept C with its original B H2 input ID and B's H3 acceptance receipt.
+
+Every re-verification requires real native verification evidence for the
+integrated snapshot. The coordinator re-runs the relevant verification and
+does not present an old test log as proof of new native facts.
+The helper validates local proof bytes and explicit lineage, not whether that
+native re-run actually happened. Evidence semantics remain the coordinator's
+responsibility.
+
+A receipt is fresh only when it is the latest receipt for the unit, passes,
+has not been superseded, matches the complete current Unit definition and
+observed Workspace, still has matching local proof bytes and stable path
+identity, and names exactly the fresh acceptance receipts of every dependency.
+No unresolved sibling attempt may
+remain for that unit. A later failed or stale receipt never resurrects an
+earlier pass. Missing observations never make an old receipt fresh.
+
+Freshness deliberately binds the whole supplied workspace snapshot. A HEAD
+or dirty-content change can invalidate upstream and downstream receipts even
+when the coordinator considers the change unrelated. New verification at the
+current snapshot is required; the helper does not infer equivalence.
+
+View unit readiness is `held`, `verified`, `ready`, or `blocked`, in that
+priority order. `ready` means graph prerequisites are satisfied and accounting
+is not paused. It is not execution authority or proof of current native facts.
+A dependency-free unit can be graph-ready without observations, but every
+reservation still requires a fresh workspace observation. Counts are derived
+from these unit views, not stored as a second status table.
+
+### Native effect accounting
+
+`prepare_effect.kind` is `push`, `reply`, `resolve_thread`, `rerun`, or `remove`.
+A reply and thread resolution are distinct operations even on the same thread.
+Preparation only
+records an operation ID, exact target, expected fingerprint, and references.
+The coordinator independently obtains actual authority, rechecks native
+facts, and executes through the existing native procedure.
+
+`resolve_effect.state` is `confirmed`, `unknown`, or `not_occurred` and requires
+local native result evidence. `confirmed` means evidence establishes that the
+action occurred. `not_occurred` means evidence establishes that it did not
+occur, including a clean failure before any effect.
+Prepared or unknown effects block any new operation of the
+same kind and exact target, even with a different fingerprint. A confirmed
+effect is immutable and blocks repeating the same fingerprint. A different fingerprint can be prepared after that outcome is
+confirmed. `not_occurred` is also immutable but releases its target and
+fingerprint for a new operation ID. It is not false confirmation of success.
+The helper does not establish whether an effect occurred by examining remote
+state. Evidence-backed non-occurrence permits accounting for a new attempt;
+it never executes that retry or establishes its authority.
+
+### Pause, adoption, and export
+
+`pause` stops new reservations and effect preparations at the accounting level.
+It marks every held attempt unknown and every prepared effect unknown. Proof
+and dirty bytes stay untouched. Worker reconciliation and receipt recording
+remain possible while paused. `resume` requires a fresh matching workspace
+observation and changes only the pause flag; unknown reservations stay held.
+
+`adopt` performs the same bookkeeping pause with a newly minted owner.
+Both changes accept optional fresh `observations`. Their returned handoff binds
+the supplied current workspace and worker proof digests. These observations
+do not reconcile reservations; `record_worker` records an actual stopped
+outcome separately. Without observations, the returned workspace is explicitly
+the creation snapshot with `workspace_observed` false.
+The coordinator's native pause procedure actually requests holds or stops
+resources. Neither `pause` nor `adopt` claims to stop a process, commit, stash,
+reset, or push.
+
+Every `view` exports a `handoff` containing run UUID, revision, store path,
+source references, workspace references, worker observations, uncertain
+effects, unsafe paths, and next route. `workspace_observed` distinguishes a supplied current
+observation from the creation snapshot. Exported source references contain the
+creation references and latest pause or adoption references, with exact
+duplicates removed. Earlier references survive in handoff history.
+A later `view` needs fresh observations again; saved recovery observations
+do not become a continuing freshness claim.
+The full view retains handoff history,
+plan history, attempts, receipts with immutable input lineage,
+`acceptance_receipts`, `reverifies`, `fresh`, and `superseded` flags, and effects.
+Receipt views are ordered by accounting revision.
+Only prepared and unknown effects appear in `uncertain_effects`.
+`view` is read-only. It neither adopts nor reconciles resources. Export is JSON
+output, not another helper-owned file or a mutation.
+
+## Errors and hard limits
+
+Domain failures use `invalid_request`, `invalid_plan`, `output_conflict`,
+`unsafe_store`, `unsafe_path`, `workspace_mismatch`, `invalid_evidence`, `owner_conflict`,
+`revision_conflict`, `change_id_conflict`, `supersession_required`,
+`reservation_held`, `stale_inputs`, `input_lineage_mismatch`,
+`reverification_conflict`, `run_paused`, `attempt_mismatch`,
+`worker_mismatch`, `invalid_transition`, or the applicable `unknown_*`,
+`duplicate_*`, and `terminal_*` record code.
+Missing and existing stores use `store_missing` and `store_exists`.
+Invalid SQLite or accounting data uses `store_corrupt`.
+The CLI reports filesystem, encoding, and SQLite operational failures as
+`storage_error`, including lock timeout. These failures never become success
+or cause an empty replacement run. Known corruption is checked read-only
+before opening a writer, so failure does not checkpoint corrupted bytes.
+Oversized JSON integers and live symlink loops report `invalid_request`.
+Changed aliases in stored path history are live drift, not store corruption.
+
+SQLite protects one local store from cooperative forked callers. It does not
+guarantee reliable locks on every network filesystem, cross-machine recovery,
+idle execution, or exactly-once native effects. WAL recovery provides atomic
+accounting, not atomicity between a record and an external launch or operation.
+Read-only views do not alter accounting or checkpoint the store; SQLite can
+maintain its WAL shared-memory bookkeeping.
+After a committed writer crashes, a read-only view can reconstruct a missing
+dead-writer SHM file when the artifact directory is writable and read the
+committed WAL. The committed-crash regression checks mode-0600 DB, WAL, and
+SHM files, unchanged DB and WAL bytes during view, and a subsequent successful
+apply. No writable database recovery fallback is added.
+
+Evidence can become unavailable or change after validation. Other processes
+can race outside the ownership protocol. Caller observations have no helper
+freshness clock or independent truth oracle. Callers must obtain native facts
+again immediately before action and preserve proof outside cleanup targets.
+The helper cannot detect a deliberately fabricated observation, consent
+claim, or evidence file.
