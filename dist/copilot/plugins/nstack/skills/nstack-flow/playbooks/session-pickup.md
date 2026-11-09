@@ -1,13 +1,15 @@
 ### Session pickup
 
-**You own the resume point. Recover facts and authority, not a remembered summary.**
+Read the [sign-off contract](../references/sign-off.md) before preparation or implementation.
 
-Read the [sign-off contract](../references/sign-off.md) and [run accounting](../references/run-contract.md) before continuation.
+Resolve script paths from the absolute installed nstack-flow skill directory without changing the project working directory.
 
-1. Read only explicitly identified prior handoff/store, branch, trail or transcript. Start with metadata and last messages, then retrieve actual decision points. Do not glob unrelated sessions or invent a child transcript source. Reduce long identified history with a bounded `judgment` helper if needed; the coordinator retains the actual approval decision.
-2. Reconcile current repository/worktree identity, branch/head, dirty-content fingerprint, actual completed work, attempts, resources and effects. Retrieve the original proposal and attributable user decision/grant, scope, exclusions and stop conditions. A saved "approved" field or worker activity is not permission.
-3. Adopt an existing store with a freshly minted coordination identity according to run accounting, or keep the read-only handoff if no store exists. Adoption records recovery, not implementation consent. Unknown native handles stay unknown and retain their output reservations. A fork is a separate run with separate outputs, not reuse of an inherited owner nonce.
-4. Compare completed versus pending. Reuse only receipts still bound to actual workspace/head/dirty contents and valid dependency inputs. Retain stale history and reverify affected claims, not every completed step indiscriminately. An unobservable worker/effect must be reconciled before retrying in the same output.
-5. State the safe resume point and route the remainder to the [coordinator's method index](../SKILL.md#playbooks). Carry recovered covering authority without a second checkpoint. Missing, ambiguous or materially changed authority produces a proportionate proposal and stops product execution; read-only diagnosis may continue within limits.
+**You own the resume point. Read the prior trail, don't redo it.**
 
-**Reply:** prior stop, facts/authority recovered, proof reused or rechecked, unknown/uncertain work, next route/action, and pending approval if any.
+1. Locate the prior trail. An explicitly identified transcript or handoff through the host's available session evidence, or a pushed branch. Do not glob unrelated sessions or invent an unavailable transcript path. Read the metadata overview and last messages first, then scan back for the decision points. Parse a long transcript with the task tool with agent type `nstack:nstack-agent`, `[nstack role=judgment]` at the start of the description, and the brief as the prompt and keep the reduced timeline in the main thread (the **principle-guard-the-context-window** skill). Use its configured nstack role tag, per the Subagents section.
+2. Reconstruct operational state. The branch and worktree, what already landed (`git log`, `git diff` against the base), the open todos, the decisions made. The prior trail is authoritative input for prior decisions. Recover the actual proposal and attributable approval before product continuation. Resist the bias to re-derive it.
+3. Diff done vs pending. Compare what shipped against what was planned, name the resume point, do not re-run the prior repro or redo completed work. A "let me verify from scratch" pass means you're treating the trail as untrustworthy when it's authoritative.
+4. Route the remaining work to the matching playbook and pick the verdict: continue the execution, ship a finished recommendation, ratify or override a prior conclusion, or postmortem a failed run. The pickup playbook ends here. The routed playbook owns the rest.
+5. Verify the inherited claims against the original goal on the real artifact (the **principle-prove-it-works** skill). A passing prior self-report is not the proof.
+
+**Reply:** where the prior agent stopped, what you inherited vs redid (ideally nothing redone), the resume point, and the outcome.

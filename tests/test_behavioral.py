@@ -3,8 +3,8 @@
 from pathlib import Path
 import yaml
 import pytest
-from behavioral.runner import run_skill_observation
-from behavioral.assertions import assert_required_invocations, assert_expected_sequence, assert_observation
+from behavioral.runner import run_skill_test
+from behavioral.assertions import assert_required_invocations, assert_expected_sequence
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "behavioral"
 PLUGINS_ROOT = Path(__file__).parent.parent / "dist" / "claude" / "plugins"
@@ -30,20 +30,14 @@ def test_behavioral(fixture_dir: Path):
     prompt = prompt_file.read_text().strip()
     expectations = yaml.safe_load(expectations_file.read_text())
 
-    evidence = expectations.get("result", {})
-    observation = run_skill_observation(
+    calls = run_skill_test(
         prompt=prompt,
         context_dir=context_dir if context_dir.exists() else None,
         plugin_dirs=PLUGIN_DIRS,
-        artifact_paths=tuple(dict.fromkeys([
-            *evidence.get("artifacts", {}), *evidence.get("artifact_contains", {}),
-        ])),
     )
-    calls = observation.calls
 
     if required := expectations.get("required_invocations"):
         assert_required_invocations(calls, required)
 
     if sequence := expectations.get("expected_sequence"):
         assert_expected_sequence(calls, sequence)
-    assert_observation(observation, evidence)

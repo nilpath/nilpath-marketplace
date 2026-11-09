@@ -113,10 +113,6 @@ ROLES: dict[str, Role] = {
     )
 }
 
-# Delegate tiers that read nstack-flow's rules before working. Specialist roles get their
-# instructions from the calling skill's brief instead.
-FLOW_ROLES = frozenset({"implementer", "implementer-hard", "judgment"})
-
 CLIENTS = ("claude", "copilot", "codex")
 CLIENT_NAMES = {"claude": "Claude Code", "copilot": "GitHub Copilot CLI", "codex": "Codex"}
 CLAUDE_MODELS = ("sonnet", "opus", "haiku", "fable")
@@ -562,7 +558,7 @@ def find_marker(client: str, args: dict):
 
 
 def read_first(role_id: str) -> list[Path]:
-    if role_id in FLOW_ROLES:
+    if ROLES[role_id].agent == WRITER_AGENT:
         return [
             PLUGIN_ROOT / "skills" / "nstack-flow" / "SKILL.md",
         ]

@@ -1,14 +1,46 @@
 ### Opening a PR
 
-**You own a reviewable change and its evidence.** Publication stays with the existing draft publisher.
+Read the [sign-off contract](../references/sign-off.md) before preparation or implementation.
 
-Read the [sign-off contract](../references/sign-off.md) before preparation or implementation and [draft delivery](../references/delivery.md) before commits or publication.
+Invoked at the end of code-producing playbooks within the user's delivery limits.
 
-1. Inspect the current checkout, base, commits, diff, unrelated dirty work, and existing branch PR. Resolve the intended target from the user or established workspace, not a guessed base. Preserve host-managed branches/worktrees. Existing local commits are not permission to publish them. Honor no-commit, no-push, no-PR, and local-only limits.
-2. Scope-check the actual change against the proposal/approval. Verify it on the matching artifact and surface. If proof is incomplete, stop unless an explicitly requested work-in-progress draft covers that result; state the gaps instead of manufacturing a pass.
-3. Prepare small, ordered commits only within commit/history limits. Run **deslop** before commits and **no-comments** before **review-panel**. Each slice should carry its own check. Keep explicit staging and preserve unrelated edits. Do not reset/discard work, rewrite shared history, retarget PRs, or force-push to make a cleaner story.
-4. Write title/body using **technical-writing** and **unslop**. Use the six evidence sections owned by draft delivery, not another body schema. One primary performance number belongs in the body; runs/range/limiter and proof belong in linked artifacts. Describe alternatives and review decisions, including what was not verified.
-5. Invoke the existing publisher exactly as [draft delivery](../references/delivery.md) specifies. No direct second PR-creation path. Preserve its errors and repair guidance. Existing non-draft PRs stay as they are and can block publication; never silently convert them or mark ready. Report the actual returned URL/state/head only on verified success.
-6. Remove only the temporary body file after publication, keeping durable evidence. A request for follow-up checks goes to [Babysit](babysit.md) with its own observation/action bounds, not automatic watching. Ready, merge, and auto-merge remain manual.
+**Worktree.** Stop for covering sign-off before product changes. Use the user or workspace-selected base, otherwise the repository default; ask if ambiguous. Keep an existing assigned feature worktree. If on the base branch or no feature worktree is assigned, create a feature branch/worktree from that base before the first commit. Subagents inherit it. Multiple subagent launches on the same branch each get their own worktree, never discard unrelated work between them. Dirty branch with unrelated work: patch out, fresh worktree, apply. Snarled worktree: obtain a decision before any destructive reset.
 
-**Reply:** actual branch/base, commits and scope, verification/review, draft URL/head or local/blocked result, unrelated changes preserved, and manual gates.
+**Commits.** Commit liberally. Rebase unshared commits into small, ordered commits before opening PRs. Each commit is a future PR: landable, ordered to tell the story. Amend when the fix belongs in a just-made commit. New commit when separable. Commit bodies don't restate the subject. Stage only explicit task paths, preserve unrelated edits, and never force-push or rewrite already-shared commits.
+
+**PRs.** Run the `deslop` skill from nstack over the diff before commit and the `no-comments` skill before review. Write every PR title, description, and commit body with the `technical-writing` skill (every layer except Diátaxis, and apply the STE vocabulary rules: one word per action, keep articles, a plain verb over `-ing` where one works), then apply the `unslop` skill.
+
+**Titles.** Conventional Commits `type(scope): subject`, no trailing period. Type such as `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, or `perf`. Scope is the area, such as `nstack` or `nstack-flow`. Subject is short, imperative, and names a real symbol when one carries the change, for example `fix(nstack): retarget opening-a-pr babysit trigger`.
+
+**Descriptions.** The PR body is a one-minute briefing, not a lab notebook, for a reviewer who has the diff. It says why the change exists, what it leaves out, what it could break, and how you proved it works. Write short, simple sentences with few identifiers, no walls of text. The body becomes the squash commit body, so keep that commit under about 40 lines. Use `##` headings, not bold lead-ins, in this order, and drop a section with nothing to say:
+
+- `## Why`: the problem and approach, 1–3 short sentences. No SHAs, rebase genealogy, or "based on main" preamble.
+- `## What changed`: 1–3 short bullets. Name a real symbol or path only when it carries the change. Name both sides of a rename or retarget.
+- `## Scope`: always. 1–3 short items on what it covers and what it deliberately leaves out (a follow-up, a known gap). No symbols, paths, or file-by-file essay.
+- `## Tradeoffs`: only rejected alternatives a reviewer would otherwise ask about. Skip when there was no real choice.
+- `## Blast Radius`: 1–2 sentences on who or what it touches and why that is safe or risky. If main is red, state the cost of leaving it red.
+- `## Verification`: 1–3 bullets, each a real run path and its outcome. Perf: one primary number with its unit, `before → after`, and a link to the candidate-graft or swarm directory for the rest. No sample-size methodology, swarm recitals, or metric tables.
+
+After the sections, attach videos or screenshots when they prove a claim. Full SHAs, swarm or candidate-graft lane recitals, lever-correction essays, file-by-file checklists, and "CLEAN" verdicts go in a linked artifact, not the body.
+
+**Publication gate.** Publish verified and reviewed work, or an explicitly requested WIP draft that states every verification gap. Do not present incomplete verification as a pass.
+
+**Forge.** Resolve the forge before the first PR operation and keep that choice for create, edit, view, watch, and merge. GitHub CLI (`gh`) is the default. If `command -v origin` succeeds and Origin can resolve the repository, prefer `origin pr ...`. If Origin is absent or cannot resolve the repository, stay on `gh` and record the fallback. Do not require Graphite (`gt`).
+
+**Built-in PR tool.** When the run provides a built-in PR tool, create, edit, and retarget through it, never through a forge CLI. A CLI-made PR misses what the tool tracks. Use the resolved forge for everything the tool does not cover, and for every PR operation when the run has no such tool.
+
+**GitHub CLI publication.** Only when no built-in PR tool is available for this operation and the resolved forge is GitHub CLI, run the existing bundled publisher from the project repository root. A built-in tool failure does not authorize a CLI fallback; follow the host's recovery instructions. Resolve the publisher's absolute installed path and write the body file outside the project.
+
+```bash
+python3 "<nstack-flow skill directory>/scripts/publish_draft.py" --base <base> --title "<title>" --body-file <body file>
+```
+
+The publisher pushes without force, reuses an existing open PR, creates drafts, and verifies the PR head against local HEAD. `"ok": true` returns the verified URL, draft state, and head. `"ok": false` returns an error and repair; report the blocked result, never claim delivery. Existing non-draft PRs stay unchanged and can block publication. Remove only the temporary body file afterwards; preserve evidence.
+
+**Size and stacks.** Prefer five narrow PRs to one large PR. A stack is a base-branch chain. The root PR targets trunk. Each child branch rebases onto its parent's exact tip and its PR targets the parent branch. After the operator merges a parent, move its child onto trunk within the user's topology and history limits. Without a built-in PR tool, per the resolved forge, create a child with `origin pr create --status draft --base <parent-branch>` or `python3 "<nstack-flow skill directory>/scripts/publish_draft.py" --base <parent-branch> --title "<title>" --body-file <body file>`, and retarget one with `origin pr edit <pr> --base <parent-branch>` or `gh pr edit <pr> --base <parent-branch>`. Branch from trunk only for independent work. Rebase on trunk before substantial stack work.
+
+**Readiness.** Open every PR as a draft. Set `draft: true` through the built-in PR tool. With Origin, select draft status; with `gh`, pass `--draft`. Never mark ready, merge, or enable auto-merge. Those actions stay manual. Run `origin pr view <number>` or `gh pr view <number>` before you refer to PR status.
+
+**Babysit.** Opening a PR does not start a babysit. Post the URL and keep building. Finish the phase or stack first. Run a separate babysit pass only when the user asks for one after the whole stack exists. A babysit for each new PR stalls the build and spends checks on commits later waves restart. Push back when feedback drifts from intent.
+
+A subagent that opens a PR runs `review-panel`, the `deslop` skill, and the `no-comments` skill, and posts the URL. It returns to the parent without babysitting, unless it is an Autopilot-full or Autopilot-stack owner. That owner's brief assigns observation, not merge authority, and is the ask `playbooks/babysit.md` waits for. The owner starts the loop after its code-ready report, reports merge-ready or STACK-READY per its playbook, and is exempt from the rules here and in `playbooks/babysit.md` that hold babysitting until a whole stack is built.

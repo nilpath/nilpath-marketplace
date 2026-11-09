@@ -105,7 +105,7 @@ Not in nstack:
 
 Playbooks are step lists inside `nstack-flow`, not skills, so they have no separate command. Describing the task selects one from the complete [method index](../nstack-flow/SKILL.md#playbooks). Explicit supported methods win over size or stepping away; only unmatched work needs a bespoke `figure-it-out` workflow.
 
-For example, a measured defect selects Perf issue, a plan-only request selects Multi-phase plan, and executing approved dependent units selects Orchestrate. Babysit observes a named PR and performs only covered fixes/actions. Cleanup previews targets before exact deletion approval. [Draft delivery](../nstack-flow/references/delivery.md) covers publication, not landing; [run accounting](../nstack-flow/references/run-contract.md) preserves coordination facts without granting authority.
+For example, a measured defect selects Perf issue, a plan-only request selects Multi-phase plan, and executing approved dependent units selects Orchestrate. Babysit observes a named PR and performs only covered fixes/actions. Cleanup previews targets before exact deletion approval. [Opening a PR](../nstack-flow/playbooks/opening-a-pr.md) covers publication, not landing.
 
 nstack has no standalone planning skill. For a design question, `/nstack:architect` settles the shape in scratch artifacts before the default sign-off. Ask for design only when the user wants no implementation.
 

@@ -1,13 +1,11 @@
 ---
 name: figure-it-out
-description: Design an auditable bespoke workflow when no supported nstack-flow method fits. Scales rigor to the task, runs a hypothesis loop, and logs decisions. Use for /figure-it-out or 'figure it out'.
+description: 'Design an auditable playbook when no narrower one fits: a large migration, an ambitious multi-part change, or work a human reviews after stepping away. Scales rigor to the task, runs a hypothesis loop, and logs decisions. Use for /figure-it-out or ''figure it out''.'
 ---
 
 # Figure it out
 
 When the task matches no playbook, design one. The deliverable before any code is the workflow itself: a sequence of phases that scales rigor to the task, runs the scientific method, and leaves a decision trail a human can audit after stepping away.
-
-Use the [coordinator's method index](../nstack-flow/SKILL.md#playbooks) first. Large, cross-cutting, or unattended work does not override an explicit supported method. A plan-only request uses Multi-phase plan; approved dependent units use Orchestrate. A bespoke workflow can hand approved units to [Orchestrate](../nstack-flow/playbooks/orchestrate.md) without another checkpoint.
 
 Read the [sign-off contract](../nstack-flow/references/sign-off.md) before preparation or execution. It governs product edits, scaffolds, shipping verification harnesses, and implementing delegates.
 

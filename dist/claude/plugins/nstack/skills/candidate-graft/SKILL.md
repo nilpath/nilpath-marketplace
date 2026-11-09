@@ -11,8 +11,6 @@ Open a todolist with one entry per phase (Frame, Fan out, Cross-judge, Pick, Gra
 
 Read the [sign-off contract](../nstack-flow/references/sign-off.md) before framing or fan-out. A caller's approved or granted scope can cover this run. Do not ask independently for approval already owned by that caller.
 
-Read the [isolated comparison protocol](references/comparison.md) for shared isolation and blind-judging mechanics. The phases below own candidate-graft's launch and synthesis. An Eval caller reuses the comparison protocol and stops at a report; it does not invoke this skill's promotion phases.
-
 ## Phase A: Frame
 
 Every candidate gets the same prompt, so the prompt is the contract.

@@ -439,6 +439,29 @@ def test_hook_footer_names_files_to_read_first(env):
     assert "Read first" not in specialist["prompt"]
 
 
+@pytest.mark.parametrize("client", ("claude", "copilot", "codex"))
+@pytest.mark.parametrize("role", sorted(set(ROLES) - READ_ONLY))
+def test_every_writer_role_receives_the_active_full_flow_path(env, client, role):
+    helper = install(env["tmp"], client)
+    root = plugin_root(helper)
+    args = allowed_args(client, hook(helper, env, client, launch(client, f"[nstack role={role} seat=1]")))
+    brief = args["message"] if client == "codex" else args["prompt"]
+    expected = f"[nstack-hook] Read first: {root / 'skills/nstack-flow/SKILL.md'}"
+    assert expected in brief
+    assert brief.count("Read first:") == 1
+    assert f"agent=nstack-agent" in brief
+
+
+@pytest.mark.parametrize("client", ("claude", "copilot", "codex"))
+@pytest.mark.parametrize("role", sorted(READ_ONLY))
+def test_reader_roles_keep_their_existing_required_read_contract(env, client, role):
+    helper = install(env["tmp"], client)
+    args = allowed_args(client, hook(helper, env, client, launch(client, f"[nstack role={role} seat=1]")))
+    brief = args["message"] if client == "codex" else args["prompt"]
+    assert "agent=nstack-reader" in brief
+    assert "Read first:" not in brief
+
+
 def test_hook_replaces_an_existing_footer_instead_of_stacking(env):
     helper = install(env["tmp"], "copilot")
     first = allowed_args("copilot", hook(helper, env, "copilot", launch("copilot", "[nstack role=implementer]")))

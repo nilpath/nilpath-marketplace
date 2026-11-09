@@ -220,6 +220,24 @@ def test_agents_have_no_fixed_model_and_reader_is_read_only(harness):
         assert tools == ["read", "search"]
 
 
+@pytest.mark.parametrize("harness", ("claude", "copilot"))
+def test_only_explicit_program_coordinators_may_launch_children(harness):
+    writer = frontmatter.load(plugin_dir(harness) / AGENT_FILES[harness][0])
+    launch_tool = "Agent" if harness == "claude" else "agent"
+    assert launch_tool in writer["tools"]
+    assert "You are operating as nstack-flow's full agent style" in writer.content
+    assert "Read the nstack-flow skill's `SKILL.md` in full before doing any work" in writer.content
+    assert "Use the absolute path your parent gave you" in writer.content
+    assert "active plugin's path supplied by the verified nstack hook" in writer.content
+    assert "a missing catalog entry does not mean nstack is absent" in writer.content
+    assert "including its inline Principles index" in writer.content
+    assert "Spawn a fresh nstack-agent for each new task" in writer["description"]
+    assert "is_background" not in writer.metadata
+    flow = (plugin_dir(harness) / "skills/nstack-flow/SKILL.md").read_text()
+    assert "Orchestrate may explicitly assign a bounded program coordinator" in flow
+    assert "ordinary workers and read-only specialists remain non-spawning" in flow
+
+
 def test_registries_route_to_nstack():
     claude = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text())
     copilot = json.loads((ROOT / ".github" / "plugin" / "marketplace.json").read_text())
@@ -323,7 +341,9 @@ def test_scripts_are_executable(harness):
     for path in (
         root / HOOK_DIRS[harness] / "nstack_config.py",
         root / "skills" / "nstack-flow" / "scripts" / "publish_draft.py",
-        root / "skills" / "nstack-flow" / "scripts" / "run_state.py",
+        root / "skills" / "nstack-flow" / "scripts" / "watch-pr" / "watch-pr",
+        root / "skills" / "nstack-flow" / "scripts" / "orch" / "orch.ts",
+        root / "skills" / "nstack-flow" / "scripts" / "worktree-audit.sh",
     ):
         assert path.is_file() and os.access(path, os.X_OK), path
 
@@ -384,8 +404,9 @@ def test_execution_entries_require_the_same_sign_off_contract(harness):
         "principle-foundational-thinking/SKILL.md": "**Scaffold first.**",
     }
     for name in routed_playbooks((skills / "nstack-flow" / "SKILL.md").read_text()):
-        if name != "investigation.md":
-            entries.setdefault(f"nstack-flow/playbooks/{name}", "1. ")
+        if name not in {"investigation.md", "pause-safely.md"}:
+            first_step = "**Worktree.**" if name == "opening-a-pr.md" else "1. "
+            entries.setdefault(f"nstack-flow/playbooks/{name}", first_step)
     for relative, first_step in entries.items():
         path = skills / relative
         text = path.read_text()
@@ -602,58 +623,118 @@ def test_expanded_methods_keep_one_index_and_shared_owners(harness):
     ]
     assert "do not override a supported method" in text
     assert "PR-status request (babysit" not in text
+    assert "Prepare existing work for draft publication" in text
+    assert "bounded workers and child coordinators with verified integration" in text
+    assert "flat root-owned dispatch" not in text
+    assert "shared draft publisher" not in text
     for path in (plugin_dir(harness) / "README.md", skills / "nstack-help" / "SKILL.md"):
         document = path.read_text()
         assert "nstack-flow/SKILL.md#playbooks" in document
         assert "does not babysit" not in document
         assert "or monitors CI" not in document
-    delivery = (flow / "references" / "delivery.md").read_text()
-    assert "The publisher never watches CI" in delivery
-    assert "../playbooks/babysit.md" in delivery
-    assert "Do not do any of those yourself either" not in delivery
+    assert not (flow / "references" / "delivery.md").exists()
+    publication = (flow / "playbooks" / "opening-a-pr.md").read_text()
+    assert "**GitHub CLI publication.**" in publication
+    assert "Only when no built-in PR tool is available for this operation" in publication
+    assert "Stage only explicit task paths" in publication
+    assert "Publish verified and reviewed work" in publication
+    assert "Keep an existing assigned feature worktree" in publication
+    assert "scripts/publish_draft.py" in publication
+    assert "`\"ok\": false` returns an error and repair" in publication
+    assert "one primary number" in publication
+    for document in skills.rglob("*.md"):
+        assert "references/delivery.md" not in document.read_text(), document
     for name in routes:
         document = (flow / "playbooks" / name).read_text()
-        assert not re.search(r"\bgh pr (?:ready|merge|create)\b", document)
-        assert not re.search(r"\bgit (?:reset --hard|worktree remove --force)\b", document)
-        assert "grok-" not in document and "/loop" not in document
-    for name in ("perf-issue", "hillclimb", "refactoring", "orchestrate", "opening-a-pr", "babysit"):
-        document = (flow / "playbooks" / f"{name}.md").read_text()
-        assert "review-panel" in document
-        assert "approval" in document or "authority" in document
-        assert "draft delivery" in document or "opening-a-pr.md" in document
+        assert not re.search(r"\bgh pr (?:ready|merge)\b", document)
+        assert not re.search(r"\bgit (?:reset --hard|push --force)\b", document)
+        assert "grok-" not in document
+        if harness != "claude":
+            assert "/loop" not in document
+    assert not (flow / "scripts" / "run_state.py").exists()
+    assert not (flow / "references" / "run-contract.md").exists()
     benchmark = (skills / "benchmark-checklist" / "SKILL.md").read_text()
     assert "../nstack-flow/playbooks/perf-issue.md" in benchmark
     assert "../nstack-flow/playbooks/hillclimb.md" in benchmark
     assert "**Opening a PR** playbook" not in benchmark
+    assert "../nstack-flow/playbooks/opening-a-pr.md" in benchmark
 
 
 @pytest.mark.parametrize("harness", HARNESSES)
 def test_method_outcomes_do_not_manufacture_authority_or_evidence(harness):
     flow = plugin_dir(harness) / "skills" / "nstack-flow"
     babysit = (flow / "playbooks" / "babysit.md").read_text()
-    for boundary in (
-        'generic "fix" or "get it green" request is not a waiver',
-        "Zero visible checks never mean green",
-        "explicit rerun authority",
-        "A changed head invalidates the pass",
-        "two fix waves",
-    ):
+    for boundary in ("Stop for covering sign-off before product fixes", "--allow-draft", "Never add a second sleep loop"):
         assert boundary in babysit
     refactor = (flow / "playbooks" / "refactoring.md").read_text()
-    assert refactor.index("do not write the shipping pin yet") < refactor.index("Stop unless")
-    assert refactor.index("shipping behavior pin before any structural move") < refactor.index("5. Subtract")
+    assert "Stop for covering sign-off before writing it, and write it before any structure moves" in refactor
     evaluation = (flow / "playbooks" / "eval.md").read_text()
-    assert "comparison.md" in evaluation
+    assert "../../candidate-graft/SKILL.md#phase-b-fan-out" in evaluation
+    assert "../../candidate-graft/SKILL.md#phase-c-cross-judge" in evaluation
+    comparison = flow.parent / "candidate-graft" / "references" / "comparison.md"
+    assert not comparison.exists(), comparison
     assert "parent's transcript" in evaluation
-    assert "protocol adherence marked unverified" in evaluation
-    assert "Never graft or promote automatically" in evaluation
+    assert "mark protocol adherence unverified" in evaluation
+    assert "independent configured judge seat" in evaluation
     cleanup = (flow / "playbooks" / "worktree-cleanup.md").read_text()
-    assert cleanup.index("explicit approval of the eligible target set") < cleanup.index("4. Re-read")
-    assert cleanup.index("4. Re-read") < cleanup.index("5. For eligible")
-    assert "untracked and ignored file" in cleanup
-    assert "supported host lifecycle mechanism" in cleanup
-    assert "proof survives" in cleanup
+    assert cleanup.index("Get explicit approval of exact targets") < cleanup.index("5. Prune")
+    assert "host's lifecycle tool for host-managed worktrees" in cleanup
+    assert "Never remove the current or main workspace" in cleanup
     orchestrate = (flow / "playbooks" / "orchestrate.md").read_text()
-    assert "reverifies" in orchestrate and "acceptance_receipts" in orchestrate
-    assert "original immutable `input_receipts`" in orchestrate
-    assert "same completed attempts" in orchestrate
+    assert "spawns its own workers and verifiers" in orchestrate
+    assert "Use isolated local workers/worktrees" in orchestrate
+    assert "Marking ready and merging remain the operator's actions" in orchestrate
+    plan = (flow / "playbooks" / "multi-phase-plan.md").read_text()
+    assert f"contents/dist/{harness}/plugins/nstack/skills/nstack-flow/playbooks/<execution playbook>.md?ref=main" in plan
+    assert 'Accept: application/vnd.github.raw+json' in plan
+    assert "If a required read fails, stop" in plan
+    assert "git show origin/main:<control skill path>" in plan
+    if harness != "claude":
+        assert "native recurring automation every 1h" in plan
+        assert "Stop if the host cannot provide the recurring automation" in plan
+    pause = (flow / "playbooks" / "pause-safely.md").read_text()
+    assert "Read the [sign-off contract]" not in pause
+    assert "Only within the user's commit limits and covering authority" in pause
+    assert "Otherwise preserve them uncommitted" in pause
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_review_triage_guidance_is_generic_but_bugbot_evidence_stays_specific(harness):
+    skills = plugin_dir(harness) / "skills"
+    flow = skills / "nstack-flow"
+    triage = (flow / "references" / "review-triage.md").read_text()
+    assert triage.startswith("# Automated review triage\n")
+    assert "Classify each automated-review thread before acting:" in triage
+    assert "Upstack or stack-local usage a review bot cannot see" in triage
+    assert 'a review bot claims "the test no longer' in triage
+    assert "Under covering sign-off, fix it in the lowest owning PR" in triage
+    assert "Bugbot's logic-bug findings against that code have been consistently legitimate" in triage
+    assert "six Bugbot passes" in triage and "eight Bugbot passes" in triage
+    assert not (flow / "references" / "bugbot-triage.md").exists()
+    for document in skills.rglob("*.md"):
+        assert "bugbot-triage.md" not in document.read_text(), document
+    coordinator = (flow / "SKILL.md").read_text()
+    assert "references/review-triage.md" in coordinator
+    babysit = (flow / "playbooks" / "babysit.md").read_text()
+    assert '"address review comments"' in babysit
+    assert "**Automated findings are triaged skeptically, always.**" in babysit
+    assert "use the watcher's Bugbot pass count" in babysit
+    plan = (flow / "playbooks" / "multi-phase-plan.md").read_text()
+    assert "Triage every automated-review and security-reviewer comment" in plan
+    assert "Automated review triage done." in plan
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_no_legacy_skill_identifiers_remain_in_instruction_markdown(harness):
+    skills = plugin_dir(harness) / "skills"
+    legacy = re.compile(r"\barena\b|\binterrogate\b|poteto-mode|poteto-agent|setup-pstack|pstack/skills/", re.IGNORECASE)
+    for path in skills.rglob("*.md"):
+        text = path.read_text()
+        if path == skills / "nstack-flow/playbooks/eval.md":
+            blinding = next(line for line in text.splitlines() if line.startswith("- No `eval`"))
+            assert "`arena`" in blinding and "`candidate-graft`" in blinding
+            text = text.replace(blinding, "")
+        assert not legacy.search(text), path
+    publication = (skills / "nstack-flow/playbooks/opening-a-pr.md").read_text()
+    assert "fix(pstack)" not in publication
+    assert "fix(nstack)" in publication

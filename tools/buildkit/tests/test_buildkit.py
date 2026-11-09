@@ -177,7 +177,10 @@ class TestSkillPermissionRendering:
                 assert "tools" not in data and "allowed-tools" not in data
         agent = tmp_path / "dist/copilot/plugins/nstack/com.github.copilot/agents/nstack-agent.agent.md"
         data, _ = split_document(agent.read_text())
-        assert data["tools"] == ["read", "edit", "execute", "search"]
+        assert data["tools"] == ["read", "edit", "execute", "search", "agent"]
+        reader = tmp_path / "dist/copilot/plugins/nstack/com.github.copilot/agents/nstack-reader.agent.md"
+        reader_data, _ = split_document(reader.read_text())
+        assert reader_data["tools"] == ["read", "search"]
         assert not any("copilot skill" in warning for warning in result.warnings)
 
     def test_copilot_raw_tools_are_rejected_and_canonical_tools_stay_gated(self, cfg, tmp_path):

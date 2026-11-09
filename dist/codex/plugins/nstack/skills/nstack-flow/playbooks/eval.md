@@ -1,14 +1,29 @@
 ### Eval
 
-**You own the experiment design. Plan, blind, run, synthesize.** A recommendation is not promotion.
+Read the [sign-off contract](../references/sign-off.md) before preparation or implementation.
 
-Read the [sign-off contract](../references/sign-off.md) before preparation or implementation and the [isolated comparison protocol](../../candidate-graft/references/comparison.md). This method returns a report, not candidate-graft's Pick or Graft phases.
+Resolve script paths from the absolute installed nstack-flow skill directory without changing the project working directory.
 
-1. Frame the condition under comparison and what behavior counts as success. Freeze a private rubric with three to six gradeable criteria before running trials. Record workload, trial count, conditions, and the rubric digest. Choose counts appropriate to uncertainty and budget; do not call one lucky trial repeatable.
-2. Build isolated, project-shaped environments outside product source. Keep condition/model mappings and the rubric private. No evaluation, judge, score, or candidate cues in paths or prompts the runner sees. Plant only the context an organic task would have. Disposable diagnostic work is preparation; production code candidates, shipping tests, or changes to installed skills require covering approval before launch, even in another worktree.
-3. Write one organic user request, identical across conditions. State the goal, not which files, principles, or chain to apply. Do not tell runners others exist. Use the shared comparison protocol with available configured runner seats, limits, and separate outputs. Do not invent a model roster or a child-event source.
-4. After all outputs stop changing, use one configured blinded judge on sanitized labels and one scale. Withhold model/condition identity. Read every output yourself before accepting the verdict. Disagreement prompts an evidence/rubric analysis, not an average of incompatible claims.
-5. Assess output quality against real artifacts. Assess protocol adherence only from actual tool events explicitly available for the identified child run. The parent's transcript and a worker's self-report are insufficient. Do not glob unrelated sessions. Missing child evidence means output-only assessment with protocol adherence marked unverified.
-6. Report conditions, rubric, trial outcomes, uncertainty, judge verdict, your synthesis, and a recommendation. If the operator wants the winner implemented or promoted, return a separately assessable proposal to the outer coordinator. Never graft or promote automatically.
+**You own the experiment design. Plan, blind, run, synthesize.**
 
-**Reply:** the comparison, rubric, per-condition notes under sanitized labels, observed quality, evidence limits, disagreement resolution, and recommendation. Distinguish measured, inferred, and unverified results.
+**Non-negotiables for blinding:**
+
+- No `eval`, `test`, `judge`, `experiment`, `rubric`, `score`, `compare`, `benchmark`, `candidate`, `arena`, or `candidate-graft` in any directory, file, or prompt the candidate sees.
+- The candidate prompt looks like an organic user request. State the goal, not the meta.
+- No chain-eliciting cues. Don't ask the candidate to list which skills, principles, or files they applied. Ask for design notes generally and grade chain-following from code shape, not self-report.
+- Sanitize directory and slug names. Use project-shaped names a user might pick.
+- Don't tell the candidate other candidates exist.
+- The judge can know it's judging but sees outputs by sanitized label only, never by model name.
+- Comparing two variants: one judge scores both sets in a single pass on one scale, blind to which set each came from.
+
+**Steps:**
+
+1. **Frame.** State what variant is under test and what behavior counts as success. Write the rubric (3-6 concrete criteria) for the judge only. Hold it back from candidates.
+2. **Set up sanitized environments.** Per-candidate working dir with the variant in place. Plant any context an organic task would have: a project skeleton, the skills the candidate would naturally read.
+3. **Author one organic prompt.** What a user would type. No leakage of what's being measured.
+4. **Spawn N parallel candidates** using the configured runner seats per [candidate-graft's Phase B](../../candidate-graft/SKILL.md#phase-b-fan-out). Each works in its own sanitized dir. Same prompt to each. Use its configured nstack role tag, per the Subagents section.
+5. **Spawn one blinded judge** on an independent configured judge seat per [candidate-graft's Phase C](../../candidate-graft/SKILL.md#phase-c-cross-judge). Judge sees outputs by sanitized label and the rubric, never a model name. Prefer another model family when available; otherwise report the same-family limitation.
+6. **Verify the chain from transcripts, not self-report.** Read each identified candidate's tool events through the host's actual session evidence. Do not glob unrelated sessions. If child events are unavailable, mark protocol adherence unverified rather than use the parent's transcript. That crosses workspace boundaries and reads private chats from unrelated projects. Look at which files each candidate actually opened. Grade chain-following from the files it really read plus the shape of the code, never from the candidate's own claims.
+7. **Read every candidate output yourself** end to end. Compare to the judge's verdict. Disagreement means a model is biased or the rubric is ambiguous. Synthesize.
+
+**Reply:** variant under test, rubric, per-candidate notes, judge's verdict, your synthesis, and a recommendation for whether to promote the variant.
