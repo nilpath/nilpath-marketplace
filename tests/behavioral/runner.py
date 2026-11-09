@@ -1,4 +1,4 @@
-"""Run bounded Claude fixtures and capture requested evidence before disposal."""
+"""Run Claude CLI in headless mode and collect tool call events from stream-json output."""
 
 import json
 import shutil
@@ -14,52 +14,15 @@ class ToolCall:
     input: dict
 
 
-@dataclass
-class ToolResult:
-    tool_use_id: str
-    content: object
-    is_error: bool
-
-
-@dataclass
-class Observation:
-    calls: list[ToolCall]
-    results: list[ToolResult]
-    final_output: str
-    artifacts: dict[str, bytes | None]
-    completed: bool = False
-
-
-class FixtureFailure(RuntimeError):
-    """Keep selected fixture evidence after the temporary workspace is disposed."""
-
-    def __init__(self, message: str, artifacts: dict[str, bytes | None]):
-        super().__init__(message)
-        self.artifacts = artifacts
-
-
-def _capture_artifacts(cwd: Path, artifact_paths: tuple[str, ...]) -> dict[str, bytes | None]:
-    artifacts = {}
-    for relative in artifact_paths:
-        path = (cwd / relative).resolve()
-        if Path(relative).is_absolute() or not path.is_relative_to(cwd.resolve()):
-            raise ValueError(f"Artifact must stay inside the fixture workspace: {relative}")
-        if path.exists() and not path.is_file():
-            raise ValueError(f"Artifact is not a file: {relative}")
-        artifacts[relative] = path.read_bytes() if path.exists() else None
-    return artifacts
-
-
 def run_skill_test(prompt: str, context_dir: Path | None, plugin_dirs: list[Path]) -> list[ToolCall]:
-    """Preserve the invocation-only interface for existing fixtures."""
-    return run_skill_observation(prompt, context_dir, plugin_dirs).calls
+    """
+    Invoke Claude CLI with the given prompt and return the ordered list of tool calls made.
 
-
-def run_skill_observation(
-    prompt: str, context_dir: Path | None, plugin_dirs: list[Path],
-    artifact_paths: tuple[str, ...] = (),
-) -> Observation:
-    """Capture fixture-relative artifact bytes; missing files are explicitly None."""
+    Args:
+        prompt: The prompt to send to Claude.
+        context_dir: Optional directory whose contents are copied into the temp working dir.
+        plugin_dirs: Local plugin directories (each passed via --plugin-dir).
+    """
     with tempfile.TemporaryDirectory() as tmp:
         cwd = Path(tmp)
         if context_dir and context_dir.exists():
@@ -81,68 +44,34 @@ def run_skill_observation(
         for plugin_dir in plugin_dirs:
             cmd += ["--plugin-dir", str(plugin_dir)]
 
-        try:
-            result = subprocess.run(
-                cmd, cwd=str(cwd), capture_output=True, text=True, timeout=900,
-            )
-        except subprocess.TimeoutExpired as error:
-            raise FixtureFailure("Claude fixture exceeded its time budget",
-                                 _capture_artifacts(cwd, artifact_paths)) from error
+        result = subprocess.run(
+            cmd,
+            cwd=str(cwd),
+            capture_output=True,
+            text=True,
+            timeout=900,
+        )
 
-        artifacts = _capture_artifacts(cwd, artifact_paths)
-        if result.returncode:
-            try:
-                _parse_observation(result.stdout)
-            except (RuntimeError, ValueError) as error:
-                raise FixtureFailure(f"Claude fixture failed ({result.returncode}): {error}", artifacts) from error
-            reason = result.stderr.strip()[-512:] or "no final error result"
-            raise FixtureFailure(f"Claude fixture failed ({result.returncode}): {reason}", artifacts)
-        try:
-            observation = _parse_observation(result.stdout)
-        except (RuntimeError, ValueError) as error:
-            raise FixtureFailure(str(error), artifacts) from error
-        if not observation.completed:
-            raise FixtureFailure("Claude fixture exited without a final result event", artifacts)
-        observation.artifacts = artifacts
-        return observation
+        return _parse_tool_calls(result.stdout)
 
 
 def _parse_tool_calls(stream_output: str) -> list[ToolCall]:
-    return _parse_observation(stream_output).calls
-
-
-def _parse_observation(stream_output: str) -> Observation:
     calls = []
-    results = []
-    final_output = ""
-    completed = False
     for line in stream_output.splitlines():
         line = line.strip()
         if not line:
             continue
         try:
             event = json.loads(line)
-        except json.JSONDecodeError as error:
-            if line.startswith("{"):
-                raise ValueError("Malformed Claude stream event") from error
+        except json.JSONDecodeError:
             continue
 
-        if event.get("type") == "result":
-            if event.get("is_error"):
-                raise RuntimeError(f"Claude fixture returned an error: {event.get('result', 'unspecified error')}")
-            final_output = event.get("result", "")
-            if not isinstance(final_output, str):
-                raise ValueError("Claude final result must be a string")
-            completed = True
-        elif event.get("type") in {"assistant", "user"}:
-            message = event.get("message", {})
-            for block in message.get("content", []):
-                if block.get("type") == "tool_use":
-                    calls.append(ToolCall(name=block["name"], input=block.get("input", {})))
-                elif block.get("type") == "tool_result":
-                    results.append(ToolResult(
-                        tool_use_id=block["tool_use_id"], content=block.get("content"),
-                        is_error=bool(block.get("is_error", False)),
-                    ))
+        if event.get("type") != "assistant":
+            continue
 
-    return Observation(calls, results, final_output, {}, completed)
+        message = event.get("message", {})
+        for block in message.get("content", []):
+            if block.get("type") == "tool_use":
+                calls.append(ToolCall(name=block["name"], input=block.get("input", {})))
+
+    return calls

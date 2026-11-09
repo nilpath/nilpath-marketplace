@@ -1,14 +1,16 @@
 ### Prototype
 
-**You own the decision, not production code.** The artifact is a disposable instrument.
+Read the [sign-off contract](../references/sign-off.md) before preparation or implementation.
 
-Read the [sign-off contract](../references/sign-off.md) before preparation or implementation. Cheap experiments do not exempt product edits from approval.
+**You own the design decision, not the code. The prototype is a throwaway instrument. The real build follows Feature.**
 
-1. Scope the empirical decision: layout, interaction, density, behavior, timing or approach. No decision means no prototype; route a real build to [Feature](feature.md). State the evidence that would distinguish alternatives.
-2. Gather prior art when the design space is open; let the operator choose genuine product/preferences before building when needed. Skip this when direction is already fixed. Do not outsource a safe observable experiment as a preference question.
-3. Build throwaway variants in an isolated assigned scratch directory outside the product tree. Use the lightest available environment. No production framework migration, shipping tests, installed configuration changes, automatic dependency installs, or production candidates in worktrees. Any such need becomes a separate proposal under sign-off.
-4. Put alternatives behind one switcher where useful, each labeled. Compare enough distinct shapes to answer the fork, not cosmetic variants of one idea. Writers have separate outputs; the coordinator owns the comparison.
-5. Drive the matching **control-ui** or **control-cli** surface, or the smallest diagnostic timing/output script. Preserve screenshots, outputs or measurements. The observation tests the decision; quality shortcuts in the prototype do not justify fabricated evidence.
-6. Present alternatives, tradeoffs and a recommendation with the scratch path. Stop. Choosing a variant does not start or approve Feature implementation. A later build uses **architect** where needed and a separately assessable implementation proposal.
+The one playbook where the Laziness Protocol's "smallest change" and the verification bar invert. Speed over polish, code quality does not matter, no planning. The rigor is in picking the right design cheaply. Propose variations the user didn't ask for, throw an approach away and try another.
 
-**Reply:** variants, observed evidence, tradeoffs, recommendation and disposable artifact path. State what remains unverified and that nothing was promoted.
+1. Scope the decision the prototype exists to make: which layout, which interaction, which density, or for an empirical fork which behavior, timing, or approach. No decision means no prototype. Route to Feature.
+2. Gather references when the design space is open. Search for prior art, summarize a moodboard of themes, palettes, and layouts, let the user pick directions before building. Skip when the direction is set.
+3. Build throwaway in an isolated scratch dir, outside product source. For a visual decision, vanilla HTML/CSS/JS or the lightest stack that renders the idea, CDN deps, a dev server with hot reload. For a behavioral or timing decision, the smallest script that exercises the question. No production framework, no tests, no abstractions.
+4. When comparing alternatives, build them behind one switcher (buttons or a keypress), each variant labeled. This is the **exhaust-the-design-space** principle skill made cheap.
+5. Verify on the matching surface. For a visual decision, screenshot each variant via the control skill and drive the interaction. For a behavioral or timing decision, observe the thing you are deciding by logging the timing, printing the output, or watching the render. The observation is the test here, not an assertion.
+6. Present alternatives, tradeoffs, and a recommendation. The output is the decision plus the throwaway artifact, not shippable code. Product implementation still requires covering sign-off. Hand the chosen direction to **Feature** (or `architect` for the shape) for the real build.
+
+**Reply:** the variants explored, the evidence (screenshots for a visual decision, the observed output or timing for a behavioral one), tradeoffs, your recommendation, and the scratch path. Say plainly that the prototype is throwaway.

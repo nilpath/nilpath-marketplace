@@ -1,12 +1,10 @@
 ### Pause safely
 
-**You own a recoverable stop.** This is an explicit pause request, not an inference from "going to bed" or "keep going".
+**You own a clean stop. Leave a checkpoint a cold-start agent can resume from.** This is explicit only. On "keep going", "going to bed, keep going", or "don't stop", do not pause.
 
-Read the [sign-off contract](../references/sign-off.md) and [run accounting](../references/run-contract.md) before changing coordination state.
+1. Stop at a safe boundary. Finish the current atomic step or back out of it. Start nothing new, and cancel any nested subagents.
+2. Take no irreversible action to pause. No PR and no push unless you already had one out.
+3. Make the work durable. Only within the user's commit limits and covering authority, commit uncommitted edits as one clear `wip:` commit on the current branch so nothing is lost. Otherwise preserve them uncommitted. If the tree is broken, say so in the commit body in one line.
+4. Write the resume note off-context. Capture intent, what you were doing, progress and what's verified, current state, next steps, key files, and gotchas. For the compaction trigger write it to a file like `/tmp/<slug>-resume.md`. If a show-me-your-work trail exists, point at it instead of duplicating it.
 
-1. Stop dispatching new work. Ask owned workers to hold at a safe boundary and wait within a stated stop budget. Complete only an already-authorized atomic operation necessary for a safe stop. Unknown or unobservable workers remain unknown, not assumed cancelled. Use actual native handles, never process-name killing.
-2. Preserve the current workspace, including unrelated dirty bytes. Do not stash, reset, create a WIP commit, push, publish, or delete resources merely to pause. Existing permission for an action is not a reason to perform it now. Keep evidence outside product and cleanup targets.
-3. Record the pause and actual observations through run accounting when a store exists. Preserve reservations and uncertain effects. Write a revision-bound handoff naming intent, plan/store, actual proposal/decision locators, current branches/heads/dirty-content fingerprints, accepted/stale receipts, owned resources, unknown workers/effects, blockers, and the first safe next action. Point at the existing **show-me-your-work** trail rather than duplicating its decisions.
-4. Read the saved handoff back. Confirm proof survives and identify what is on disk versus only in conversation. If stop confirmation or storage failed, report a partial pause explicitly. [Session pickup](session-pickup.md) owns later reconciliation, not blind resumption from this note.
-
-**Reply:** handoff/store/evidence paths, preserved workspace state, confirmed and unknown stops, uncertain effects, and first action on resume. This is a pause, not a completion report.
+**Reply:** where you are in the loop, what's on disk versus still in your head (paths, no diff dumps), the commits you made and whether the tree is clean, and the first action on resume. This is a pause, not a final report.
