@@ -49,7 +49,9 @@ Babysit can check or watch CI/reviews and execute covering-approved fixes. Obser
 
 [Opening a PR](skills/nstack-flow/playbooks/opening-a-pr.md) owns publication instructions. It preserves upstream's built-in PR-tool preference; the existing draft publisher is used only for the GitHub CLI publication path. No separate delivery guide or duplicate PR-body format is maintained.
 
-The copied playbooks use pstack's existing orchestration, PR-watch, plan-checking and worktree-audit helpers and dependency files. No separate Python/SQLite accounting framework is added. Explicitly assigned program coordinators may launch child coordinators using inherited scope and existing configured roles. Copies retain upstream content except for the operator-approved substitutions below.
+The copied playbooks use standard-library Python translations of pstack's orchestration, PR-watch and plan-checking helpers, plus its unchanged Bash worktree audit. The three Python tools require no pip packages, Bun, Node.js or npm bootstrap. Orchestration keeps pstack's TSV/Markdown/JSON store and PID lock, not a separate SQLite accounting framework. Explicitly assigned program coordinators may launch child coordinators using inherited scope and existing configured roles. Playbook copies retain upstream content except for the operator-approved substitutions below.
+
+Run the helpers as `python3 <skill>/scripts/check_plan.py <plan.md>`, `python3 <skill>/scripts/orch/orch.py --store <directory> <command>` and `python3 <skill>/scripts/watch-pr/watch_pr.py <options>`, with `<skill>` resolved to the absolute installed nstack-flow directory. Options, exit meanings, stored formats and watcher decisions remain. Help and exception details use Python wording; count labels sort deterministically by UTF-16 rather than locale collation. JSON retains values and absent/null distinctions, not incidental numeric spelling or object-member order. Behavioral tests live in the repository's `tests/`, not the installed plugin. TypeScript-only compile-time proofs are not claimed for Python.
 
 Bundled rule reads use `gh api` against this repository's `main` and the rendered tree matching the current harness. Project-code baselines still use the project's trunk. A missing rule read stops the workflow; it does not silently substitute an installed or working-copy version. These trunk rules can be newer than installed helpers.
 
@@ -92,8 +94,9 @@ Defaults are suggestions: an account may not have every model. A model the clien
 
 ## Requirements and limits
 
-- Python 3.11+ for the model hook and `setup-nstack`.
-- Bun for the copied orchestration and PR-watch tools, Node.js for the plan checker, and the helpers' original dependency files. The upstream bootstrap may install dependencies before its first CLI invocation.
+- Python 3.11+ for the model hook, `setup-nstack`, and the standard-library orchestration, PR-watch and plan-checking helpers.
+- The orchestration helper supports Linux and macOS only. Other platforms stop before store mutation or PID liveness checks; Python's Windows `os.kill(pid, 0)` is not a safe process probe.
+- `git`, an authenticated `gh` CLI for GitHub operations, and optional `origin` for the existing orchestration forge path. The unchanged Bash worktree audit also uses `jq`, `rg`, Unix utilities and its existing platform-specific metadata probes.
 - **Codex:** trust nstack's plugin hook once with `/hooks`. Until then, nstack agents reply that the hook did not run, and delegation stops.
 - Read access to the plugin's install directory: skills and subagents read their reference files there. Interactive sessions ask for approval; non-interactive runs must pre-approve it (for example, Copilot CLI's `--add-dir`).
 - The model hook is verified for Copilot CLI and Claude Code plugins, and with the same hook command in Codex. Codex loading it from an installed plugin is not yet verified. Native Copilot use inside VS Code is unsupported. Copilot CLI in a VS Code terminal remains CLI usage.
@@ -110,7 +113,7 @@ The Python best-practices skill is an original summary linking to the Google Pyt
 
 `nstack-help` and its prompting and recipe references are adapted from [pstack's poteto-help](https://github.com/cursor/plugins/tree/8b3326d99fd4b993cb33a24dad8af03175c642c5/pstack/skills/poteto-help) at commit `8b3326d99fd4b993cb33a24dad8af03175c642c5` (pstack 0.15.30), under the same Lauren Tan MIT License below. Wording is retained where it applies; commands, setup, public source links, and the inventory match nstack's three clients and bundled playbooks. Unsupported pstack-only workflows are not offered.
 
-The twelve added procedures, bot-triage reference and supporting scripts are copied from [poteto-mode](https://github.com/cursor/plugins/tree/8b3326d99fd4b993cb33a24dad8af03175c642c5/pstack/skills/poteto-mode) at that same pin (pstack 0.15.30, MIT copyright Lauren Tan 2026). Keep upstream content verbatim except for operator-approved mechanical substitutions and narrowly approved nstack constraints. Older component provenance below remains unchanged.
+The twelve added procedures, bot-triage reference and Bash audit are copied from [poteto-mode](https://github.com/cursor/plugins/tree/8b3326d99fd4b993cb33a24dad8af03175c642c5/pstack/skills/poteto-mode) at that same pin (pstack 0.15.30, MIT copyright Lauren Tan 2026). The Python orchestration, PR-watch and plan-checking scripts translate its helpers under the same license. Copied instructions stay verbatim except for operator-approved substitutions and constraints; translated scripts use pinned behavioral fixtures, not a byte-identity claim. The one-time import audit is not a permanent CI gate. Older component provenance below remains unchanged.
 
 nstack adapts workflows, prompts, and principles from pstack by Lauren Tan (poteto), and the deslop, control-cli, and control-ui skills from Cursor's cursor-team-kit. Both are published in [cursor/plugins](https://github.com/cursor/plugins) at commit `dbf49813a39c1a5389c5e28cb8e4c1c2379e2454` (pstack 0.15.23) under the MIT License. Most skill text is copied verbatim; nstack replaces Cursor-specific mechanics (the Task tool, model rule files, cloud workers) with its own launch tags and model hook. nstack is not affiliated with or endorsed by the pstack author or Cursor.
 

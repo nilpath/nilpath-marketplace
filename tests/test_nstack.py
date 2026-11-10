@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
@@ -341,11 +342,98 @@ def test_scripts_are_executable(harness):
     for path in (
         root / HOOK_DIRS[harness] / "nstack_config.py",
         root / "skills" / "nstack-flow" / "scripts" / "publish_draft.py",
-        root / "skills" / "nstack-flow" / "scripts" / "watch-pr" / "watch-pr",
-        root / "skills" / "nstack-flow" / "scripts" / "orch" / "orch.ts",
+        root / "skills" / "nstack-flow" / "scripts" / "watch-pr" / "watch_pr.py",
+        root / "skills" / "nstack-flow" / "scripts" / "orch" / "orch.py",
         root / "skills" / "nstack-flow" / "scripts" / "worktree-audit.sh",
     ):
         assert path.is_file() and os.access(path, os.X_OK), path
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_converted_helpers_use_only_stdlib_and_run_without_site_packages(harness, tmp_path):
+    flow = plugin_dir(harness) / "skills" / "nstack-flow"
+    scripts = flow / "scripts"
+    cases = (
+        ("check_plan.py", [], 2),
+        ("orch/orch.py", ["--help"], 0),
+        ("watch-pr/watch_pr.py", ["--help"], 0),
+    )
+    for name, args, expected_exit in cases:
+        path = scripts / name
+        tree = ast.parse(path.read_text())
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                modules = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                assert node.level == 0, (name, node.module)
+                modules = [node.module]
+            else:
+                continue
+            for module in modules:
+                assert module and module.split(".")[0] in sys.stdlib_module_names, (name, module)
+        result = subprocess.run(
+            [sys.executable, "-I", "-S", str(path), *args],
+            cwd=tmp_path, env={"PATH": str(tmp_path), "HOME": str(tmp_path)},
+            capture_output=True, text=True, timeout=10,
+        )
+        assert result.returncode == expected_exit, (name, result.stdout, result.stderr)
+        assert "Traceback" not in result.stderr
+    assert not list(scripts.rglob("*.ts"))
+    assert not list(scripts.rglob("*.mjs"))
+    for name in ("bootstrap.ts", "package.json", "bun.lock", "watch-pr/tsconfig.json"):
+        assert not (scripts / name).exists()
+    for path in (flow / "playbooks").glob("*.md"):
+        text = path.read_text()
+        for legacy in ("scripts/check-plan.mjs", "scripts/orch/orch.ts", "scripts/watch-pr/watch-pr"):
+            assert legacy not in text, path
+    for playbook, script in (
+        ("multi-phase-plan.md", "check_plan.py"),
+        ("orchestrate.md", "orch/orch.py"),
+        ("babysit.md", "watch-pr/watch_pr.py"),
+    ):
+        text = (flow / "playbooks" / playbook).read_text()
+        assert re.search(r'`python3 "[^"\n]+/scripts/' + re.escape(script) + r'"', text), playbook
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
+def test_generated_checker_and_store_work_without_other_runtimes(harness, tmp_path):
+    scripts = plugin_dir(harness) / "skills" / "nstack-flow" / "scripts"
+    env = {"PATH": str(tmp_path), "HOME": str(tmp_path)}
+
+    def run(script, *args):
+        return subprocess.run(
+            [sys.executable, "-I", "-S", str(scripts / script), *args],
+            cwd=tmp_path, env=env, capture_output=True, text=True, timeout=10,
+        )
+
+    plan = tmp_path / "plan.md"
+    data = (ROOT / "tests/fixtures/nstack-python/checker/valid.input").read_bytes()
+    if harness != "claude":
+        data = data.replace(b"/loop 1h", b"native recurring automation every 1h")
+    plan.write_bytes(data)
+    expected = json.loads((ROOT / "tests/fixtures/nstack-python/checker/valid.expected.json").read_text())
+    checked = run("check_plan.py", str(plan))
+    assert checked.returncode == expected["exit"] == 0
+    assert checked.stdout == expected["stdout"].replace("<PLAN>", str(plan))
+    assert checked.stderr == expected["stderr"].replace("<PLAN>", str(plan))
+
+    store = tmp_path / "store"
+    initialized = run("orch/orch.py", "--store", str(store), "init")
+    assert initialized.returncode == 0, initialized.stderr
+    added = run("orch/orch.py", "--store", str(store), "--json", "unit", "add", "u1", "--track", "feature")
+    assert added.returncode == 0, added.stderr
+    assert json.loads(added.stdout) == {
+        "id": "u1", "track": "feature", "state": "pending",
+        "branch": "", "pr": "", "sha": "", "brief": "",
+    }
+    assert (store / "units.tsv").read_text() == (
+        "id\ttrack\tstate\tbranch\tpr\tsha\tbrief\nu1\tfeature\tpending\t\t\t\t\n"
+    )
+    missing = run("orch/orch.py", "--store", str(store), "--json", "ledger", "check", "42", "abc")
+    assert missing.returncode == 2
+    assert missing.stderr == ""
+    assert json.loads(missing.stdout) == {"pr": "42", "sha": "abc", "verdict": "NOT-VERIFIED"}
+    assert not (store / ".orch.lock").exists()
 
 
 @pytest.mark.parametrize("harness", HARNESSES)

@@ -1,0 +1,5 @@
+{
+  "exit": 1,
+  "stdout": "0 PR sections, 10 problems\n",
+  "stderr": "<PLAN>:1: no \"## How to read this\" section\n<PLAN>:3: Program checklist lacks \"### Arm the program\" in order\n<PLAN>:3: Program checklist lacks \"### Spawn owners\" in order\n<PLAN>:3: Program checklist lacks \"### PR mechanics\" in order\n<PLAN>:3: Program checklist lacks \"### Verdict and merge\" in order\n<PLAN>:3: Program checklist lacks \"### Boot recipe\" in order\n<PLAN>:3: Program checklist lacks \"git show origin/main:\"\n<PLAN>:3: Program checklist lacks \"/loop 1h\"\n<PLAN>:3: Program checklist lacks \"status message\"\n<PLAN>:1: no PR sections between Program checklist and Close the program\n"
+}

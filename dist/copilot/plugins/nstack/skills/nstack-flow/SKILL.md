@@ -126,7 +126,7 @@ Comments follow the same rule as the reply. Write them clean as you go. Keep a c
 
 Open the todo list with the matched playbook's steps copied verbatim before task-specific items. A skipped step keeps a one-line `skip: <reason>`. Open the full linked procedure before running it.
 
-This ordered index is the complete playbook inventory. Explicit intent wins; combined requests use a named handoff. Size, cross-cutting scope, and stepping away do not override a supported method. Preparation and execution still follow the sign-off contract. The copied playbooks use their upstream helper scripts; there is no additional nstack accounting framework.
+This ordered index is the complete playbook inventory. Explicit intent wins; combined requests use a named handoff. Size, cross-cutting scope, and stepping away do not override a supported method. Preparation and execution still follow the sign-off contract. The copied playbooks use standard-library Python translations of their upstream helpers and the unchanged Bash audit; there is no additional nstack accounting framework.
 
 - [Pause safely](playbooks/pause-safely.md). Explicit safe stop and preserved handoff.
 - [Session pickup](playbooks/session-pickup.md). Reconcile explicitly identified prior evidence and current authority/state.

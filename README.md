@@ -12,13 +12,13 @@ Native Copilot use inside VS Code is not supported. Copilot CLI in a VS Code ter
 | **engineering-workflow** | 0.8.2 | research→plan→implement→review pipeline: 5 skills, 10 agents, context7 MCP | ✅ | ✅¹ | ✅¹ |
 | **documentation** | 0.8.0 | writing-documentation + mermaid skills, doc-writer/doc-auditor agents | ✅ | ✅¹ | ✅¹ |
 | **authoring-tools** | 0.8.1 | creating-skills, creating-agents (about Claude Code's own formats) | ✅ | — | — |
-| **nstack** | 0.1.0 | Engineering backbone adapted from pstack: coordinator with fifteen playbooks and upstream helper tools, 8 workflow skills plus pstack's 24 principles and 15 supporting skills (47 total), 3 agents, per-role models via a hook² | ✅ | ✅ | ✅ |
+| **nstack** | 0.1.0 | Engineering backbone adapted from pstack: coordinator with fifteen playbooks and standard-library Python helpers, 8 workflow skills plus pstack's 24 principles and 15 supporting skills (47 total), 3 agents, per-role models via a hook² | ✅ | ✅ | ✅ |
 
 ¹ The orchestrator skills (researching, planning, executing-plan, performing-code-review, writing-documentation) are adapted per harness: subagent dispatch, todo tracking, and user questions render in each harness's native mechanism. They degrade gracefully on Copilot/Codex (chat questions instead of structured question UI, no parallel exploration fan-out).
 
 ² nstack is independent of the other plugins. A plugin hook applies the model, and effort where supported, for each delegated role from built-in defaults or your overrides; it needs Python 3.11+, and Codex users must trust the hook once with `/hooks`. See [the nstack README](src/plugins/nstack/README.md).
 
-Nstack 0.1.0 adds pstack's babysitting, experiment, planning, orchestration, pause/pickup and cleanup procedures with their original helpers. The [method index](src/plugins/nstack/skills/nstack-flow/SKILL.md.j2#playbooks) owns the complete inventory. Product changes still require an approved proposal or explicit scoped grant. "Going to bed" alone does not waive sign-off. Marking ready, merging and auto-merge remain manual; native runtime compliance is not proved by rendered-document tests.
+Nstack 0.1.0 adds pstack's babysitting, experiment, planning, orchestration, pause/pickup and cleanup procedures. Its orchestration, PR-watch and plan-checking helpers use Python 3.11's standard library without pip packages, Bun or Node; the Bash worktree audit is unchanged. The [method index](src/plugins/nstack/skills/nstack-flow/SKILL.md.j2#playbooks) owns the complete inventory. Product changes still require an approved proposal or explicit scoped grant. "Going to bed" alone does not waive sign-off. Marking ready, merging and auto-merge remain manual; native runtime compliance is not proved by rendered-document tests.
 
 Dependencies: `engineering-workflow` uses skills from `git-tools` and the doc-writer agent from `documentation` — install them together.
 

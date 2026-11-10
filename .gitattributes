@@ -1,0 +1,2 @@
+# Preserve the checker's intentional CRLF and final bare CR fixture.
+tests/fixtures/nstack-python/checker/crlf-final-cr.input -text whitespace=-blank-at-eol,-blank-at-eof

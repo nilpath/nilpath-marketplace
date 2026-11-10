@@ -1,0 +1,19 @@
+# Demo
+
+## How to read this 
+One box is one unit of work and names the evidence. Check a box only when its evidence exists. See playbooks/.
+Tests alone are not sufficient verification. A PR is verified only when its unit, live, and perf boxes are all checked.
+
+## Program checklist
+### Arm the program
+### Spawn owners
+### PR mechanics
+### Verdict and merge
+### Boot recipe
+`git show origin/main:` /loop 1h status message
+
+## Close the program
+
+## Appendix Prototype evidence
+colon with FEFF: ﻿
+colon with NEL: 

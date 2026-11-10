@@ -1,0 +1,5 @@
+{
+  "exit": 0,
+  "stdout": "PR 1  boxes=19  files=1 build=1 you-see=1 verify-unit=1 verify-live=10 verify-perf=4 review-gate=0 merge=1\n1 PR sections, 0 problems\n",
+  "stderr": ""
+}
