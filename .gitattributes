@@ -2,3 +2,6 @@ dist/** linguist-generated=true
 .claude-plugin/marketplace.json linguist-generated=true
 .agents/plugins/marketplace.json linguist-generated=true
 .github/plugin/marketplace.json linguist-generated=true
+
+# Preserve the checker's intentional CRLF and final bare CR fixture.
+tests/fixtures/nstack-python/checker/crlf-final-cr.input -text whitespace=-blank-at-eol,-blank-at-eof
