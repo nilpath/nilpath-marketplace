@@ -1,67 +1,53 @@
 import json
+import re
 
 import pytest
-import yaml
+from buildkit.config import load_config
 
-from paths import CHANGELOG_MD, MARKETPLACE_JSON, PLUGIN_DIRS, SRC_PLUGINS_DIR
-
-
-def _marketplace_plugins() -> dict[str, dict]:
-    data = json.loads(MARKETPLACE_JSON.read_text())
-    return {p["name"]: p for p in data.get("plugins", [])}
+from paths import ROOT
 
 
-def _src_plugins() -> dict[str, dict]:
-    return {
-        f.parent.name: yaml.safe_load(f.read_text())
-        for f in sorted(SRC_PLUGINS_DIR.glob("*/plugin.yaml"))
-    }
-
-
-def test_marketplace_lists_every_plugin():
-    marketplace = set(_marketplace_plugins())
-    src = set(_src_plugins())
-    dist = {p.name for p in PLUGIN_DIRS}
-    assert marketplace == src == dist, (
-        f"plugin sets diverge: marketplace={sorted(marketplace)}, "
-        f"src={sorted(src)}, dist={sorted(dist)}"
+def test_current_readme_version_fields_match_source_exactly():
+    plugins = load_config(ROOT).plugins
+    cells = re.findall(
+        r"^\| \*\*([a-z0-9-]+)\*\* \| ([0-9]+\.[0-9]+\.[0-9]+) \|",
+        (ROOT / "README.md").read_text(), re.M,
     )
+    assert len(cells) == len(plugins)
+    assert dict(cells) == {plugin.name: plugin.version for plugin in plugins}
+    for plugin in plugins:
+        readme = plugin.src_dir / "README.md"
+        headers = re.findall(r"^Version: \*\*([^*]+)\*\*$", readme.read_text(), re.M)
+        if headers:
+            assert headers == [plugin.version]
 
 
-@pytest.mark.parametrize("plugin_dir", PLUGIN_DIRS, ids=lambda p: p.name)
-def test_plugin_version_sync(plugin_dir):
-    manifest = json.loads((plugin_dir / ".claude-plugin" / "plugin.json").read_text())
-    src_version = _src_plugins()[plugin_dir.name]["version"]
-    market_version = _marketplace_plugins()[plugin_dir.name]["version"]
-    assert manifest["version"] == src_version == market_version, (
-        f"{plugin_dir.name}: plugin.json={manifest['version']}, "
-        f"src={src_version}, marketplace={market_version}"
-    )
-
-
-def test_copilot_registry_syncs_with_sources():
-    """Copilot CLI's .github/plugin/marketplace.json must list every plugin that
-    has copilot components, with versions matching src."""
-    registry = json.loads(
-        (MARKETPLACE_JSON.parent.parent / ".github" / "plugin" / "marketplace.json").read_text()
-    )
-    src = _src_plugins()
-    copilot_dist = MARKETPLACE_JSON.parent.parent / "dist" / "copilot" / "plugins"
-    dist_names = {p.name for p in copilot_dist.iterdir() if p.is_dir()}
-    registry_entries = {p["name"]: p for p in registry["plugins"]}
-    assert set(registry_entries) == dist_names
-    for name, entry in registry_entries.items():
-        assert entry["version"] == src[name]["version"]
-        assert entry["source"] == f"dist/copilot/plugins/{name}"
-
-
-@pytest.mark.parametrize("plugin_dir", PLUGIN_DIRS, ids=lambda p: p.name)
-def test_changelog_contains_plugin_version(plugin_dir):
-    version = _src_plugins()[plugin_dir.name]["version"]
-    changelog = CHANGELOG_MD.read_text()
-    assert version in changelog, f"Version '{version}' not found in CHANGELOG.md"
-
-
-@pytest.mark.parametrize("plugin_dir", PLUGIN_DIRS, ids=lambda p: p.name)
-def test_plugin_readme_exists(plugin_dir):
-    assert (plugin_dir / "README.md").exists(), f"{plugin_dir.name}: missing README.md in dist"
+@pytest.mark.parametrize("harness,manifest,registry_path", [
+    ("claude", ".claude-plugin/plugin.json", ".claude-plugin/marketplace.json"),
+    ("copilot", "plugin.json", ".github/plugin/marketplace.json"),
+    ("codex", ".codex-plugin/plugin.json", ".agents/plugins/marketplace.json"),
+])
+def test_generated_manifests_and_registry_match_sources(harness, manifest, registry_path):
+    cfg = load_config(ROOT)
+    sources = {plugin.name: plugin.version for plugin in cfg.plugins}
+    plugins = ROOT / cfg.harnesses[harness].dist_root / "plugins"
+    actual = {}
+    for plugin in sorted(plugins.iterdir()):
+        data = json.loads((plugin / manifest).read_text())
+        assert data["name"] == plugin.name
+        actual[plugin.name] = data["version"]
+        assert data["version"] == sources[plugin.name]
+        assert (plugin / "README.md").is_file(), f"{plugin.name}: missing README.md"
+    if harness == "claude":
+        assert set(actual) == set(sources)
+    registry = json.loads((ROOT / registry_path).read_text())
+    assert sorted(entry["name"] for entry in registry["plugins"]) == sorted(actual)
+    if harness != "codex":
+        assert registry["metadata"]["version"] == cfg.marketplace["version"]
+    for entry in registry["plugins"]:
+        path = f"{cfg.harnesses[harness].dist_root}/plugins/{entry['name']}"
+        if harness == "codex":
+            assert entry["source"] == {"source": "local", "path": f"./{path}"}
+        else:
+            assert entry["source"] == (f"./{path}" if harness == "claude" else path)
+            assert entry["version"] == actual[entry["name"]]

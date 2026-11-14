@@ -1,5 +1,15 @@
 # Changelog
 
+Component release notes are generated above the legacy boundary.
+
+## Legacy changelog
+
+The unchanged historical notes below, including Unreleased, are not generator input.
+
+<!-- release-legacy-boundary -->
+
+# Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

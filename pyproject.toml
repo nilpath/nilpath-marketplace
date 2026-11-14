@@ -3,6 +3,7 @@ name = "nilpath-marketplace-tests"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
+    "git-cliff==2.13.1",
     "pytest>=8.0",
     "pytest-xdist>=3.0",
     "python-frontmatter>=1.1",

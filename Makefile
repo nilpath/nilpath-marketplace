@@ -3,12 +3,13 @@ PYTHON := $(VENV)/bin/python
 PYTEST := $(VENV)/bin/pytest
 BUILDKIT := $(VENV)/bin/nilpath-build
 export PYTHONPATH := $(CURDIR)/tools/buildkit/src
+export PATH := $(VENV)/bin:$(PATH)
 
 .PHONY: install build check validate test test-static test-behavioral
 
 install:
-	uv venv $(VENV) --python 3.11
-	uv pip install pytest pytest-xdist python-frontmatter pyyaml --python $(PYTHON)
+	uv venv $(VENV) --python 3.11 --allow-existing
+	uv pip install -r pyproject.toml --python $(PYTHON)
 	uv pip install -e tools/buildkit --python $(PYTHON)
 
 build:
