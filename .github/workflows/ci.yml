@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Check Conventional Commit title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: tools/pr_conventions.sh --title "$PR_TITLE"
+
+  test-static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.12.23"
+          python-version: "3.11"
+      - run: make install VENV="$RUNNER_TEMP/nilpath-ci"
+      - name: Check committed output before any rebuild
+        run: make test-static VENV="$RUNNER_TEMP/nilpath-ci"
+
+  release-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.12.23"
+          python-version: "3.11"
+      - run: make install VENV="$RUNNER_TEMP/nilpath-ci"
+      - name: Check release history and exact proposal boundary
+        env:
+          PROPOSAL_BRANCH: ${{ startsWith(github.head_ref, 'release/proposal-') }}
+          PROPOSAL_MARKER: ${{ contains(github.event.pull_request.body, '<!-- nilpath-release-proposal:') }}
+        run: |
+          if [ "$PROPOSAL_BRANCH" = true ] || [ "$PROPOSAL_MARKER" = true ]; then
+            "$RUNNER_TEMP/nilpath-ci/bin/python" tools/release.py check-proposal --base-sha "$(git rev-parse origin/main)"
+          else
+            "$RUNNER_TEMP/nilpath-ci/bin/python" tools/release.py check
+          fi

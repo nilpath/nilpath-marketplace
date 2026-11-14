@@ -93,33 +93,51 @@ A plugin with zero components for a harness is skipped entirely in that harness'
 
 1. `~/.virtualenvs/nilpath-marketplace/bin/nilpath-build new-skill <name> --plugin <plugin>`
 2. Author `src/plugins/<plugin>/skills/<name>/SKILL.md.j2` with canonical frontmatter
-3. `make build`, then update version files (see below)
+3. Run `make build check` and `make test-static`. Leave version selection to the release-preparation PR.
 
 ### Add an agent
 
 1. Create `src/plugins/<plugin>/agents/<category>/<name>.md.j2` (categories: review, research, implementation, planning)
-2. `make build`, then update version files
+2. Run `make build check` and `make test-static`. Leave version selection to the release-preparation PR.
 
 ### Release changes
 
 See [ai_docs/release-workflow.md](ai_docs/release-workflow.md).
+Ordinary changes do not manually bump versions. The Release workflow proposes
+independent component updates in one draft preparation PR. Resolve ambiguity in
+`.release/decisions.toml` with an exact component, commit SHA, bump, and reason.
+Do not edit `.release/plan.json` or generated output to resolve a decision.
 
 ## Version Sync
 
-The build propagates versions from **`src/plugins/<plugin>/plugin.yaml`** (and `src/marketplace.yaml`) into every generated manifest. A release updates:
+The build propagates versions from **`src/plugins/<plugin>/plugin.yaml`** and
+`src/marketplace.yaml` into every generated manifest. Source YAML is the current
+version authority. `.release/baselines.toml` records historical commit provenance,
+not duplicate mutable versions. The release adapter updates:
 
 | File | Update |
 | --- | --- |
 | `src/plugins/<plugin>/plugin.yaml` | Version bump for each changed plugin |
 | `CHANGELOG.md` (repo root) | Document changes |
-| root `README.md` + `src/plugins/<plugin>/README.md` | Component tables |
+| root `README.md` + existing source README current-version headers | Exact current-version fields only, never historical references |
 | generated manifests | via `make build` (never by hand) |
 
-### Version rules
+### Proposal policy
 
-- **MAJOR**: breaking changes
-- **MINOR**: new agent or skill
-- **PATCH**: bug fixes, doc updates
+- Direct `fix`, `docs`, `perf`, and `refactor` changes suggest patch, unless breaking.
+- `feat` or an added skill or agent suggests minor.
+- Stable breaking changes suggest major.
+- Features on `0.0.x` and breaking changes before `1.0` require explicit decisions.
+- Unknown messages, conflicting scope, removal, new plugins, and shared shipped
+  changes require review. `none` requires a reason and binds one component and SHA.
+- Plugins release independently. Marketplace metadata is separate. Buildkit and
+  the root test package are not release components.
+- A prepared proposal must pass `pr-title`, `test-static`, and `release-plan` checks on
+  its exact head and receive human approval. Its squash merge must retain the recorded
+  input parent and exact checked tree. Require branches to be up to date before
+  merging. Do not rebase or add unrelated commits to generated proposals.
+  Tags point to the reviewed merge. GitHub releases remain drafts until a
+  maintainer publishes them.
 
 ## Deep Dives
 
