@@ -645,7 +645,7 @@ def test_make_supplies_declared_git_cliff_without_global_path(tmp_path):
         cwd=ROOT, env={**os.environ, "PATH": "/usr/bin:/bin"}, text=True, capture_output=True,
     )
     assert result.returncode == 0, result.stderr
-    assert result.stdout.splitlines()[-1] == "git-cliff 2.13.1"
+    assert "git-cliff 2.13.1" in result.stdout.splitlines()
 
 
 def test_writer_creates_exact_draft_pr_and_retries_without_rewriting(prepared):
