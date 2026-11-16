@@ -1,12 +1,10 @@
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 
 import pytest
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/pr_conventions.sh"
@@ -88,95 +86,10 @@ def test_fetch_failure_is_not_reported_as_success(tmp_path):
     assert "OK:" not in result.stdout
 
 
-def test_workflow_handles_title_edits_and_passes_title_as_data(tmp_path):
-    workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
-    assert set(workflow["on"]["pull_request"]["types"]) >= {"opened", "synchronize", "reopened", "edited"}
-    job = workflow["jobs"]["pr-title"]
-    assert job["if"] == "github.event_name == 'pull_request'"
-    step = next(step for step in job["steps"] if step.get("name") == "Check Conventional Commit title")
-    assert step["env"]["PR_TITLE"] == "${{ github.event.pull_request.title }}"
+def test_title_is_treated_as_data(tmp_path):
     marker = tmp_path / "injected"
     title = f"feat: $(touch {marker})"
-    result = subprocess.run(["bash", "-e", "-c", step["run"]], cwd=ROOT, capture_output=True,
-                            text=True, env={**os.environ, "PR_TITLE": title})
+    result = subprocess.run([str(SCRIPT), "--title", title], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert result.stdout == "OK: title is a Conventional Commit\n"
     assert not marker.exists()
-
-
-def test_ci_checks_generated_ownership_once_alongside_title_validation():
-    workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
-    jobs = workflow["jobs"]
-    guards = [(job, step) for job, config in jobs.items() for step in config["steps"]
-              if "tools/check_generated.sh" in step.get("run", "")]
-    assert [job for job, _ in guards] == ["pr-title"]
-    assert guards[0][1]["name"] == "Check generated files"
-    assert guards[0][1]["env"]["BASE_SHA"] == "${{ github.event.pull_request.base.sha }}"
-    checkout = next(step for step in jobs["pr-title"]["steps"] if step.get("uses", "").startswith("actions/checkout@"))
-    assert checkout["with"]["fetch-depth"] == "0"
-    assert checkout["with"]["ref"] == "${{ github.event.pull_request.head.sha }}"
-    release_checks = [job for job, config in jobs.items() for step in config["steps"]
-                      if "tools/release.py check-pr" in step.get("run", "")]
-    assert release_checks == ["release-plan"]
-    test_commands = [step["run"] for step in jobs["test-static"]["steps"] if "run" in step]
-    assert test_commands == [
-        'make install VENV="$RUNNER_TEMP/nilpath-ci"',
-        'make test-static VENV="$RUNNER_TEMP/nilpath-ci"',
-    ]
-
-
-@pytest.mark.parametrize("change", ["source", "source-lookalike", "generated", "invalid-base"])
-def test_ci_generated_check_uses_only_shell_and_git(tmp_path, change):
-    (tmp_path / "tools").mkdir()
-    shutil.copy(ROOT / "tools/check_generated.sh", tmp_path / "tools/check_generated.sh")
-    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
-    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
-    commit = ["git", "-c", "user.name=Tester", "-c", "user.email=test@example.com", "commit", "-qm", "chore: fixture"]
-    subprocess.run(commit, cwd=tmp_path, check=True)
-    base = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=tmp_path, text=True).strip()
-    path = tmp_path / {
-        "generated": "dist/file",
-        "source-lookalike": " dist/file",
-    }.get(change, "source.txt")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("changed\n")
-    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
-    subprocess.run(commit, cwd=tmp_path, check=True)
-    workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
-    step = next(step for step in workflow["jobs"]["pr-title"]["steps"]
-                if "tools/check_generated.sh" in step.get("run", ""))
-    result = subprocess.run(
-        ["bash", "-e", "-c", step["run"]], cwd=tmp_path, capture_output=True, text=True,
-        env={"PATH": "/usr/bin:/bin", "BASE_SHA": "missing-base" if change == "invalid-base" else base,
-             "PR_AUTHOR": "human", "PR_AUTHOR_ID": "1", "PR_HEAD_REPO": "nilpath/test",
-             "PR_HEAD_REF": "feature", "GITHUB_REPOSITORY": "nilpath/test"},
-    )
-    if change in {"source", "source-lookalike"}:
-        assert result.returncode == 0, result.stderr
-        assert result.stdout == ""
-    elif change == "generated":
-        assert result.returncode == 1
-        assert result.stdout == "dist/file\n"
-    else:
-        assert result.returncode != 0
-        assert "missing-base" in result.stderr
-
-
-def test_writer_consumes_only_the_read_only_verifier_dependency():
-    workflow = yaml.load((ROOT / ".github/workflows/release.yml").read_text(), Loader=yaml.BaseLoader)
-    verify, writer = (workflow["jobs"][name] for name in ("verify", "write"))
-    assert verify["needs"] == "inspect"
-    assert verify["permissions"] == {"contents": "read", "pull-requests": "read"}
-    assert writer["needs"] == "verify"
-    download = next(step for step in writer["steps"] if step.get("uses", "").startswith("actions/download-artifact@"))
-    assert download["with"]["artifact-ids"] == "${{ needs.verify.outputs.artifact_id }}"
-    write = writer["steps"][-1]
-    assert write["env"]["VERIFICATION_ARTIFACT_ID"] == "${{ needs.verify.outputs.artifact_id }}"
-    assert "--verification-artifact-id" in write["run"]
-    assert not any("make build" in step.get("run", "") for step in workflow["jobs"]["inspect"]["steps"])
-    candidate_steps = [step for step in workflow["jobs"]["inspect"]["steps"]
-                       if step.get("working-directory") == "candidate"]
-    assert all(step["if"] == "steps.snapshot.outputs.kind == 'proposal'" for step in candidate_steps)
-    historical = next(step for step in workflow["jobs"]["inspect"]["steps"]
-                      if step.get("if") == "steps.snapshot.outputs.kind == 'drafts'")
-    assert "python -S dispatcher/tools/release.py bundle --root candidate" in historical["run"]

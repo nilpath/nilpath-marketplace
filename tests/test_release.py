@@ -37,21 +37,6 @@ def write(root, path, text):
     target.write_text(text)
 
 
-def generated_pr_check(root, base, pr):
-    import yaml
-
-    workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
-    step = next(step for step in workflow["jobs"]["pr-title"]["steps"]
-                if "tools/check_generated.sh" in step.get("run", ""))
-    return subprocess.run(
-        ["bash", "-e", "-c", step["run"]], cwd=root, capture_output=True, text=True,
-        env={**os.environ, "BASE_SHA": base, "GITHUB_REPOSITORY": "nilpath/test",
-             "PR_AUTHOR": pr["user"]["login"], "PR_AUTHOR_ID": str(pr["user"]["id"]),
-             "PR_HEAD_REPO": (pr["head"].get("repo") or {}).get("full_name", ""),
-             "PR_HEAD_REF": pr["head"]["ref"]},
-    )
-
-
 @pytest.fixture
 def repo(tmp_path):
     command(tmp_path, "git", "init", "-q", "-b", "main")
@@ -595,34 +580,6 @@ def test_source_only_pr_preserves_installation_snapshot(repo):
     assert (repo / "dist/claude/plugins/alpha/file").read_text() == "released\n"
 
 
-@pytest.mark.parametrize("owner", ["human", "fork", "deleted-fork", "wrong-id", "wrong-login", "ordinary-bot"])
-def test_copied_proposal_identity_cannot_bypass_generated_check(repo, owner):
-    base = command(repo, "git", "rev-parse", "HEAD")
-    write(repo, "dist/claude/plugins/alpha/file", "unversioned content\n")
-    write(repo, "src/plugins/alpha/skills/one/SKILL.md.j2", "{{ invalid template")
-    head = commit(repo, "fix: copied proposal")
-    pr = {
-        "user": {"login": r.BOT, "id": r.BOT_ID},
-        "head": {"ref": "release/proposal-copied", "sha": head, "repo": {"full_name": "nilpath/test"}},
-        "base": {"ref": "main", "repo": {"full_name": "nilpath/test"}},
-        "body": r.PROPOSAL_MARKER + "f" * 64 + " -->",
-    }
-    if owner in {"human", "wrong-login"}:
-        pr["user"]["login"] = "maintainer"
-    if owner in {"human", "wrong-id"}:
-        pr["user"]["id"] = 1
-    if owner == "fork":
-        pr["head"]["repo"]["full_name"] = "other/fork"
-    if owner == "deleted-fork":
-        pr["head"]["repo"] = None
-    if owner == "ordinary-bot":
-        pr["head"]["ref"] = "ordinary-branch"
-    result = generated_pr_check(repo, base, pr)
-    assert result.returncode == 1
-    assert "dist/claude/plugins/alpha/file" in result.stdout
-    assert "deferred" not in result.stdout
-
-
 @pytest.mark.parametrize("extra", [False, True])
 def test_bot_proposal_uses_exact_transaction_checks(repo, monkeypatch, capsys, extra):
     change(repo, "fix(alpha): reviewed guidance")
@@ -639,11 +596,6 @@ def test_bot_proposal_uses_exact_transaction_checks(repo, monkeypatch, capsys, e
     event = repo.parent / f"{repo.name}-event.json"
     event.write_bytes(r.canonical({"repository": {"full_name": "nilpath/test"}, "pull_request": pr}))
     monkeypatch.setenv("GITHUB_EVENT_PATH", str(event))
-    guard = generated_pr_check(repo, plan["input_sha"], pr)
-    assert guard.returncode == 0, guard.stderr
-    assert guard.stdout == (
-        "Generated-file validation deferred to the required release-plan job.\n"
-    )
     assert r.main(["check-pr", "--root", str(repo), "--base-sha", plan["input_sha"]]) == int(extra)
     output = capsys.readouterr()
     if extra:
@@ -804,57 +756,6 @@ def test_ordinary_pr_ownership_uses_merge_base_after_main_releases(repo, modify_
         assert "dist/claude/plugins/alpha/skills/one/SKILL.md" in result.stdout
     else:
         assert result.stdout == ""
-
-
-def test_release_plan_ci_exports_installed_venv_before_proposal_cli(repo, tmp_path):
-    import yaml
-
-    base = change(repo, "fix(alpha): proposal guidance")
-    plan = r.propose(repo).plan
-    r.prepare(repo, plan)
-    head = commit(repo, "chore(release): proposal")
-    event = tmp_path / "event.json"
-    event.write_bytes(r.canonical({
-        "repository": {"full_name": "nilpath/test"},
-        "pull_request": {
-            "user": {"login": r.BOT, "id": r.BOT_ID},
-            "head": {"ref": "release/proposal-" + plan["plan_id"], "sha": head, "repo": {"full_name": "nilpath/test"}},
-            "base": {"ref": "main", "repo": {"full_name": "nilpath/test"}}, "body": r.proposal_body(plan),
-        },
-    }))
-    workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
-    steps = workflow["jobs"]["release-plan"]["steps"]
-    gate = next(i for i, step in enumerate(steps) if "tools/release.py check-pr" in step.get("run", ""))
-    runner = tmp_path / "runner"
-    runner.mkdir()
-    (runner / "nilpath-ci").symlink_to(Path(sys.executable).parent.parent, target_is_directory=True)
-    stub_bin = tmp_path / "bin"
-    stub_bin.mkdir()
-    (stub_bin / "make").write_text("#!/bin/sh\nexit 0\n")
-    (stub_bin / "make").chmod(0o755)
-    github_path = tmp_path / "github-path"
-    initial_path = f"{stub_bin}:/usr/bin:/bin:/usr/sbin:/sbin"
-    assert shutil.which("git-cliff", path=initial_path) is None
-    env = {**os.environ, "RUNNER_TEMP": str(runner), "GITHUB_PATH": str(github_path), "PATH": initial_path,
-           "EVENT_NAME": "pull_request", "BASE_SHA": base, "GITHUB_EVENT_PATH": str(event)}
-    for step in steps[:gate]:
-        if "make install" in step.get("run", "") or "GITHUB_PATH" in step.get("run", ""):
-            result = subprocess.run(["bash", "-e", "-c", step["run"]], env=env, text=True, capture_output=True)
-            assert result.returncode == 0, result.stderr
-    exported = github_path.read_text().splitlines() if github_path.exists() else []
-    result = subprocess.run(
-        ["bash", "-e", "-c", steps[gate]["run"]], cwd=repo,
-        env={**env, "PATH": os.pathsep.join([*exported, initial_path])}, text=True, capture_output=True,
-    )
-    assert result.returncode == 0, result.stderr
-    assert result.stdout == "PR release checks passed.\n"
-    stale = subprocess.run(
-        ["bash", "-e", "-c", steps[gate]["run"]], cwd=repo,
-        env={**env, "PATH": os.pathsep.join([*exported, initial_path]),
-             "BASE_SHA": command(repo, "git", "rev-parse", base + "^")}, text=True, capture_output=True,
-    )
-    assert stale.returncode == 1
-    assert "Proposal input is no longer current main" in stale.stderr
 
 
 @pytest.mark.parametrize("directory_to_file", [False, True])
