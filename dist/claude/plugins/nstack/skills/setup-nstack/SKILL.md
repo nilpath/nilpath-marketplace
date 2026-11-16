@@ -12,7 +12,9 @@ Review and change the model nstack uses for each delegated role in this client, 
 
 nstack's plugin hook reads the `[nstack role=<role> seat=<n>]` tag on each launch of `nstack-agent`, sets the role's model, and routes read-only roles to `nstack-reader`. At session start it adds an `nstack panels` line with each panel's seats. Overrides live in `~/.nstack/models.json`, per client. Model changes apply to the next launch, seat counts to new sessions.
 
-Read the [configuration helper reference](references/nstack-config.md) for its installed path, input format and result handling. Use its `<helper>` path in the steps below. Never hand-write `models.json`.
+Never hand-write `models.json`. Use the hook's script, `<helper>`: `${CLAUDE_PLUGIN_ROOT}/hooks/nstack_config.py`. It needs Python 3.11 or newer.
+
+Replace `<helper>` in each command with that absolute path. Quote it and keep the repository working directory. The helper is under plugin hooks, not this skill's scripts. Hook execution is independent of skill frontmatter approvals.
 
 Open a todolist with one entry per step before starting.
 
@@ -30,7 +32,20 @@ Panel roles take 2 to 6 seats (`candidate-graft-judge` 1 to 6). Repeating a mode
 
 ## 3. Preview
 
-Prepare the chosen overrides using the [helper's input format](references/nstack-config.md#administrative-commands). Include the complete set of overrides the user wants for this client.
+Write the overrides to a temp JSON file outside the repository. It replaces this client's overrides as a whole, so list every role that should differ from its default. Empty `roles` clears them.
+
+```json
+{
+  "schema_version": 1,
+  "clients": {
+    "claude": {
+      "roles": {
+        "review-panel-reviewer": [{"model": "<model-a>"}, {"model": "<model-b>"}]
+      }
+    }
+  }
+}
+```
 
 Run `python3 "<helper>" configure --input <overrides.json> --dry-run` and show each changed role's `before` and `after`. Fix validation errors with the user and preview again.
 
