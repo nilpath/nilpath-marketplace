@@ -25,9 +25,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from check_generated import BOT, BOT_ID, PROPOSAL_MARKER, proposal_candidate
-
 sys.path.insert(0, str(Path(__file__).resolve().parent / "buildkit/src"))
 from buildkit.ownership import REGISTRIES, owns, snapshot as generated_snapshot
 
@@ -46,7 +43,10 @@ DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 VERSION = re.compile(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\Z")
 BUMPS = {"none": 0, "patch": 1, "minor": 2, "major": 3, "initial": 4}
+PROPOSAL_MARKER = "<!-- nilpath-release-proposal:"
 COMPLETION_MARKER = "<!-- nilpath-release-complete:"
+BOT = "github-actions[bot]"
+BOT_ID = 41898282
 ACTIONS_APP_ID = 15368
 
 
@@ -966,8 +966,7 @@ def renderer_identity(root=None, sha=None):
     root = root or Path(__file__).resolve().parent.parent
     files = git_entries(root, sha) if sha else (
         p.relative_to(root).as_posix() for p in (root / "tools/buildkit/src/buildkit").rglob("*.py"))
-    paths = {"tools/release.py", "tools/check_generated.py", "cliff.toml",
-             "pyproject.toml", "uv.lock", "tools/buildkit/pyproject.toml"}
+    paths = {"tools/release.py", "cliff.toml", "pyproject.toml", "uv.lock", "tools/buildkit/pyproject.toml"}
     paths.update(p for p in files if p.startswith("tools/buildkit/src/buildkit/")
                  and p.endswith(".py") and "__pycache__" not in PurePosixPath(p).parts)
     return digest(canonical({p: digest(blob(root, sha, p) if sha else (root / p).read_bytes()) for p in sorted(paths)}))
@@ -1211,6 +1210,13 @@ def open_proposals(gh):
             owned_proposal(pr, gh.repository)
             proposals.append(pr)
     return proposals
+
+
+def proposal_candidate(pr, repository):
+    return (pr.get("user", {}).get("login") == BOT and pr["user"].get("id") == BOT_ID
+            and (pr.get("head", {}).get("repo") or {}).get("full_name") == repository
+            and (pr["head"].get("ref", "").startswith("release/proposal-")
+                 or PROPOSAL_MARKER in (pr.get("body") or "")))
 
 
 def plan_at(gh, sha):

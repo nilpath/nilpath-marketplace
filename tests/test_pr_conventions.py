@@ -108,9 +108,9 @@ def test_ci_checks_generated_ownership_once_alongside_title_validation():
     workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
     jobs = workflow["jobs"]
     guards = [(job, step) for job, config in jobs.items() for step in config["steps"]
-              if "tools/check_generated.py" in step.get("run", "")]
+              if "tools/check_generated.sh" in step.get("run", "")]
     assert [job for job, _ in guards] == ["pr-title"]
-    assert guards[0][1]["name"] == "Check generated-file ownership"
+    assert guards[0][1]["name"] == "Check generated files"
     assert guards[0][1]["env"]["BASE_SHA"] == "${{ github.event.pull_request.base.sha }}"
     checkout = next(step for step in jobs["pr-title"]["steps"] if step.get("uses", "").startswith("actions/checkout@"))
     assert checkout["with"]["fetch-depth"] == "0"
@@ -125,13 +125,10 @@ def test_ci_checks_generated_ownership_once_alongside_title_validation():
     ]
 
 
-@pytest.mark.parametrize("change", ["source", "source-lookalike", "generated", "head-mismatch"])
-def test_ci_generated_check_works_without_release_tool_or_site_packages(tmp_path, change):
-    for path in ("tools/check_generated.py", "tools/buildkit/src/buildkit/__init__.py",
-                 "tools/buildkit/src/buildkit/ownership.py"):
-        target = tmp_path / path
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(ROOT / path, target)
+@pytest.mark.parametrize("change", ["source", "source-lookalike", "generated", "invalid-base"])
+def test_ci_generated_check_uses_only_shell_and_git(tmp_path, change):
+    (tmp_path / "tools").mkdir()
+    shutil.copy(ROOT / "tools/check_generated.sh", tmp_path / "tools/check_generated.sh")
     subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
     subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
     commit = ["git", "-c", "user.name=Tester", "-c", "user.email=test@example.com", "commit", "-qm", "chore: fixture"]
@@ -145,30 +142,24 @@ def test_ci_generated_check_works_without_release_tool_or_site_packages(tmp_path
     path.write_text("changed\n")
     subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
     subprocess.run(commit, cwd=tmp_path, check=True)
-    head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=tmp_path, text=True).strip()
-    event = tmp_path / "event.json"
-    event.write_text(json.dumps({
-        "repository": {"full_name": "nilpath/test"},
-        "pull_request": {"user": {"login": "human", "id": 1},
-                         "head": {"sha": base if change == "head-mismatch" else head}},
-    }))
     workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
     step = next(step for step in workflow["jobs"]["pr-title"]["steps"]
-                if "tools/check_generated.py" in step.get("run", ""))
+                if "tools/check_generated.sh" in step.get("run", ""))
     result = subprocess.run(
         ["bash", "-e", "-c", step["run"]], cwd=tmp_path, capture_output=True, text=True,
-        env={"PATH": os.pathsep.join([str(Path(sys.executable).parent), "/usr/bin", "/bin"]),
-             "BASE_SHA": base, "GITHUB_EVENT_PATH": str(event)},
+        env={"PATH": "/usr/bin:/bin", "BASE_SHA": "missing-base" if change == "invalid-base" else base,
+             "PR_AUTHOR": "human", "PR_AUTHOR_ID": "1", "PR_HEAD_REPO": "nilpath/test",
+             "PR_HEAD_REF": "feature", "GITHUB_REPOSITORY": "nilpath/test"},
     )
     if change in {"source", "source-lookalike"}:
         assert result.returncode == 0, result.stderr
-        assert result.stdout == "Ordinary PR preserves build-owned paths.\n"
+        assert result.stdout == ""
     elif change == "generated":
         assert result.returncode == 1
-        assert result.stderr == "check-generated: Ordinary PR changes build-owned paths:\ndist/file\n"
+        assert result.stdout == "dist/file\n"
     else:
-        assert result.returncode == 1
-        assert result.stderr == "check-generated: PR head mismatch\n"
+        assert result.returncode != 0
+        assert "missing-base" in result.stderr
 
 
 def test_writer_consumes_only_the_read_only_verifier_dependency():

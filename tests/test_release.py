@@ -37,6 +37,21 @@ def write(root, path, text):
     target.write_text(text)
 
 
+def generated_pr_check(root, base, pr):
+    import yaml
+
+    workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
+    step = next(step for step in workflow["jobs"]["pr-title"]["steps"]
+                if "tools/check_generated.sh" in step.get("run", ""))
+    return subprocess.run(
+        ["bash", "-e", "-c", step["run"]], cwd=root, capture_output=True, text=True,
+        env={**os.environ, "BASE_SHA": base, "GITHUB_REPOSITORY": "nilpath/test",
+             "PR_AUTHOR": pr["user"]["login"], "PR_AUTHOR_ID": str(pr["user"]["id"]),
+             "PR_HEAD_REPO": (pr["head"].get("repo") or {}).get("full_name", ""),
+             "PR_HEAD_REF": pr["head"]["ref"]},
+    )
+
+
 @pytest.fixture
 def repo(tmp_path):
     command(tmp_path, "git", "init", "-q", "-b", "main")
@@ -49,7 +64,7 @@ def repo(tmp_path):
     for path in ("pyproject.toml", "uv.lock"):
         shutil.copy(ROOT / path, tmp_path / path)
     (tmp_path / "tools").mkdir()
-    for path in ("tools/release.py", "tools/check_generated.py"):
+    for path in ("tools/release.py", "tools/check_generated.sh"):
         shutil.copy(ROOT / path, tmp_path / path)
     shutil.copytree(ROOT / "tools/buildkit/src/buildkit", tmp_path / "tools/buildkit/src/buildkit",
                     ignore=shutil.ignore_patterns("__pycache__"))
@@ -562,12 +577,10 @@ def test_ordinary_pr_rejects_every_generated_git_change(repo, path, operation):
         write(repo, path, "unversioned\n")
     commit(repo, "fix: ordinary generated edit")
     result = subprocess.run(
-        [sys.executable, "-S", str(ROOT / "tools/check_generated.py"),
-         "--root", str(repo), "--base-sha", base], capture_output=True, text=True,
+        ["sh", str(ROOT / "tools/check_generated.sh"), base], cwd=repo, capture_output=True, text=True,
     )
     assert result.returncode == 1
-    assert "Ordinary PR changes build-owned paths" in result.stderr
-    assert path in result.stderr
+    assert path in result.stdout
 
 
 def test_source_only_pr_preserves_installation_snapshot(repo):
@@ -575,15 +588,14 @@ def test_source_only_pr_preserves_installation_snapshot(repo):
     base = commit(repo, "chore: released snapshot")
     change(repo, "fix(alpha): source-only repair")
     result = subprocess.run(
-        [sys.executable, "-S", str(ROOT / "tools/check_generated.py"),
-         "--root", str(repo), "--base-sha", base], capture_output=True, text=True,
+        ["sh", str(ROOT / "tools/check_generated.sh"), base], cwd=repo, capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr
-    assert result.stdout == "Ordinary PR preserves build-owned paths.\n"
+    assert result.stdout == ""
     assert (repo / "dist/claude/plugins/alpha/file").read_text() == "released\n"
 
 
-@pytest.mark.parametrize("owner", ["human", "fork", "deleted-fork", "wrong-id", "wrong-login"])
+@pytest.mark.parametrize("owner", ["human", "fork", "deleted-fork", "wrong-id", "wrong-login", "ordinary-bot"])
 def test_copied_proposal_identity_cannot_bypass_generated_check(repo, owner):
     base = command(repo, "git", "rev-parse", "HEAD")
     write(repo, "dist/claude/plugins/alpha/file", "unversioned content\n")
@@ -603,14 +615,11 @@ def test_copied_proposal_identity_cannot_bypass_generated_check(repo, owner):
         pr["head"]["repo"]["full_name"] = "other/fork"
     if owner == "deleted-fork":
         pr["head"]["repo"] = None
-    event = repo.parent / f"{repo.name}-event.json"
-    event.write_bytes(r.canonical({"repository": {"full_name": "nilpath/test"}, "pull_request": pr}))
-    result = subprocess.run(
-        [sys.executable, "-S", str(ROOT / "tools/check_generated.py"), "--root", str(repo), "--base-sha", base],
-        env={**os.environ, "GITHUB_EVENT_PATH": str(event)}, capture_output=True, text=True,
-    )
+    if owner == "ordinary-bot":
+        pr["head"]["ref"] = "ordinary-branch"
+    result = generated_pr_check(repo, base, pr)
     assert result.returncode == 1
-    assert "Ordinary PR changes build-owned paths" in result.stderr
+    assert "dist/claude/plugins/alpha/file" in result.stdout
     assert "deferred" not in result.stdout
 
 
@@ -630,13 +639,10 @@ def test_bot_proposal_uses_exact_transaction_checks(repo, monkeypatch, capsys, e
     event = repo.parent / f"{repo.name}-event.json"
     event.write_bytes(r.canonical({"repository": {"full_name": "nilpath/test"}, "pull_request": pr}))
     monkeypatch.setenv("GITHUB_EVENT_PATH", str(event))
-    guard = subprocess.run(
-        [sys.executable, "-S", str(ROOT / "tools/check_generated.py"),
-         "--root", str(repo), "--base-sha", plan["input_sha"]], capture_output=True, text=True,
-    )
+    guard = generated_pr_check(repo, plan["input_sha"], pr)
     assert guard.returncode == 0, guard.stderr
     assert guard.stdout == (
-        "Generated-file validation deferred to the required release-plan job for this bot-owned proposal.\n"
+        "Generated-file validation deferred to the required release-plan job.\n"
     )
     assert r.main(["check-pr", "--root", str(repo), "--base-sha", plan["input_sha"]]) == int(extra)
     output = capsys.readouterr()
@@ -791,15 +797,13 @@ def test_ordinary_pr_ownership_uses_merge_base_after_main_releases(repo, modify_
     base = commit(repo, "chore(release): release beta")
     command(repo, "git", "checkout", "-q", "topic")
     result = subprocess.run(
-        [sys.executable, "-S", str(ROOT / "tools/check_generated.py"),
-         "--root", str(repo), "--base-sha", base], text=True, capture_output=True,
+        ["sh", str(ROOT / "tools/check_generated.sh"), base], cwd=repo, text=True, capture_output=True,
     )
     assert result.returncode == int(modify_generated), result.stderr
     if modify_generated:
-        assert "Ordinary PR changes build-owned paths:" in result.stderr
-        assert "dist/claude/plugins/alpha/skills/one/SKILL.md" in result.stderr
+        assert "dist/claude/plugins/alpha/skills/one/SKILL.md" in result.stdout
     else:
-        assert result.stdout == "Ordinary PR preserves build-owned paths.\n"
+        assert result.stdout == ""
 
 
 def test_release_plan_ci_exports_installed_venv_before_proposal_cli(repo, tmp_path):
@@ -1323,7 +1327,7 @@ def test_actual_read_only_verifier_cli_emits_the_complete_verified_bundle(prepar
 
 
 @pytest.mark.parametrize("path", [
-    "tools/release.py", "tools/check_generated.py", "tools/buildkit/src/buildkit/build.py", "pyproject.toml",
+    "tools/release.py", "tools/buildkit/src/buildkit/build.py", "pyproject.toml",
 ])
 def test_changed_input_renderer_requires_a_fresh_dispatch(repo, path):
     target = repo / path
@@ -2041,7 +2045,7 @@ def test_first_draft_uses_historical_bytes_after_current_generation_changes(prep
 
 @pytest.mark.parametrize("path", [
     ".github/workflows/ci.yml", ".github/workflows/release.yml", "tools/release.py",
-    "tools/check_generated.py", "tools/pr_conventions.sh", "cliff.toml", "README.md", "CHANGELOG.md",
+    "tools/check_generated.sh", "tools/pr_conventions.sh", "cliff.toml", "README.md", "CHANGELOG.md",
 ])
 @pytest.mark.parametrize("merged", [False, True])
 def test_historical_validation_never_trusts_changed_payload_or_pr_owned_verifiers(prepared, monkeypatch, path, merged):

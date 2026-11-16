@@ -283,13 +283,15 @@ proposal commit. On a proposal branch, inspect `.release/plan.json` and use
 `check-proposal` instead. Fetch current main before that check.
 `check` validates historical provenance, including deletion of either versioned
 or decision-only plans. In CI, the `pr-title` job runs
-`python3 -S tools/check_generated.py --base-sha "$BASE_SHA"` alongside title
-validation. The standalone check compares the PR head to its merge base with
-the current base SHA and rejects ordinary changes to build-owned paths.
+`sh tools/check_generated.sh "$BASE_SHA"` alongside title validation.
+The script uses `git diff` against the merge base, scoped to `dist/` and the
+three generated marketplace registries. It lists changed paths and fails if
+any are changed.
 A copied branch name or marker does not grant a generated-file exception.
-Only same-repository proposals owned by the exact GitHub Actions bot identity
-defer generated-file validation to the independently required `release-plan`
-job. The guard reports that deferral without claiming to validate the output.
+The workflow defers same-repository `release/proposal-*` branches owned by
+the exact GitHub Actions bot identity to the independently required
+`release-plan` job. It reports that deferral without claiming to validate the
+output. The shell script has no release logic or Python dependencies.
 The `test-static` job only installs dependencies and tests fresh source output.
 
 The `release-plan` job uses `check-pr` with the PR event to select release-history
