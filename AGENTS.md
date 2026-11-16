@@ -103,46 +103,47 @@ A plugin with zero components for a harness is skipped entirely in that harness'
 ### Release changes
 
 See [ai_docs/release-workflow.md](ai_docs/release-workflow.md).
-Ordinary changes do not manually bump versions. The Release workflow proposes
-independent component updates in one draft preparation PR. Resolve ambiguity in
-`.release/decisions.toml` with an exact component, commit SHA, bump, and reason.
-Do not edit `.release/plan.json` or generated output to resolve a decision.
+Ordinary changes do not manually bump versions. After merging a plugin's changes,
+run `make release PLUGIN=<plugin> BUMP=<major|minor|patch>`. The command creates a
+version-bump commit and opens a draft PR without changing your current checkout.
+The Release workflow prepares that plugin's notes and generated output in the PR.
+After human review and squash merge, it tags the merge commit and creates a draft
+GitHub release. Publishing remains manual.
 
 ## Version Sync
 
 The build propagates versions from **`src/plugins/<plugin>/plugin.yaml`** and
 `src/marketplace.yaml` into every generated manifest. Source YAML is the current
 version authority. `.release/baselines.toml` records historical commit provenance,
-not duplicate mutable versions. The release adapter updates:
+not duplicate mutable versions. Each release updates one plugin:
 
 | File | Update |
 | --- | --- |
-| `src/plugins/<plugin>/plugin.yaml` | Version bump for each changed plugin |
+| `src/plugins/<plugin>/plugin.yaml` | Explicit major, minor, or patch bump |
 | `CHANGELOG.md` (repo root) | Document changes |
 | root `README.md` + existing source README current-version headers | Exact current-version fields only, never historical references |
-| generated files and registries | full regeneration during release preparation |
+| generated files and registries | selected plugin only, rendered by buildkit |
 
-Full regeneration requires a release version for every component whose generated
-content changes. An unresolved or `none` decision cannot publish that component
-alongside another release. Marketplace-owned registry fields require their own
-component decision.
+Preparation renders into a temporary directory, then promotes only the selected
+plugin's output and registry entries. Other installed plugins and marketplace
+metadata remain unchanged, even when their sources have pending changes.
 
-### Proposal policy
+### Release boundaries
 
-- Direct `fix`, `docs`, `perf`, and `refactor` changes suggest patch, unless breaking.
-- `feat` or an added skill or agent suggests minor.
-- Stable breaking changes suggest major.
-- Features on `0.0.x` and breaking changes before `1.0` require explicit decisions.
-- Unknown messages, conflicting scope, removal, new plugins, and shared shipped
-  changes require review. `none` requires a reason and binds one component and SHA.
-- Plugins release independently. Marketplace metadata is separate. Buildkit and
-  the root test package are not release components.
-- A prepared proposal must pass `pr-title`, `test-static`, and `release-plan` checks on
-  its exact head and receive human approval. Its squash merge must retain the recorded
-  input parent and exact checked tree. Require branches to be up to date before
-  merging. Do not rebase or add unrelated commits to generated proposals.
-  Tags point to the reviewed merge. GitHub releases remain drafts until a
-  maintainer publishes them.
+- The caller chooses the version increment. There is no automatic bump planner,
+  decision file, or release-plan check.
+- Ordinary CI validates the PR title, runs the standalone generated-file guard,
+  and runs tests against fresh temporary output.
+- A release PR contains one source-version bump and its exact derived files.
+  Only a validated release PR may change generated paths.
+- Privileged preparation uses protected-main code. It reads the candidate as Git
+  data and never runs candidate tools, dependencies, or templates.
+- Require `pr-title`, `test-static`, an up-to-date branch, human approval of the
+  latest push, and squash merging. Review the prepared output before merging.
+- Tags use `<plugin>/v<version>` and point to the PR's merge commit, never a later
+  main tip. Conflicting tags fail instead of moving.
+- Marketplace-metadata releases, initial releases without a historical anchor,
+  multi-plugin batches, and automatic publication are outside this command.
 
 ## Deep Dives
 

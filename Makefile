@@ -5,7 +5,7 @@ BUILDKIT := $(VENV)/bin/nilpath-build
 export PYTHONPATH := $(CURDIR)/tools/buildkit/src
 export PATH := $(VENV)/bin:$(PATH)
 
-.PHONY: install build check validate test test-static test-behavioral
+.PHONY: install build check validate test test-static test-behavioral release
 
 install:
 	uv venv $(VENV) --python 3.11 --allow-existing
@@ -25,3 +25,7 @@ test-static: check
 
 test-behavioral:
 	$(PYTEST) tests/test_behavioral.py -m behavioral -v -n auto
+
+release:
+	@test -n "$(PLUGIN)" -a -n "$(BUMP)" || { echo "usage: make release PLUGIN=<plugin> BUMP=<major|minor|patch>" >&2; exit 2; }
+	$(PYTHON) tools/open_release.py --plugin "$(PLUGIN)" --bump "$(BUMP)"

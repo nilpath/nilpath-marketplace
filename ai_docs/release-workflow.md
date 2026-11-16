@@ -1,357 +1,161 @@
-# Prepare and review component releases
+# Release a plugin
 
-Ordinary changes merge without manual version bumps. The Release workflow opens
-one draft preparation PR for independently versioned plugins and marketplace
-metadata. After review and a valid squash merge, it creates component tags and
-draft GitHub releases. Publishing is always manual.
+Merge ordinary source changes first. Then open a version-bump PR with
+`make release`. The Release workflow prepares the selected plugin's changelog
+and installation files in that PR. After review and squash merge, it tags the
+merge commit and creates a draft GitHub release. Publishing remains manual.
 
-## Activate the workflows
+## Set up releases
 
-Before relying on automation, review these repository settings yourself.
-The implementation does not change settings.
+Deploy the release scripts and workflows to `main` before using the command.
+The command checks fetched `origin/main`, not an unmerged local implementation.
+Use an existing `gh` login with permission to push branches and open PRs.
 
-1. Enable GitHub Actions for the repository.
-2. Review **Allow GitHub Actions to create and approve pull requests**.
-   The observed settings use read-default workflow permissions and
-   `can_approve_pull_request_reviews=false`. The writer requests explicit job
-   permissions, but repository policy can still prohibit PR creation.
-3. Configure the `pr-title`, `test-static`, and `release-plan` CI jobs as required checks.
-   Require branches to be up to date before merging. Do not rebase or update a
-   release proposal onto a different input.
-4. Require human review and squash merges onto `main`. Configure the default
-   squash commit title to use the PR title.
-
-PRs opened, synchronized, or reopened by `GITHUB_TOKEN` wait for a user with
-write access to click **Approve workflows to run**. Token pushes alone do not
-trigger CI. No PAT or GitHub App is required by these workflows.
-Do not mistake an approval-required run for a passing check.
-
-## Develop an ordinary change
-
-Install the declared local dependencies before the first check:
+Install the declared dependencies:
 
 ```sh
 make install
-export PATH="$HOME/.virtualenvs/nilpath-marketplace/bin:$PATH"
 ```
 
-`make install` supplies git-cliff 2.13.1 through `pyproject.toml`, along with the
-Python test dependencies and editable buildkit. Make targets put the selected
-`VENV/bin` on PATH. Export that same directory when running the release CLI
-directly. A separate global or CI-only git-cliff installation is not needed.
-Use `make install VENV=/path/to/new/environment` for an isolated installation.
+The Make targets use `~/.virtualenvs/nilpath-marketplace` by default.
+Set `VENV=/path/to/environment` to use another environment.
+The dependency declarations supply git-cliff 2.13.1 and editable buildkit.
+CI uses Python 3.11 and uv 0.12.23.
+
+Configure the `main` ruleset to require `pr-title`, `test-static`, an up-to-date
+branch, one human approval, approval of the latest push, and squash merging.
+The old `release-plan` check is no longer used.
+
+GitHub Actions needs contents-write permission for preparation and tagging.
+It never approves or merges PRs. Bot-generated PR updates can require a writer
+to select **Approve workflows to run** before ordinary CI starts. Do not treat
+an approval-required run as a passing check.
+
+## Develop an ordinary change
 
 1. Edit shipping sources under `src/`.
 2. Run `make test-static`.
-3. Include sources only in the ordinary PR.
+3. Commit sources without version bumps or generated installation files.
 
-Never edit `dist/` or the three root registries directly.
-`src/plugins/<plugin>/plugin.yaml` owns each plugin's current version.
-`src/marketplace.yaml` owns the marketplace version.
-Buildkit generates all client manifests and registries.
-Keep current-version README fields, but do not change historical nstack or
-pstack references.
+`make check` validates sources. Tests inspect a fresh temporary build, so pending
+source changes do not require changing committed `dist/`.
+The low-level `nilpath-build check` compares all committed output with a full
+fresh build. It is not the ordinary PR gate or a per-plugin release check.
+Likewise, `make build` is a full render, not the release command.
 
-CI rejects ordinary changes to build-owned paths before rendering a preview.
-This includes additions, deletions, renames, byte changes, and executable modes.
-Tests inspect a fresh temporary render, not committed installation files.
-`make check` validates sources. The low-level `nilpath-build check` still compares
-the committed snapshot with a fresh build for release verification.
-It uses Python 3.11 and the existing Make targets with a command-line `VENV`
-override. The workflows pin uv 0.12.23 and git-cliff 2.13.1.
-The root `uv.lock` does not lock buildkit's installation. These installs are not
-claimed to be frozen.
+CI validates the PR title, checks generated paths in a separate step, and runs
+static tests. The guard covers `dist/`, `.claude-plugin/marketplace.json`,
+`.agents/plugins/marketplace.json`, and `.github/plugin/marketplace.json`.
+It rejects additions, deletions, renames, content changes, and mode changes.
 
-Model-backed behavioral tests remain separate.
-Run `make test-behavioral` when changing skill behavior, with the required model
-credentials. Add or update fixtures under `tests/fixtures/behavioral/` for changed
-delegation behavior. Static CI does not use model credentials.
+Check the guard locally against a fetched base:
 
-### Use a Conventional Commit PR title
+```sh
+sh tools/check_generated.sh origin/main
+```
 
-The `pr-title` job validates titles when a PR opens, receives commits, reopens,
-or is edited. It does not run on pushes or manual workflow dispatches.
-Use `<type>[optional scope][optional !]: <summary>`, for example
-`feat(nstack): add a verification skill` or `fix!: remove obsolete behavior`.
-Allowed types are `feat`, `fix`, `perf`, `refactor`, `revert`, `docs`, `deps`,
-`chore`, `ci`, `test`, `style`, and `build`.
-
-Check a title locally without credentials:
+Use a Conventional Commit PR title, such as
+`feat(nstack): add a verification skill`. Allowed types are `feat`, `fix`, `perf`,
+`refactor`, `revert`, `docs`, `deps`, `chore`, `ci`, `test`, `style`, and `build`.
 
 ```sh
 tools/pr_conventions.sh --title "feat(nstack): add a verification skill"
 ```
 
-To fetch the title of an existing PR, run
-`PR_NUMBER=123 tools/pr_conventions.sh`. This uses your existing `gh` login,
-`GH_TOKEN`, or `GITHUB_TOKEN` without changing authentication settings.
-The repository defaults to `GITHUB_REPOSITORY` or `nilpath/nilpath-marketplace`.
-Set `GH_REPO` to override it.
+The title script also accepts `PR_NUMBER=123 tools/pr_conventions.sh` to fetch a
+title through `gh`. Keep the PR title as the squash commit title.
+Git-cliff uses commit messages for release notes, not to choose version bumps.
 
-Keep the validated PR title as the squash commit title when merging.
-The commit type helps the release planner classify changes. This repository's
-git-cliff configuration does not silently drop unconventional commits.
-Ambiguous changes still require
-explicit release decisions, even when their titles pass this check.
+Model-backed tests remain separate. Run `make test-behavioral` with the required
+credentials when checking skill behavior. Static CI needs no model credentials.
 
-## Review a preparation PR
+## Open and review a release PR
 
-After an ordinary merge, the Release workflow evaluates changes after each
-component's accepted baseline.
-
-1. Open the bot's draft preparation PR.
-2. If the proposal needs decisions, follow the next section before reviewing versions.
-3. Inspect source versions, exact README fields, changelog sections, all generated
-   changes, reviewed decisions, and `.release/plan.json`.
-4. Click **Approve workflows to run**.
-5. Wait for successful `pr-title`, `test-static`, and `release-plan` checks on the exact
-   proposal head.
-6. Approve that exact head. Mark the PR ready yourself when appropriate, then
-   squash-merge it without changing its input parent or checked tree.
-7. Inspect the resulting draft GitHub releases. Publish them manually when ready.
-
-The workflow never marks a PR ready, reviews it, merges it, or publishes a release.
-Any new main commit makes an older proposal's recorded input stale.
-Let a new preparation supersede it rather than rebasing or force-pushing it.
-Automatic refresh carries decisions from an unchanged regenerated proposal.
-If you edited decisions, dispatch an explicit resolution with that exact head.
-Resolution can carry still-applicable decisions after main advances. It first
-verifies the old proposal's immutable edits against its own input, then validates
-the exact component and commit decisions against the new input.
-Unrelated edits, conflicting accepted decisions, changed heads, and non-ancestor
-inputs fail instead of discarding work.
-Discovery ignores human PRs, fork PRs, and unrelated bot PRs even if they copy a
-proposal marker or branch name. A malformed bot-owned same-repository proposal
-still fails. Explicit resolution never accepts a foreign PR.
-
-To request preparation explicitly:
+Choose one plugin and one semantic-version increment:
 
 ```sh
-gh workflow run release.yml --ref main -f mode=prepare
+make release PLUGIN=nstack BUMP=minor
 ```
 
-## Resolve an ambiguous proposal
+`BUMP` accepts `major`, `minor`, or `patch`. The command reads the selected
+plugin's current version from fetched `origin/main`. It uses a temporary worktree
+to commit only the source `version:` change, pushes a new branch, and opens a
+draft PR. Your current branch, index, and uncommitted files stay unchanged.
+Existing release branches are not overwritten.
+An existing target tag also stops the request before preparation.
 
-A blocked proposal contains suggestions and decision requests, not partial
-version bumps. Its `release-plan` check fails until regeneration resolves every
-request.
+The workflow uses that version bump as its release request:
 
-Add entries to the proposal's `.release/decisions.toml`:
+1. Wait for preparation to add the changelog, current-version README fields,
+   and generated files.
+2. Inspect the selected plugin's version, notes, and output for each client.
+3. Approve workflow execution if GitHub requests it.
+4. Wait for `pr-title` and `test-static` to pass on the prepared head.
+5. Mark the PR ready, obtain human approval of the latest push, and squash-merge.
+6. Inspect the tag and draft GitHub release, then publish the release manually.
 
-```toml
-[[decision]]
-component = "nstack"
-commit = "<full commit SHA>"
-bump = "patch"
-reason = "Changes wording, not the invocation contract."
-```
+Do not add features, tooling changes, or hand-edited generated content to a
+release PR. Merge those changes separately before opening the release PR.
+The release check accepts only one version bump and its exact derived files.
+A branch name alone never permits generated-file changes.
 
-Allowed increments are `patch`, `minor`, and `major`. Use `none` only with a
-reason for excluding that exact component and commit.
-For a new plugin, `initial` confirms the authored initial source version.
-Each affected commit before its first release needs its own exact-SHA
-confirmation. One `initial` decision does not approve later source changes.
-Keep accepted decisions. Do not edit the generated plan, source versions, or
-other proposal files to resolve a question.
+Preparation renders all sources into a temporary directory, then copies only
+the selected plugin's client directories and registry entries into the PR.
+Other plugins' installed bytes and versions remain unchanged even if their
+sources have pending changes. Marketplace metadata is preserved.
+The changelog's heading and introduction stay at the top, followed by the new
+release section and unchanged historical sections.
 
-Dispatch with the exact edited proposal head:
+The notes use the previous plugin-version tag as their history anchor.
+Before the first tag, `.release/baselines.toml` supplies the reviewed historical
+anchor. It is not a second version authority.
+Notes include selected-plugin and shared-rendering changes, excluding changes
+that affect only another plugin. Existing changelog history stays intact.
 
-```sh
-gh workflow run release.yml --ref main -f mode=prepare \
-  -f proposal_pr=123 -f expected_head='<full-head-SHA>'
-```
+Marketplace-metadata releases, unanchored initial releases, multi-plugin batches,
+and automatic publication are not supported by this command.
 
-The writer reads decisions only from that head. It creates a replacement branch
-and draft PR rather than force-pushing over your work. It closes the old PR only
-after the replacement exists. A resolution containing only `none` decisions can
-persist without a version, tag, or release.
-Its merged transaction still needs exact-head human approval and CI before
-completion, as described below.
+## Recover a failed release
 
-The planner applies this policy:
+Read the command's error before retrying. Push and PR creation are separate
+operations. If a push succeeds but PR creation fails, the command reports the
+retained branch and a recovery command. It never force-pushes or silently chooses
+a different version.
 
-| Evidence | Proposal |
-| --- | --- |
-| Direct `fix`, `docs`, `perf`, or `refactor` | Patch unless breaking |
-| Direct `feat` or added skill or agent | Minor |
-| Stable breaking change | Major |
-| Feature on `0.0.x`, or any pre-1.0 breaking change | Explicit decision |
-| Unknown message, conflicting scope, or removal | Explicit decision |
-| Shared build, defaults, or client changes with shipped differences | Component-specific decision |
-| Shared change with identical shipped trees | Explain as unchanged |
-| Root CI, tests, and repository-only documentation | No plugin bump |
-| New plugin | Confirm authored initial version |
+For workflow failures, use GitHub Actions' **Re-run jobs** action after resolving
+the reported problem. Preparation fails if the PR head or base changes underneath
+it rather than replacing newer work. If main has advanced, open a fresh release
+request from current main instead of rebasing generated output by hand.
 
-Plugins do not cascade versions to dependencies or marketplace metadata.
-Marketplace metadata changes require their own explicit decision.
-The adapter owns increment arithmetic. Git-cliff parses and renders the selected
-commits, including unconventional messages. A skipped commit requires an explicit
-component-bound decision and reason.
-Preparation performs one full regeneration. Every component whose generated
-content changes must have a release version, including shared changes and
-marketplace-owned registry fields. A changed component with `none` or an
-unresolved decision blocks the full release rather than publishing unversioned
-content. Decision-only transactions do not regenerate installation files.
-Older shared commits retain their committed-output evidence. Source-only shared
-commits use pending rendered impact and conservative component/SHA decisions.
-The note date comes from the immutable input commit, so regeneration is repeatable.
-Deleting or renaming a component's source identity fails rather than inventing a
-current version. Keep source metadata for a removal release, or review a separate
-component-identity migration.
+To replace a stale request, close its PR first. Inspect the old release branch
+and confirm that its work can be discarded. Remove any retained temporary
+worktree, then delete both the local and remote release branches before running
+the command again. Closing a PR alone does not delete those branches. The command
+does not delete them for you.
 
-## Retry draft creation
+Branch writes use explicit Git ref preconditions. Creation requires an absent
+remote branch. Preparation requires the captured PR head and adds a child commit.
+The `--force-with-lease` arguments enforce those conditions, not permission to
+replace existing history.
 
-The release identity includes component, version, merged SHA, and plan ID.
-Tags use `<component>/v<version>`. They point at the reviewed squash merge, never
-the current main tip.
+Tags use `<plugin>/v<version>` and identify the merged PR's `merge_commit_sha`.
+They do not trigger preparation. Retrying tagging accepts an existing tag only
+when it already points at that merge commit. A conflicting tag fails and is
+never moved. Existing draft or published release text is not overwritten.
 
-```sh
-gh workflow run release.yml --ref main -f mode=drafts \
-  -f proposal_pr=123 -f merged_sha='<full-merged-SHA>'
-```
+GitHub can reject a release against a historical commit when its workflows differ
+from current main. The workflow does not substitute a newer commit or add broader
+credentials to work around that failure.
 
-The writer verifies the human approval, exact-head CI run and check provenance,
-recorded input parent, exact merged-tree equality, plan, source, and generated
-metadata before creating a tag. It creates tags explicitly, then invokes
-`gh release create --draft --verify-tag` with the exact merged SHA.
+## Trust and verification
 
-A matching tag or draft is reused. Human-edited release text is preserved.
-A matching published release is a terminal no-op. Conflicting tags or unowned
-releases fail. API errors, incomplete pagination, stale identities, and missing
-checks fail visibly. A later proposal is blocked by an incomplete prior release
-transaction. Retry that transaction first.
+Preparation uses `pull_request_target` with protected-main scripts, dependencies,
+and templates. It reads the PR as Git data and imports only its validated version
+scalar. It never executes candidate code with write credentials.
+Ordinary PR CI remains read-only. No PAT, GitHub App, or mutable-branch workflow
+dispatch is needed.
 
-Before the first draft, the full review, CI, merge, and generated-file checks are
-mandatory. Completed releases retain their immutable plan, merge, source, tag,
-and ownership-marker identity. They do not require old CI records to remain
-available or old content to be regenerated by today's updater.
-The actual tag ref is authoritative. GitHub does not use `target_commitish`
-when the tag already exists.
-
-Decision-only transactions use one bot-authored completion comment on their
-merged proposal PR instead of a release receipt. The reserved
-`nilpath-release-complete` marker binds its format version, repository, PR number,
-checked head, merged SHA, and plan ID. The writer creates it only after the full
-first-time validation and confirms it through the comments API. Future preparation
-requires that receipt. Merely merging a decision-only plan does not complete it.
-Matching receipts are no-ops on retry, including when a write succeeded but its
-response or confirmation failed. Historical review and CI records can then
-disappear without blocking preparation.
-
-Do not delete or copy completion comments. A missing receipt requires a `drafts`
-retry with the original review and CI evidence still available. A receipt with a
-login or ID that does not exactly match GitHub Actions is ignored before the
-workflow reads a reserved marker. An exact bot-owned receipt with a different
-identity, or multiple exact bot-owned reserved receipt comments, fails rather
-than being adopted or overwritten. If the evidence is gone before completion,
-or an exact bot-owned receipt is corrupted, stop for a separately reviewed
-repair. The workflow does not create substitute version tags or releases for
-decision-only plans.
-
-GitHub can refuse release creation for a historical target whose workflow files
-differ from the default branch. Its release API can require workflow-write
-permission, which `GITHUB_TOKEN` cannot receive. The workflow fails visibly in
-that case. It does not substitute current main, move the reviewed tag, introduce
-another credential, or publish a release.
-
-No workflow uploads release assets, overwrites assets, deletes branches, or
-publishes releases. An interrupted branch or draft creation can resume without
-force pushes. Proposal branches bind the plan identity, not a workflow attempt.
-If a replacement exists but commenting on or closing the old PR failed, a fresh
-preparation can finish automatic supersession after verifying both exact heads.
-For an edited decision resolution, retry with the original PR and expected head.
-The old proposal can be draft or ready.
-
-Artifacts still bind the workflow run and attempt. Start a fresh dispatch or
-rerun all jobs. Rerunning only the failed writer cannot reuse an artifact from
-an earlier attempt. GitHub concurrency can replace an older pending run, so use
-the explicit `drafts` dispatch if an automatic release-merge run did not finish.
-
-## Inspect provenance locally
-
-```sh
-PYTHONPATH=tools/buildkit/src ~/.virtualenvs/nilpath-marketplace/bin/python tools/release.py plan
-PYTHONPATH=tools/buildkit/src ~/.virtualenvs/nilpath-marketplace/bin/python tools/release.py check
-# On a proposal branch, check the exact proposal against current main.
-PYTHONPATH=tools/buildkit/src ~/.virtualenvs/nilpath-marketplace/bin/python tools/release.py check-proposal \
-  --base-sha "$(git rev-parse origin/main)"
-make test-static
-```
-
-Run `plan` on main history. It cannot infer GitHub merge state from a local
-proposal commit. On a proposal branch, inspect `.release/plan.json` and use
-`check-proposal` instead. Fetch current main before that check.
-`check` validates historical provenance, including deletion of either versioned
-or decision-only plans. In CI, the `pr-title` job runs
-`sh tools/check_generated.sh "$BASE_SHA"` alongside title validation.
-The script uses `git diff` against the merge base, scoped to `dist/` and the
-three generated marketplace registries. It lists changed paths and fails if
-any are changed.
-A copied branch name or marker does not grant a generated-file exception.
-The workflow defers same-repository `release/proposal-*` branches owned by
-the exact GitHub Actions bot identity to the independently required
-`release-plan` job. It reports that deferral without claiming to validate the
-output. The shell script has no release logic or Python dependencies.
-The `test-static` job only installs dependencies and tests fresh source output.
-
-The `release-plan` job uses `check-pr` with the PR event to select release-history
-checks or exact proposal validation. It does not repeat the ordinary
-generated-file check. Exact proposal validation rejects extra commits, rebases,
-stale inputs, unexpected trees, and unsafe file modes.
-A deliberately bypassed invalid merge still fails draft validation
-and requires a separately reviewed repair. There is no history-reset bypass.
-
-Local `tools/release.py` commands are `plan`, `prepare`, `bundle`, `check`,
-`check-pr`, `check-proposal`, and `verify-bundle`.
-The GitHub commands are `snapshot` and `write`.
-The read-only planner discovers components through buildkit configuration.
-The separate inspect and write jobs invoke `snapshot` and `write` from the
-dispatcher revision with `python -S`, without renderer or YAML dependencies.
-A separate read-only verifier installs dispatcher-owned dependencies and
-reconstructs the complete transaction from a clean immutable input checkout.
-Input and dispatcher renderer identities must match. A mismatch requires a fresh
-dispatch. The verifier compares decisions, plan, payloads, and modes before
-uploading a separate verified artifact.
-The writer receives that artifact ID from the verifier job dependency, not from
-the candidate bundle. It checks repository, input, dispatcher and renderer
-identities, workflow run and attempt, decisions, and plan ID before writing.
-It never renders templates, executes candidate code, installs candidate
-dependencies, or applies arbitrary files.
-Checkout credentials are not persisted. No workflow uses `pull_request_target`.
-
-### Historical compatibility contract
-
-Schema 1 fixes the generated metadata byte contract, including changelog
-insertion, version fields, README selectors, JSON formatting, and decision
-serialization. Active proposals and first-time draft retries use that fixed
-contract against their immutable input, not the current generator.
-They remain usable after the current git-cliff pin or updater changes.
-The writer checks the input's policy digest and literal git-cliff pin without
-executing historical code. It permits decision edits only at the explicitly
-selected head.
-
-First-time completion compares every file path, blob, and mode against the input
-plus the schema's exact updates. Workflow files, verifier code, build code, and
-dependency declarations must therefore remain unchanged in the proposal.
-Passing jobs from modified PR-owned verifiers do not substitute for this check.
-Human approval and Actions workflow, run, attempt, job, check-app, suite, URL, and
-exact-head association checks still apply.
-
-The schema-1 helpers remain frozen compatibility code.
-Fresh schema-2 plans bind canonical generated put and delete operations into the
-plan ID. Each operation records the path, Git mode, and content digest.
-Deletions record the expected input identity. Bundles carry put bytes.
-Historical schema-2 validation uses recorded operations and Git blobs, not
-historical executable code or today's renderer. Every unaffected path, mode,
-and blob remains identical to the input. Unknown schemas and unsupported
-historical policies fail. The writer never regenerates an old proposal in place.
-
-The initial `.release/baselines.toml` anchors are the last commits that established
-each current source version. Review them as historical provenance, not another
-version authority. Adoption creates no version bumps, tags, or releases.
-Existing changelog bytes remain below `<!-- release-legacy-boundary -->`,
-including the old Unreleased section. The generator does not reinterpret them.
-
-Local tests use temporary Git repositories, actual git-cliff, fake GitHub API
-responses, and a fake `gh` executable. They do not prove Linux-hosted execution,
-repository settings, or live bot PR and release creation.
+Direct script tests use disposable Git repositories, git-cliff, and fake GitHub
+responses. These checks do not establish hosted workflow behavior. A live
+preparation, CI-approval, and tagging exercise requires a separately authorized
+release.

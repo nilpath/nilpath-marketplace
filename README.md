@@ -111,4 +111,15 @@ make test-static      # test a fresh temporary render
 2. Run `make test-static`. Tests inspect current sources without updating installation files.
 3. Commit sources only. Release preparation updates versions and generated output together.
 
-See [ai_docs/release-workflow.md](ai_docs/release-workflow.md) for releases.
+After merging a plugin's changes, open its release PR:
+
+```bash
+make release PLUGIN=nstack BUMP=minor
+```
+
+The command bumps the source version, commits, pushes, and opens a draft PR in an
+isolated worktree. Your current checkout is unchanged. The Release workflow adds
+that plugin's changelog and generated output before review. Squash-merging the PR
+creates a tag at the merge commit and a draft GitHub release. Publishing is manual.
+
+See [ai_docs/release-workflow.md](ai_docs/release-workflow.md) for setup and recovery.

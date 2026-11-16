@@ -12,10 +12,6 @@ REGISTRIES = (
 OWNED_PATHS = (Path("dist"), *(Path(p) for p in REGISTRIES))
 
 
-def owns(path: str) -> bool:
-    return any(path == str(p) or path.startswith(str(p) + "/") for p in OWNED_PATHS)
-
-
 def snapshot(root: Path) -> dict[str, tuple[str, bytes]]:
     result = {}
     for rel in OWNED_PATHS:
