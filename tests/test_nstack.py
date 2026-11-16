@@ -269,6 +269,40 @@ def test_markdown_links_resolve(harness):
 
 
 @pytest.mark.parametrize("harness", HARNESSES)
+def test_each_script_has_one_local_usage_reference(harness):
+    root = plugin_dir(harness)
+    skills = root / "skills"
+    scripts = [
+        path for path in skills.glob("*/scripts/**/*")
+        if path.is_file() and path.suffix in {".py", ".sh"}
+    ]
+    hook = root / HOOK_DIRS[harness] / "nstack_config.py"
+    scripts.append(hook)
+    references = {
+        path: {(path.parent / link).resolve() for link in LINK_RE.findall(path.read_text())}
+        for path in skills.glob("*/references/*.md")
+    }
+    readme_targets = {
+        (root / link).resolve() for link in LINK_RE.findall((root / "README.md").read_text())
+    }
+    for script in scripts:
+        owners = [path for path, targets in references.items() if script.resolve() in targets]
+        assert len(owners) == 1, (script, owners)
+        owner = owners[0]
+        skill = skills / ("setup-nstack" if script == hook else script.relative_to(skills).parts[0])
+        assert owner.parent == skill / "references", (script, owner)
+        assert owner.resolve() in readme_targets, owner
+        callers = [
+            path for path in skill.rglob("*.md")
+            if "references" not in path.relative_to(skill).parts
+        ]
+        assert any(
+            owner.resolve() in {(path.parent / link).resolve() for link in LINK_RE.findall(path.read_text())}
+            for path in callers
+        ), owner
+
+
+@pytest.mark.parametrize("harness", HARNESSES)
 def test_help_catalog_covers_bundled_skills(harness):
     text = (plugin_dir(harness) / "skills" / "nstack-help" / "SKILL.md").read_text()
     targets = set(re.findall(r"\]\(\.\./([^/]+)/SKILL\.md\)", text))
@@ -372,6 +406,7 @@ def test_scripts_are_executable(harness):
     for path in (
         root / HOOK_DIRS[harness] / "nstack_config.py",
         root / "skills" / "nstack-flow" / "scripts" / "publish_draft.py",
+        root / "skills" / "nstack-flow" / "scripts" / "reply_thread.py",
         root / "skills" / "nstack-flow" / "scripts" / "watch-pr" / "watch_pr.py",
         root / "skills" / "nstack-flow" / "scripts" / "orch" / "orch.py",
         root / "skills" / "nstack-flow" / "scripts" / "worktree-audit.sh",
@@ -387,6 +422,7 @@ def test_converted_helpers_use_only_stdlib_and_run_without_site_packages(harness
         ("check_plan.py", [], 2),
         ("orch/orch.py", ["--help"], 0),
         ("watch-pr/watch_pr.py", ["--help"], 0),
+        ("reply_thread.py", ["--help"], 0),
     )
     for name, args, expected_exit in cases:
         path = scripts / name
@@ -416,13 +452,14 @@ def test_converted_helpers_use_only_stdlib_and_run_without_site_packages(harness
         text = path.read_text()
         for legacy in ("scripts/check-plan.mjs", "scripts/orch/orch.ts", "scripts/watch-pr/watch-pr"):
             assert legacy not in text, path
-    for playbook, script in (
-        ("multi-phase-plan.md", "check_plan.py"),
-        ("orchestrate.md", "orch/orch.py"),
-        ("babysit.md", "watch-pr/watch_pr.py"),
+    for playbook, reference in (
+        ("multi-phase-plan.md", "check-plan.md"),
+        ("orchestrate.md", "orch.md"),
+        ("babysit.md", "watch-pr.md"),
     ):
-        text = (flow / "playbooks" / playbook).read_text()
-        assert re.search(r'`python3 "[^"\n]+/scripts/' + re.escape(script) + r'"', text), playbook
+        path = flow / "playbooks" / playbook
+        targets = {(path.parent / link).resolve() for link in LINK_RE.findall(path.read_text())}
+        assert (flow / "references" / reference).resolve() in targets, playbook
 
 
 @pytest.mark.parametrize("harness", HARNESSES)
@@ -757,8 +794,7 @@ def test_expanded_methods_keep_one_index_and_shared_owners(harness):
     assert "Stage only explicit task paths" in publication
     assert "Publish verified and reviewed work" in publication
     assert "Keep an existing assigned feature worktree" in publication
-    assert "scripts/publish_draft.py" in publication
-    assert "`\"ok\": false` returns an error and repair" in publication
+    assert "../references/publish-draft.md" in publication
     assert "one primary number" in publication
     for document in skills.rglob("*.md"):
         assert "references/delivery.md" not in document.read_text(), document
@@ -837,6 +873,10 @@ def test_review_triage_guidance_is_generic_but_bugbot_evidence_stays_specific(ha
     assert '"address review comments"' in babysit
     assert "**Automated findings are triaged skeptically, always.**" in babysit
     assert "use the watcher's Bugbot pass count" in babysit
+    assert "../references/reply-thread.md" in babysit
+    assert "gh api --method POST" not in babysit
+    assert "origin pr thread reply <thread-id> <pr> --body-file <reply-file>" in babysit
+    assert "[comment helper reference](reply-thread.md)" in triage
     plan = (flow / "playbooks" / "multi-phase-plan.md").read_text()
     assert "Triage every automated-review and security-reviewer comment" in plan
     assert "Automated review triage done." in plan

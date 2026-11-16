@@ -9,9 +9,7 @@ Review and change the model and effort nstack uses for each delegated role in th
 
 nstack's plugin hook reads the `[nstack role=<role> seat=<n>]` tag on each launch of `nstack-agent`, sets the role's model and effort, and routes read-only roles to `nstack-reader`. At session start it adds an `nstack panels` line with each panel's seats. Overrides live in `~/.nstack/models.json`, per client. Model changes apply to the next launch, seat counts to new sessions.
 
-Never hand-write `models.json`. Use the hook's script, `<helper>`: `../../hooks/nstack_config.py` from this skill's base directory (absolute path). It needs Python 3.11 or newer.
-
-Replace `<helper>` in each command with that absolute path. Quote it and keep the repository working directory. The helper is under plugin hooks, not this skill's scripts. Hook execution is independent of skill frontmatter approvals.
+Read the [configuration helper reference](references/nstack-config.md) for its installed path, input format and result handling. Use its `<helper>` path in the steps below. Never hand-write `models.json`.
 
 Open a todolist with one entry per step before starting.
 
@@ -31,20 +29,7 @@ Panel roles take 2 to 6 seats (`candidate-graft-judge` 1 to 6). Repeating a mode
 
 ## 3. Preview
 
-Write the overrides to a temp JSON file outside the repository. It replaces this client's overrides as a whole, so list every role that should differ from its default. Empty `roles` clears them.
-
-```json
-{
-  "schema_version": 1,
-  "clients": {
-    "codex": {
-      "roles": {
-        "review-panel-reviewer": [{"model": "<model-a>", "effort": "high"}, {"model": "<model-b>", "effort": "high"}]
-      }
-    }
-  }
-}
-```
+Prepare the chosen overrides using the [helper's input format](references/nstack-config.md#administrative-commands). Include the complete set of overrides the user wants for this client.
 
 Run `python3 "<helper>" configure --input <overrides.json> --dry-run` and show each changed role's `before` and `after`. Fix validation errors with the user and preview again.
 

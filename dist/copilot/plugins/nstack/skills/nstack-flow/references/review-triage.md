@@ -12,6 +12,8 @@ Classify each automated-review thread before acting:
 
 When in doubt, ask. Skipping a noisy code-quality comment is cheap; skipping a real data or security bug is not.
 
+For authorized GitHub CLI replies, follow the [comment helper reference](reply-thread.md).
+
 ## Learned pattern format
 
 Add future patterns in this shape:

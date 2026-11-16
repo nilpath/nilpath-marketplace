@@ -51,7 +51,20 @@ Babysit can check or watch CI/reviews and execute covering-approved fixes. Obser
 
 The copied playbooks use standard-library Python translations of pstack's orchestration, PR-watch and plan-checking helpers, plus its unchanged Bash worktree audit. The three Python tools require no pip packages, Bun, Node.js or npm bootstrap. Orchestration keeps pstack's TSV/Markdown/JSON store and PID lock, not a separate SQLite accounting framework. Explicitly assigned program coordinators may launch child coordinators using inherited scope and existing configured roles. Playbook copies retain upstream content except for the operator-approved substitutions below.
 
-Run the helpers as `python3 <skill>/scripts/check_plan.py <plan.md>`, `python3 <skill>/scripts/orch/orch.py --store <directory> <command>` and `python3 <skill>/scripts/watch-pr/watch_pr.py <options>`, with `<skill>` resolved to the absolute installed nstack-flow directory. Options, exit meanings, stored formats and watcher decisions remain. Help and exception details use Python wording; count labels sort deterministically by UTF-16 rather than locale collation. JSON retains values and absent/null distinctions, not incidental numeric spelling or object-member order. Behavioral tests live in the repository's `tests/`, not the installed plugin. TypeScript-only compile-time proofs are not claimed for Python.
+Each bundled script has one usage reference under its owning skill. Read it before running the helper; playbooks retain when to run it and the required authority.
+
+| Script | Usage reference |
+| --- | --- |
+| `check_plan.py` | [Plan checker](skills/nstack-flow/references/check-plan.md) |
+| `orch/orch.py` | [Orchestration bookkeeping](skills/nstack-flow/references/orch.md) |
+| `watch-pr/watch_pr.py` | [GitHub PR watcher](skills/nstack-flow/references/watch-pr.md) |
+| `reply_thread.py` | [GitHub comments and thread replies](skills/nstack-flow/references/reply-thread.md) |
+| `publish_draft.py` | [GitHub draft publisher](skills/nstack-flow/references/publish-draft.md) |
+| `worktree-audit.sh` | [Worktree audit](skills/nstack-flow/references/worktree-audit.md) |
+| `log.sh` | [Decision-log writer](skills/show-me-your-work/references/log.md) |
+| `nstack_config.py` | [Model configuration and hooks](skills/setup-nstack/references/nstack-config.md) |
+
+Translated helpers retain CLI, stored-format and watcher behavior with Python help/error wording, deterministic UTF-16 count-label order and semantic JSON numeric/member formatting. Behavioral tests live in the repository's `tests/`, not the installed plugin. TypeScript-only compile-time proofs are not claimed for Python.
 
 Bundled rule reads use `gh api` against this repository's `main` and the rendered tree matching the current harness. Project-code baselines still use the project's trunk. A missing rule read stops the workflow; it does not silently substitute an installed or working-copy version. These trunk rules can be newer than installed helpers.
 
@@ -80,7 +93,7 @@ nstack works without setup: every delegated role has a built-in default model, a
 - Every nstack launch carries a role tag such as `[nstack role=review-panel-reviewer seat=2]`. That tag is all the skills know about model selection.
 - A plugin hook runs before every subagent launch. For a tagged launch it writes the role's model and effort into the launch call, routes read-only roles to `nstack-reader`, and tells the subagent which instructions to read first. Untagged launches pass through untouched.
 - At session start, the hook adds one context line listing each panel role's seats and models, so panel skills know how many seats to launch.
-- The hook's script (`nstack_config.py`) ships in the plugin's hooks directory, next to `hooks.json`.
+- The [configuration helper](skills/setup-nstack/references/nstack-config.md) ships in the plugin's hooks directory, next to `hooks.json`.
 - Overrides are stored per user in `~/.nstack/models.json`, per client (`claude`, `copilot`, `codex`). Run `setup-nstack` to change them; changes apply to the next launch, with no restart.
 - A configured model is not proof that the client used it. `setup-nstack` records a dispatch check only when the client itself shows which model ran.
 
