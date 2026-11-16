@@ -189,7 +189,10 @@ class TestSkillPermissionRendering:
                 assert "tools" not in data and "allowed-tools" not in data
         agent = tmp_path / "dist/copilot/plugins/nstack/com.github.copilot/agents/nstack-agent.agent.md"
         data, _ = split_document(agent.read_text())
-        assert data["tools"] == ["read", "edit", "execute", "search"]
+        assert data["tools"] == ["read", "edit", "execute", "search", "agent"]
+        reader = tmp_path / "dist/copilot/plugins/nstack/com.github.copilot/agents/nstack-reader.agent.md"
+        reader_data, _ = split_document(reader.read_text())
+        assert reader_data["tools"] == ["read", "search"]
         assert not any("copilot skill" in warning for warning in result.warnings)
 
     def test_copilot_raw_tools_are_rejected_and_canonical_tools_stay_gated(self, cfg, tmp_path):
@@ -219,7 +222,7 @@ class TestSkillPermissionRendering:
         assert result.warnings == []
 
     @pytest.mark.parametrize(
-        ("plugin_name", "skill_name", "expected_tools", "scripts"),
+        ("plugin_name", "skill_name", "expected_tools", "scripts", "usage_document"),
         [
             (
                 "git-tools", "gh-pr-review",
@@ -228,6 +231,7 @@ class TestSkillPermissionRendering:
                 'Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/create-review.sh":*), '
                 'Bash("${CLAUDE_PLUGIN_ROOT}/skills/gh-pr-review/scripts/submit-review.sh":*), Read',
                 ["pr-info.sh", "create-review.sh", "submit-review.sh"],
+                "SKILL.md",
             ),
             (
                 "git-tools", "git-stacked-prs",
@@ -238,16 +242,18 @@ class TestSkillPermissionRendering:
                 'Bash("${CLAUDE_PLUGIN_ROOT}/skills/git-stacked-prs/scripts/stack-backup.sh":*), '
                 'Read, Edit, Write',
                 ["stack-rebase.sh", "stack-status.sh", "update-pr-targets.sh", "stack-backup.sh"],
+                "SKILL.md",
             ),
             (
                 "nstack", "show-me-your-work",
                 'Bash("${CLAUDE_PLUGIN_ROOT}/skills/show-me-your-work/scripts/log.sh":*)',
                 ["log.sh"],
+                "references/log.md",
             ),
         ],
     )
     def test_claude_script_callers_match_literal_rules(
-        self, cfg, tmp_path, plugin_name, skill_name, expected_tools, scripts
+        self, cfg, tmp_path, plugin_name, skill_name, expected_tools, scripts, usage_document
     ):
         plugin = next(p for p in cfg.plugins if p.name == plugin_name)
         result = BuildResult()
@@ -258,8 +264,11 @@ class TestSkillPermissionRendering:
         data, body = split_document(result.written[0].read_text())
         assert data["allowed-tools"] == expected_tools
         assert "PR_INFO=$(" not in body
+        if usage_document != "SKILL.md":
+            assert f"]({usage_document})" in body
+        usage = (result.written[0].parent / usage_document).read_text()
         for script in scripts:
-            assert f'"${{CLAUDE_PLUGIN_ROOT}}/skills/{skill_name}/scripts/{script}"' in body
+            assert f'"${{CLAUDE_PLUGIN_ROOT}}/skills/{skill_name}/scripts/{script}"' in usage
             assert (result.written[0].parent / "scripts" / script).stat().st_mode & 0o111
 
     @pytest.mark.parametrize("harness_id", ["claude", "codex"])

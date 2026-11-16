@@ -50,6 +50,8 @@ prose:
   skill: 'the `{name}` skill (`/{name}`)'
   todo: 'the todo list'
   ask_user: 'a direct chat question to the user (wait for their reply before continuing)'
+  schedule: 'the native `/every` or `/schedule` capability'
+  schedule_hourly: 'native recurring automation every 1h'
 models:
   map:                   # .agent.md accepts fallback priority lists
     small:  [claude-haiku-4-5]

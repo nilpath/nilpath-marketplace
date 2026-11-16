@@ -34,6 +34,8 @@ prose:
   skill: 'the `{name}` skill'
   todo: 'the plan tool (`update_plan`)'
   ask_user: 'a direct chat question to the user (wait for their reply before continuing)'
+  schedule: 'the host''s exposed native recurring-automation capability'
+  schedule_hourly: 'native recurring automation every 1h'
 models:
   map:
     small:  gpt-5.1-codex-mini

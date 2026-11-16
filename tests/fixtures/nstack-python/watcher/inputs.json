@@ -1,0 +1,5224 @@
+{
+  "pin": {
+    "repository": "https://github.com/cursor/plugins",
+    "commit": "8b3326d99fd4b993cb33a24dad8af03175c642c5",
+    "checkoutBaseline": "6e1f772af2f88348bf118f8c6e93f5a98ff41e38",
+    "capture": "Pinned upstream watch-pr modules, Bun 1.3.6, Commander 14.0.0. Only run(argv) in the owned scratch copy is instrumented to return scripted process results. The stdout capture uses Buffer UTF8 encoding, as the real CLI does. All parsing, queries, decisions, queue transitions and rendering run upstream code with a deterministic clock. Expected values are emitted by upstream, not Python."
+  },
+  "selection": {
+    "originalObservations": {
+      "runtime": 161,
+      "pure": 88,
+      "parsing": 148
+    },
+    "runtime": "Retains verdict/readiness precedence, retry/reset/deadline modes, every queue transition scenario, fallback/schema errors, pagination and rendering. Removes standalone draft/recovery and thread-page variants covered by longer traces. URL rules shared by origin/current-PR inference use representative spellings rather than repeating the same normalization on both paths.",
+    "pure": "Retains merge refusal/allowance boundaries, check/gate mapping, schema-error precedence, Bugbot attribution and stack ordering. Removes check-name/state Cartesian products, equivalent missing-state/keyless forms and simpler schema errors covered by multiple-invalid-field cases.",
+    "parsing": "Retains each numeric syntax and validation boundary once, with zero/fraction boundaries for each option family. Retains Commander value consumption, help/error ordering, queue validation and option syntax. Removes the repeated numeric-token matrix across flags and equivalent malformed-option spellings.",
+    "storage": "runtimeDefaults supplies only omitted top-level runtime fields; a sole $ref copies an exact named shared value. Shared values are frozen upstream data, not recomputed watcher results. Retained observations expand losslessly."
+  },
+  "runtimeDefaults": {
+    "argv": [
+      "--owner",
+      "owner",
+      "--repo",
+      "repo",
+      "--pr",
+      "42"
+    ],
+    "pretty": false
+  },
+  "shared": {
+    "facts-open": {
+      "code": 0,
+      "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+    },
+    "threads-empty": {
+      "code": 0,
+      "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}}"
+    },
+    "checks-passed": {
+      "code": 0,
+      "stdout": "[{\"name\": \"ci\", \"state\": \"SUCCESS\", \"bucket\": \"pass\"}]"
+    },
+    "history-passed": {
+      "code": 0,
+      "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"SUCCESS\"}}}]}}}}}"
+    },
+    "checks-pending": {
+      "code": 0,
+      "stdout": "[{\"name\": \"ci\", \"state\": \"PENDING\", \"bucket\": \"pending\"}]"
+    },
+    "history-pending": {
+      "code": 0,
+      "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"previous\", \"statusCheckRollup\": {\"state\": \"SUCCESS\"}}}, {\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"PENDING\"}}}]}}}}}"
+    },
+    "history-failed": {
+      "code": 0,
+      "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"FAILURE\"}}}]}}}}}"
+    },
+    "facts-merged": {
+      "code": 0,
+      "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"MERGED\", \"mergedAt\": \"now\", \"isDraft\": false}"
+    },
+    "checks-failed": {
+      "code": 0,
+      "stdout": "[{\"name\": \"ci\", \"state\": \"FAILURE\", \"bucket\": \"fail\"}]"
+    },
+    "facts-draft": {
+      "code": 0,
+      "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": true}"
+    },
+    "query-denied": {
+      "code": 1,
+      "stderr": "no access"
+    },
+    "checks-empty": {
+      "code": 0,
+      "stdout": "[]"
+    },
+    "fallback-current-pr": {
+      "code": 0,
+      "stdout": "{\"number\": 42, \"url\": \"https://github.com/fallback/repo/pull/42\"}"
+    },
+    "rollup-first-page": {
+      "code": 0,
+      "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"statusCheckRollup\": {\"contexts\": {\"nodes\": [{\"__typename\": \"FutureNode\"}, {\"__typename\": \"CheckRun\", \"name\": \"first\", \"status\": \"COMPLETED\", \"conclusion\": \"SUCCESS\"}], \"pageInfo\": {\"hasNextPage\": true, \"endCursor\": \"next\"}}}}}]}}}}}"
+    },
+    "rollup-last-page": {
+      "code": 0,
+      "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"statusCheckRollup\": {\"contexts\": {\"nodes\": [{\"__typename\": \"StatusContext\", \"context\": \"second\", \"state\": \"SUCCESS\", \"targetUrl\": \"url\"}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}]}}}}}"
+    }
+  },
+  "runtime": [
+    {
+      "name": "fast-path-exit-0",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "fast-path-exit-1",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "code": 1,
+          "stdout": "[{\"name\": \"ci\", \"state\": \"SUCCESS\", \"bucket\": \"pass\"}]"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "fast-path-exit-8",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "code": 8,
+          "stdout": "[{\"name\": \"ci\", \"state\": \"SUCCESS\", \"bucket\": \"pass\"}]"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "hidden-refusal",
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"BLOCKED\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-failed"
+        }
+      ]
+    },
+    {
+      "name": "conflict-CONFLICTING",
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CONFLICTING\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "conflict-DIRTY",
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"DIRTY\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "threads-before-ci",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"one\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"please fix\", \"author\": {\"login\": \"someone\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}}"
+        },
+        {
+          "$ref": "checks-failed"
+        },
+        {
+          "$ref": "history-failed"
+        }
+      ]
+    },
+    {
+      "name": "ci-before-draft",
+      "steps": [
+        {
+          "$ref": "facts-draft"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-failed"
+        },
+        {
+          "$ref": "history-failed"
+        }
+      ]
+    },
+    {
+      "name": "gate-closed",
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"CLOSED\", \"mergedAt\": null, \"isDraft\": false}"
+        }
+      ]
+    },
+    {
+      "name": "gate-changes",
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"CHANGES_REQUESTED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "draft-allowed",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--allow-draft",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": true}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "merged-short-circuit",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-merged"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "merged-at-short-circuit",
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": \"now\", \"isDraft\": false}"
+        }
+      ]
+    },
+    {
+      "name": "status-only-blocker",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"one\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"please fix\", \"author\": {\"login\": \"someone\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}}"
+        },
+        {
+          "$ref": "checks-failed"
+        },
+        {
+          "$ref": "history-failed"
+        }
+      ]
+    },
+    {
+      "name": "pending-timeout-after-read",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--interval",
+        "10",
+        "--timeout",
+        "5"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "$ref": "history-pending"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "$ref": "history-pending"
+        }
+      ]
+    },
+    {
+      "name": "draft-pending-then-gate",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--interval",
+        "10"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-draft"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"PENDING\"}}}]}}}}}"
+        },
+        {
+          "$ref": "facts-draft"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "retry-budget",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "4",
+        "--interval",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "query-denied"
+        },
+        {
+          "$ref": "query-denied"
+        },
+        {
+          "$ref": "query-denied"
+        },
+        {
+          "$ref": "query-denied"
+        }
+      ]
+    },
+    {
+      "name": "retry-deadline",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--timeout",
+        "5"
+      ],
+      "steps": [
+        {
+          "code": 1,
+          "stderr": "unavailable",
+          "advance": 5
+        }
+      ]
+    },
+    {
+      "name": "retry-reset",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "2"
+      ],
+      "steps": [
+        {
+          "code": 1,
+          "stderr": "one"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"PENDING\"}}}]}}}}}"
+        },
+        {
+          "code": 1,
+          "stderr": "two"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "status-only-retries",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only"
+      ],
+      "steps": [
+        {
+          "code": 1,
+          "stderr": "one"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "stderr-utf16-cut",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "code": 1,
+          "stderr": "\ufeffaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d\ude00z\nignored"
+        }
+      ]
+    },
+    {
+      "name": "stderr-js-whitespace",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "code": 2,
+          "stderr": "\u0085\u001cproblem\u0085"
+        }
+      ]
+    },
+    {
+      "name": "stderr-empty-default",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "code": 2,
+          "stderr": "\ufeff \r\n"
+        }
+      ]
+    },
+    {
+      "name": "raw-invalid-{}",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "stdout": "{}"
+        }
+      ]
+    },
+    {
+      "name": "raw-invalid-null",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "stdout": "null"
+        }
+      ]
+    },
+    {
+      "name": "raw-invalid-{\"mergeable\":NaN}",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "stdout": "{\"mergeable\":NaN}"
+        }
+      ]
+    },
+    {
+      "name": "invalid-context",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"url\": \"https://evil.test/o/r/pull/42\", \"number\": 42}"
+        }
+      ]
+    },
+    {
+      "name": "setup-no-retry",
+      "argv": [],
+      "steps": [
+        {
+          "code": 1,
+          "stderr": "setup unavailable"
+        }
+      ]
+    },
+    {
+      "name": "origin-inference",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "git@github.com:local/checkout.git\n"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "origin-overlay",
+      "argv": [
+        "--pr",
+        "42",
+        "--owner",
+        "explicit"
+      ],
+      "steps": [
+        {
+          "stdout": "ssh://git@github.com/local/checkout.git\n"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "origin-fallback-current",
+      "argv": [
+        "--pr",
+        "42",
+        "--repo",
+        "explicit"
+      ],
+      "steps": [
+        {
+          "code": 1
+        },
+        {
+          "code": 0,
+          "stdout": "{\"number\": 99, \"url\": \"https://github.com/inferred/repo/pull/99\"}"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "current-overlay",
+      "argv": [
+        "--owner",
+        "explicit"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://github.com/inferred/repo/pull/42\"}"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "argv-safe",
+      "argv": [
+        "--owner",
+        "$(no shell)",
+        "--repo",
+        "--pretty",
+        "--pr",
+        "0x2a"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "large-rounded-pr",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "9007199254740993"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "nan-fallback",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "stdout": "[{\"name\":\"ci\",\"state\":NaN,\"bucket\":\"pass\"}]"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"statusCheckRollup\": {\"contexts\": {\"nodes\": [{\"__typename\": \"CheckRun\", \"name\": \"fallback\", \"status\": \"COMPLETED\", \"conclusion\": \"SUCCESS\"}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}]}}}}}"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "fallback-empty",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-empty"
+        },
+        {
+          "$ref": "rollup-first-page"
+        },
+        {
+          "$ref": "rollup-last-page"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "fallback-invalid",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "stdout": "{"
+        },
+        {
+          "$ref": "rollup-first-page"
+        },
+        {
+          "$ref": "rollup-last-page"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "fallback-shape",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "{}"
+        },
+        {
+          "$ref": "rollup-first-page"
+        },
+        {
+          "$ref": "rollup-last-page"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "fallback-bad-check",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "[{}]"
+        },
+        {
+          "$ref": "rollup-first-page"
+        },
+        {
+          "$ref": "rollup-last-page"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "fallback-exit",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "code": 2,
+          "stdout": "[{\"name\": \"ci\", \"state\": \"SUCCESS\", \"bucket\": \"pass\"}]"
+        },
+        {
+          "$ref": "rollup-first-page"
+        },
+        {
+          "$ref": "rollup-last-page"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "both-empty-empty",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": []}}}}}"
+        }
+      ]
+    },
+    {
+      "name": "both-empty-unusable",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "code": 8,
+          "stderr": "credential cannot read checks"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": []}}}}}"
+        }
+      ]
+    },
+    {
+      "name": "both-empty-malformed",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "stdout": "{"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": []}}}}}"
+        }
+      ]
+    },
+    {
+      "name": "null-rollup",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"statusCheckRollup\": null}}]}}}}}"
+        }
+      ]
+    },
+    {
+      "name": "cursor-null-stops",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"statusCheckRollup\": {\"contexts\": {\"nodes\": [{\"__typename\": \"StatusContext\", \"context\": \"ci\", \"state\": \"SUCCESS\"}], \"pageInfo\": {\"hasNextPage\": true, \"endCursor\": null}}}}}]}}}}}"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "head-by-oid-not-position",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"SUCCESS\"}}}, {\"commit\": {\"oid\": \"other\", \"statusCheckRollup\": {\"state\": \"FAILURE\"}}}]}}}}}"
+        }
+      ]
+    },
+    {
+      "name": "missing-head-null",
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"BLOCKED\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": null, \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-failed"
+        }
+      ]
+    },
+    {
+      "name": "threads-cursor-null-stops",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"one\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"please fix\", \"author\": {\"login\": \"someone\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": true, \"endCursor\": null}}}}}}"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "bugbot-global-passes",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"one\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"RUN_ID: run-1\", \"author\": {\"login\": \"bugbot\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}, {\"id\": \"two\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"CURSOR_AUTOMATION_ID: run-2 severity high\", \"author\": {\"login\": \"cursor\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": true, \"endCursor\": \"next\"}}}}}}"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"resolved\", \"isResolved\": true, \"comments\": {\"nodes\": [{\"body\": \"RUN_ID: run-3\", \"author\": {\"login\": \"bugbot\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}}"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "first-comment-only",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"one\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"first\", \"createdAt\": \"now\", \"path\": null, \"line\": null, \"author\": null}, {\"body\": \"RUN_ID: ignored\", \"author\": {\"login\": \"bugbot\"}}]}}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}}"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "unicode-180-cut",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"one\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\ud83d\\ude00z\\r\\nignored\", \"author\": {\"login\": \"someone\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}}"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "surrogate-json",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"one\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"\\ud800 X \\udfff \\u2028\", \"author\": {\"login\": \"someone\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}}"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "stack-tier-major",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--stack"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "[{\"number\": 41, \"headRefName\": \"bottom\", \"baseRefName\": \"main\"}, {\"number\": 42, \"headRefName\": \"feature\", \"baseRefName\": \"bottom\"}, {\"number\": 43, \"headRefName\": \"up\", \"baseRefName\": \"feature\"}]"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-failed"
+        },
+        {
+          "$ref": "history-failed"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"DIRTY\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "stack-wait-attribution",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--stack",
+        "--interval",
+        "10"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "[{\"number\": 41, \"headRefName\": \"bottom\", \"baseRefName\": \"main\"}, {\"number\": 42, \"headRefName\": \"feature\", \"baseRefName\": \"bottom\"}]"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"PENDING\"}}}]}}}}}"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "stack-ready",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--stack",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "[{\"number\": 41, \"headRefName\": \"bottom\", \"baseRefName\": \"main\"}, {\"number\": 42, \"headRefName\": \"feature\", \"baseRefName\": \"bottom\"}, {\"number\": 43, \"headRefName\": \"up\", \"baseRefName\": \"feature\"}]"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "queued-status-only",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--queued-stack",
+        "--stack-prs",
+        "42,43",
+        "--interval",
+        "10",
+        "--sweep-interval",
+        "20",
+        "--status-only"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "queue-wait-dedupe-sweep",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--queued-stack",
+        "--stack-prs",
+        "42,43",
+        "--interval",
+        "10",
+        "--sweep-interval",
+        "20",
+        "--timeout",
+        "25"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "queue-failed-sweep-resume",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--queued-stack",
+        "--stack-prs",
+        "42,43",
+        "--interval",
+        "10",
+        "--sweep-interval",
+        "20",
+        "--timeout",
+        "65"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "code": 1,
+          "stderr": "rate limited"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "queue-immediate-advance-complete",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--queued-stack",
+        "--stack-prs",
+        "42,43",
+        "--interval",
+        "10",
+        "--sweep-interval",
+        "20"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-merged"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"MERGED\", \"mergedAt\": \"later\", \"isDraft\": false}"
+        }
+      ]
+    },
+    {
+      "name": "queue-pending-history-omitted",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--queued-stack",
+        "--stack-prs",
+        "42,43",
+        "--interval",
+        "10",
+        "--sweep-interval",
+        "20",
+        "--timeout",
+        "15"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        }
+      ]
+    },
+    {
+      "name": "queue-frontier-ready-upstack-pending",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--queued-stack",
+        "--stack-prs",
+        "42,43",
+        "--interval",
+        "10",
+        "--sweep-interval",
+        "20",
+        "--timeout",
+        "15"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        }
+      ]
+    },
+    {
+      "name": "queue-complete-before-deadline",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--queued-stack",
+        "--stack-prs",
+        "42,43",
+        "--interval",
+        "10",
+        "--sweep-interval",
+        "20",
+        "--timeout",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-merged"
+        },
+        {
+          "$ref": "facts-merged"
+        }
+      ]
+    },
+    {
+      "name": "queue-blocker-before-deadline",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--queued-stack",
+        "--stack-prs",
+        "42,43",
+        "--interval",
+        "10",
+        "--sweep-interval",
+        "20",
+        "--timeout",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-failed"
+        },
+        {
+          "$ref": "history-failed"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}",
+          "advance": 5
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "queue-discovery-frozen",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--queued-stack"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "[{\"number\": 41, \"headRefName\": \"bottom\", \"baseRefName\": \"main\"}, {\"number\": 42, \"headRefName\": \"feature\", \"baseRefName\": \"bottom\"}, {\"number\": 43, \"headRefName\": \"up\", \"baseRefName\": \"feature\"}]"
+        },
+        {
+          "$ref": "facts-merged"
+        },
+        {
+          "$ref": "facts-merged"
+        },
+        {
+          "$ref": "facts-merged"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com/o/r.git/",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com/o/r.git/"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com/o/r.git/.",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com/o/r.git/."
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com:0443/o/r.git",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com:0443/o/r.git"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://:@github.com/o/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://:@github.com/o/r"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github%2ecom/o/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github%2ecom/o/r"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com/o//../r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com/o//../r"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com/o/r/.git",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com/o/r/.git"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https:github.com/o/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https:github.com/o/r"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://GitHub.com/o/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://GitHub.com/o/r"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com/o/r?",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com/o/r?"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com/o/r#",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com/o/r#"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://user@github.com/o/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://user@github.com/o/r"
+        },
+        {
+          "$ref": "fallback-current-pr"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com:444/o/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com:444/o/r"
+        },
+        {
+          "$ref": "fallback-current-pr"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-http://github.com/o/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "http://github.com/o/r"
+        },
+        {
+          "$ref": "fallback-current-pr"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-not a url",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "not a url"
+        },
+        {
+          "$ref": "fallback-current-pr"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com/\u00e4/\ud83d\ude00.git",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com/\u00e4/\ud83d\ude00.git"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com/o r/r.git",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com/o r/r.git"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com/o\"<>`{}^|[]/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com/o\"<>`{}^|[]/r"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com/o\u0000/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com/o\u0000/r"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github.com/o\ud800/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github.com/o\ud800/r"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "remote-https://github\u3002com/o/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://github\u3002com/o/r"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "url-https://github.com/o/r/pull/0x2a",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://github.com/o/r/pull/0x2a\"}"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "url-https://github.com/o/r/pull/42/",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://github.com/o/r/pull/42/\"}"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "url-https://github.com/o/x/../r/pull/42",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://github.com/o/x/../r/pull/42\"}"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "url-\t https://github.com/o/r/pull/42\n",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"\\t https://github.com/o/r/pull/42\\n\"}"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "url-https://github.com/o/r/pull/0",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://github.com/o/r/pull/0\"}"
+        }
+      ]
+    },
+    {
+      "name": "url-https://github.com/o/r/pull/42?x",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://github.com/o/r/pull/42?x\"}"
+        }
+      ]
+    },
+    {
+      "name": "url-https://github.com/o/r/pull/42#x",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://github.com/o/r/pull/42#x\"}"
+        }
+      ]
+    },
+    {
+      "name": "pr-shortest-integer-string",
+      "argv": [
+        "--owner",
+        "o",
+        "--repo",
+        "r",
+        "--pr",
+        "1000000000000000100"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "pr-exponent-string",
+      "argv": [
+        "--owner",
+        "o",
+        "--repo",
+        "r",
+        "--pr",
+        "1e21"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "threads-three-pages",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"one\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"please fix\", \"author\": {\"login\": \"someone\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": true, \"endCursor\": \"next\"}}}}}}"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"two\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"please fix\", \"author\": {\"login\": \"someone\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": true, \"endCursor\": \"last\"}}}}}}"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"three\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"please fix\", \"author\": {\"login\": \"someone\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}}"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "status-only-pretty-ci-failed",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-failed"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"previous\", \"statusCheckRollup\": {\"state\": \"SUCCESS\"}}}, {\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"FAILURE\"}}}]}}}}}"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "status-only-pretty-pending",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "$ref": "history-pending"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "status-only-pretty-closed",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"CLOSED\", \"mergedAt\": null, \"isDraft\": false}"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "status-only-pretty-draft",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-draft"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "status-only-pretty-changes",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"CHANGES_REQUESTED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-hidden-refusal",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"BLOCKED\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"previous\", \"statusCheckRollup\": {\"state\": \"SUCCESS\"}}}, {\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"ERROR\"}}}]}}}}}"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-conflict",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"CONFLICTING\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-failing-checks",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-failed"
+        },
+        {
+          "$ref": "history-failed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-draft-gate",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-draft"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-closed-gate",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"CLOSED\", \"mergedAt\": null, \"isDraft\": false}"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-changes-gate",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"CHANGES_REQUESTED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-retry-budget",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "2",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "query-denied"
+        },
+        {
+          "$ref": "query-denied"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-pending-timeout",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--interval",
+        "10",
+        "--timeout",
+        "5",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"PENDING\"}}}]}}}}}"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-pending"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"PENDING\"}}}]}}}}}"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-query-timeout",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--timeout",
+        "5",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "code": 1,
+          "stderr": "unavailable",
+          "advance": 5
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-queue-advance-complete",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--queued-stack",
+        "--stack-prs",
+        "42,43",
+        "--interval",
+        "10",
+        "--sweep-interval",
+        "20",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-merged"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"MERGED\", \"mergedAt\": \"later\", \"isDraft\": false}"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-queue-timeout",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--queued-stack",
+        "--stack-prs",
+        "42,43",
+        "--interval",
+        "10",
+        "--sweep-interval",
+        "20",
+        "--timeout",
+        "5",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-automation-table",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "[{\"name\": \"Security Review\", \"state\": \"PENDING\", \"bucket\": \"pending\"}, {\"name\": \"ci\", \"state\": \"FAILURE\", \"bucket\": \"fail\"}]"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-automation-open",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"one\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"please fix\", \"author\": {\"login\": \"someone\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}}"
+        },
+        {
+          "code": 0,
+          "stdout": "[{\"name\": \"Bugbot\", \"state\": \"PENDING\", \"bucket\": \"pending\"}]"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-thread-open",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": [{\"id\": \"one\", \"isResolved\": false, \"comments\": {\"nodes\": [{\"body\": \"please fix\", \"author\": {\"login\": \"someone\"}, \"createdAt\": \"now\", \"path\": \"a.ts\", \"line\": 1}]}}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}}"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-status-conflict",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"DIRTY\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "pretty-status-hidden-refusal",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--status-only",
+        "--pretty"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"BLOCKED\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"previous\", \"statusCheckRollup\": {\"state\": \"SUCCESS\"}}}, {\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"ERROR\"}}}]}}}}}"
+        }
+      ],
+      "pretty": true
+    },
+    {
+      "name": "gate-only-pending-ready",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "[{\"name\": \"Code Review Gate\", \"state\": \"PENDING\", \"bucket\": \"pending\"}]"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "gate-only-action-ready",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "[{\"name\": \"Code Review Gate\", \"state\": \"ACTION_REQUIRED\", \"bucket\": \"fail\"}]"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "gate-not-exempt-failure",
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "[{\"name\": \"Code Review Gate\", \"state\": \"FAILURE\", \"bucket\": \"fail\"}]"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "hidden-refusal-with-pending-gate",
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"BLOCKED\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "[{\"name\": \"Code Review Gate\", \"state\": \"PENDING\", \"bucket\": \"pending\"}]"
+        },
+        {
+          "$ref": "history-failed"
+        }
+      ]
+    },
+    {
+      "name": "unknown-only-rollup-empty",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"statusCheckRollup\": {\"contexts\": {\"nodes\": [{\"__typename\": \"FutureNode\"}], \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}]}}}}}"
+        }
+      ]
+    },
+    {
+      "name": "invalid-thread-root",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {}}"
+        }
+      ]
+    },
+    {
+      "name": "invalid-thread-nodes",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"reviewThreads\": {\"nodes\": null, \"pageInfo\": {\"hasNextPage\": false, \"endCursor\": null}}}}}}"
+        }
+      ]
+    },
+    {
+      "name": "invalid-commit-state",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [{\"commit\": {\"oid\": \"head\", \"statusCheckRollup\": {\"state\": \"FUTURE_VALUE\"}}}]}}}}}"
+        }
+      ]
+    },
+    {
+      "name": "invalid-rollup-root",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-empty"
+        },
+        {
+          "code": 0,
+          "stdout": "{\"data\": {\"repository\": {\"pullRequest\": {\"commits\": {\"nodes\": [null]}}}}}"
+        }
+      ]
+    },
+    {
+      "name": "command-negative-code",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "code": -1,
+          "stderr": "terminated"
+        }
+      ]
+    },
+    {
+      "name": "numeric-raw-value-mergeStateStatus",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": 1, \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        }
+      ]
+    },
+    {
+      "name": "numeric-raw-value-reviewDecision",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": 1e-07, \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        }
+      ]
+    },
+    {
+      "name": "numeric-raw-value-headRefName",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": 1e-06, \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        }
+      ]
+    },
+    {
+      "name": "numeric-raw-value-isDraft",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": 0}"
+        }
+      ]
+    },
+    {
+      "name": "numeric-raw-value-mergeable",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"mergeable\": {\"value\": 1000000000000000100, \"nested\": [1.0, 1e+21, -0.0]}, \"mergeStateStatus\": \"CLEAN\", \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        }
+      ]
+    },
+    {
+      "name": "nonfinite-raw-value",
+      "argv": [
+        "--owner",
+        "owner",
+        "--repo",
+        "repo",
+        "--pr",
+        "42",
+        "--max-query-errors",
+        "1"
+      ],
+      "steps": [
+        {
+          "stdout": "{\"mergeable\": \"MERGEABLE\", \"mergeStateStatus\": 1e400, \"reviewDecision\": \"APPROVED\", \"headRefOid\": \"head\", \"headRefName\": \"feature\", \"baseRefName\": \"main\", \"state\": \"OPEN\", \"mergedAt\": null, \"isDraft\": false}"
+        }
+      ]
+    },
+    {
+      "name": "reserved-encoded-origin-https://%40github.com/o/r",
+      "argv": [
+        "--pr",
+        "42"
+      ],
+      "steps": [
+        {
+          "stdout": "https://%40github.com/o/r"
+        },
+        {
+          "$ref": "fallback-current-pr"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "reserved-encoded-url-%40github.com",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://%40github.com/o/r/pull/1\"}"
+        }
+      ]
+    },
+    {
+      "name": "reserved-encoded-url-github.com%3A443",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://github.com%3A443/o/r/pull/1\"}"
+        }
+      ]
+    },
+    {
+      "name": "reserved-encoded-url-%3A@github.com",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://%3A@github.com/o/r/pull/1\"}"
+        }
+      ]
+    },
+    {
+      "name": "encoded-letters-url-%67it%68ub.com",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://%67it%68ub.com/o/r/pull/42\"}"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    },
+    {
+      "name": "encoded-letters-url-%EF%BD%87ithub.com",
+      "argv": [],
+      "steps": [
+        {
+          "code": 0,
+          "stdout": "{\"number\": 42, \"url\": \"https://%EF%BD%87ithub.com/o/r/pull/42\"}"
+        },
+        {
+          "$ref": "facts-open"
+        },
+        {
+          "$ref": "threads-empty"
+        },
+        {
+          "$ref": "checks-passed"
+        },
+        {
+          "$ref": "history-passed"
+        }
+      ]
+    }
+  ],
+  "pure": [
+    {
+      "name": "truth-BLOCKED-FAILURE",
+      "function": "assessGitHubMerge",
+      "args": [
+        {
+          "mergeStateStatus": "BLOCKED",
+          "headRollupState": "FAILURE"
+        }
+      ]
+    },
+    {
+      "name": "truth-BLOCKED-ERROR",
+      "function": "assessGitHubMerge",
+      "args": [
+        {
+          "mergeStateStatus": "BLOCKED",
+          "headRollupState": "ERROR"
+        }
+      ]
+    },
+    {
+      "name": "truth-BLOCKED-PENDING",
+      "function": "assessGitHubMerge",
+      "args": [
+        {
+          "mergeStateStatus": "BLOCKED",
+          "headRollupState": "PENDING"
+        }
+      ]
+    },
+    {
+      "name": "truth-UNSTABLE-FAILURE",
+      "function": "assessGitHubMerge",
+      "args": [
+        {
+          "mergeStateStatus": "UNSTABLE",
+          "headRollupState": "FAILURE"
+        }
+      ]
+    },
+    {
+      "name": "truth-UNKNOWN-ERROR",
+      "function": "assessGitHubMerge",
+      "args": [
+        {
+          "mergeStateStatus": "UNKNOWN",
+          "headRollupState": "ERROR"
+        }
+      ]
+    },
+    {
+      "name": "truth-UNKNOWN-None",
+      "function": "assessGitHubMerge",
+      "args": [
+        {
+          "mergeStateStatus": "UNKNOWN",
+          "headRollupState": null
+        }
+      ]
+    },
+    {
+      "name": "backoff-1-1",
+      "function": "queryBackoffSeconds",
+      "args": [
+        1,
+        1
+      ]
+    },
+    {
+      "name": "backoff-1-2",
+      "function": "queryBackoffSeconds",
+      "args": [
+        1,
+        2
+      ]
+    },
+    {
+      "name": "backoff-60-4",
+      "function": "queryBackoffSeconds",
+      "args": [
+        60,
+        4
+      ]
+    },
+    {
+      "name": "backoff-600-1",
+      "function": "queryBackoffSeconds",
+      "args": [
+        600,
+        1
+      ]
+    },
+    {
+      "name": "run-IN_PROGRESS-None",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "CheckRun",
+          "name": "ci",
+          "status": "IN_PROGRESS",
+          "conclusion": null
+        }
+      ]
+    },
+    {
+      "name": "run-COMPLETED-SUCCESS",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "CheckRun",
+          "name": "ci",
+          "status": "COMPLETED",
+          "conclusion": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "name": "run-COMPLETED-NEUTRAL",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "CheckRun",
+          "name": "ci",
+          "status": "COMPLETED",
+          "conclusion": "NEUTRAL"
+        }
+      ]
+    },
+    {
+      "name": "run-COMPLETED-SKIPPED",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "CheckRun",
+          "name": "ci",
+          "status": "COMPLETED",
+          "conclusion": "SKIPPED"
+        }
+      ]
+    },
+    {
+      "name": "run-COMPLETED-ACTION_REQUIRED",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "CheckRun",
+          "name": "ci",
+          "status": "COMPLETED",
+          "conclusion": "ACTION_REQUIRED"
+        }
+      ]
+    },
+    {
+      "name": "run-COMPLETED-FUTURE_VALUE",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "CheckRun",
+          "name": "ci",
+          "status": "COMPLETED",
+          "conclusion": "FUTURE_VALUE"
+        }
+      ]
+    },
+    {
+      "name": "context-EXPECTED",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "StatusContext",
+          "context": "ci",
+          "state": "EXPECTED"
+        }
+      ]
+    },
+    {
+      "name": "context-SUCCESS",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "StatusContext",
+          "context": "ci",
+          "state": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "name": "context-FAILURE",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "StatusContext",
+          "context": "ci",
+          "state": "FAILURE"
+        }
+      ]
+    },
+    {
+      "name": "context-FUTURE_VALUE",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "StatusContext",
+          "context": "ci",
+          "state": "FUTURE_VALUE"
+        }
+      ]
+    },
+    {
+      "name": "context-None",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "StatusContext",
+          "context": "ci",
+          "state": null
+        }
+      ]
+    },
+    {
+      "name": "unknown-typename",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "FutureNode"
+        }
+      ]
+    },
+    {
+      "name": "fast-Code Review Gate-ACTION_REQUIRED-fail",
+      "function": "parseFastCheck",
+      "args": [
+        {
+          "name": "Code Review Gate",
+          "state": "ACTION_REQUIRED",
+          "bucket": "fail"
+        }
+      ]
+    },
+    {
+      "name": "fast-ci-ACTION_REQUIRED-fail",
+      "function": "parseFastCheck",
+      "args": [
+        {
+          "name": "ci",
+          "state": "ACTION_REQUIRED",
+          "bucket": "fail"
+        }
+      ]
+    },
+    {
+      "name": "fast-Code Review Gate-PENDING-pending",
+      "function": "parseFastCheck",
+      "args": [
+        {
+          "name": "Code Review Gate",
+          "state": "PENDING",
+          "bucket": "pending"
+        }
+      ]
+    },
+    {
+      "name": "fast-Code Review Gate-FAILURE-fail",
+      "function": "parseFastCheck",
+      "args": [
+        {
+          "name": "Code Review Gate",
+          "state": "FAILURE",
+          "bucket": "fail"
+        }
+      ]
+    },
+    {
+      "name": "fast-Code Review Gate-ERROR-pending",
+      "function": "parseFastCheck",
+      "args": [
+        {
+          "name": "Code Review Gate",
+          "state": "ERROR",
+          "bucket": "pending"
+        }
+      ]
+    },
+    {
+      "name": "fast-ci-SUCCESS-pass",
+      "function": "parseFastCheck",
+      "args": [
+        {
+          "name": "ci",
+          "state": "SUCCESS",
+          "bucket": "pass"
+        }
+      ]
+    },
+    {
+      "name": "fast-ci-SKIPPED-skipping",
+      "function": "parseFastCheck",
+      "args": [
+        {
+          "name": "ci",
+          "state": "SKIPPED",
+          "bucket": "skipping"
+        }
+      ]
+    },
+    {
+      "name": "fast-ci-SUCCESS-future",
+      "function": "parseFastCheck",
+      "args": [
+        {
+          "name": "ci",
+          "state": "SUCCESS",
+          "bucket": "future"
+        }
+      ]
+    },
+    {
+      "name": "gate-CheckRun-{'status': 'IN_PROGRESS'}",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "CheckRun",
+          "name": "Code Review Gate",
+          "context": "Code Review Gate",
+          "status": "IN_PROGRESS"
+        }
+      ]
+    },
+    {
+      "name": "gate-CheckRun-{'status': 'COMPLETED', 'conclusion': 'ACTION_REQUIRED'}",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "CheckRun",
+          "name": "Code Review Gate",
+          "context": "Code Review Gate",
+          "status": "COMPLETED",
+          "conclusion": "ACTION_REQUIRED"
+        }
+      ]
+    },
+    {
+      "name": "gate-CheckRun-{'status': 'COMPLETED', 'conclusion': 'FAILURE'}",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "CheckRun",
+          "name": "Code Review Gate",
+          "context": "Code Review Gate",
+          "status": "COMPLETED",
+          "conclusion": "FAILURE"
+        }
+      ]
+    },
+    {
+      "name": "gate-StatusContext-{'state': 'PENDING'}",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "StatusContext",
+          "name": "Code Review Gate",
+          "context": "Code Review Gate",
+          "state": "PENDING"
+        }
+      ]
+    },
+    {
+      "name": "gate-StatusContext-{'state': 'FAILURE'}",
+      "function": "mapRollupNode",
+      "args": [
+        {
+          "__typename": "StatusContext",
+          "name": "Code Review Gate",
+          "context": "Code Review Gate",
+          "state": "FAILURE"
+        }
+      ]
+    },
+    {
+      "name": "facts-reviewDecision-",
+      "function": "parsePullRequest",
+      "args": [
+        {
+          "mergeable": "MERGEABLE",
+          "mergeStateStatus": "CLEAN",
+          "reviewDecision": "",
+          "headRefOid": "head",
+          "headRefName": "feature",
+          "baseRefName": "main",
+          "state": "OPEN",
+          "mergedAt": null,
+          "isDraft": false
+        },
+        {
+          "owner": "owner",
+          "repo": "repo",
+          "number": 42
+        }
+      ]
+    },
+    {
+      "name": "facts-reviewDecision-MAYBE",
+      "function": "parsePullRequest",
+      "args": [
+        {
+          "mergeable": "MERGEABLE",
+          "mergeStateStatus": "CLEAN",
+          "reviewDecision": "MAYBE",
+          "headRefOid": "head",
+          "headRefName": "feature",
+          "baseRefName": "main",
+          "state": "OPEN",
+          "mergedAt": null,
+          "isDraft": false
+        },
+        {
+          "owner": "owner",
+          "repo": "repo",
+          "number": 42
+        }
+      ]
+    },
+    {
+      "name": "facts-mergeStateStatus-FUTURE_STATE",
+      "function": "parsePullRequest",
+      "args": [
+        {
+          "mergeable": "MERGEABLE",
+          "mergeStateStatus": "FUTURE_STATE",
+          "reviewDecision": "APPROVED",
+          "headRefOid": "head",
+          "headRefName": "feature",
+          "baseRefName": "main",
+          "state": "OPEN",
+          "mergedAt": null,
+          "isDraft": false
+        },
+        {
+          "owner": "owner",
+          "repo": "repo",
+          "number": 42
+        }
+      ]
+    },
+    {
+      "name": "facts-isDraft-None",
+      "function": "parsePullRequest",
+      "args": [
+        {
+          "mergeable": "MERGEABLE",
+          "mergeStateStatus": "CLEAN",
+          "reviewDecision": "APPROVED",
+          "headRefOid": "head",
+          "headRefName": "feature",
+          "baseRefName": "main",
+          "state": "OPEN",
+          "mergedAt": null,
+          "isDraft": null
+        },
+        {
+          "owner": "owner",
+          "repo": "repo",
+          "number": 42
+        }
+      ]
+    },
+    {
+      "name": "facts-headRefOid-None",
+      "function": "parsePullRequest",
+      "args": [
+        {
+          "mergeable": "MERGEABLE",
+          "mergeStateStatus": "CLEAN",
+          "reviewDecision": "APPROVED",
+          "headRefOid": null,
+          "headRefName": "feature",
+          "baseRefName": "main",
+          "state": "OPEN",
+          "mergedAt": null,
+          "isDraft": false
+        },
+        {
+          "owner": "owner",
+          "repo": "repo",
+          "number": 42
+        }
+      ]
+    },
+    {
+      "name": "missing-page",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": []
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bugbot-someone-RUN_ID: no",
+      "function": "buildReviewThreads",
+      "args": [
+        [
+          {
+            "id": "one",
+            "resolved": false,
+            "firstComment": {
+              "authorLogin": "someone",
+              "body": "RUN_ID: no",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "name": "bugbot-BUGBOT[bot]-RUN_ID:\ufeffabc",
+      "function": "buildReviewThreads",
+      "args": [
+        [
+          {
+            "id": "one",
+            "resolved": false,
+            "firstComment": {
+              "authorLogin": "BUGBOT[bot]",
+              "body": "RUN_ID:\ufeffabc",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "name": "bugbot-cursor-severity\nRUN_ID:\u0085abc",
+      "function": "buildReviewThreads",
+      "args": [
+        [
+          {
+            "id": "one",
+            "resolved": false,
+            "firstComment": {
+              "authorLogin": "cursor",
+              "body": "severity\nRUN_ID:\u0085abc",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "name": "bugbot-cursor-description start CURSOR_AUTOMATION_ID: a",
+      "function": "buildReviewThreads",
+      "args": [
+        [
+          {
+            "id": "one",
+            "resolved": false,
+            "firstComment": {
+              "authorLogin": "cursor",
+              "body": "description start CURSOR_AUTOMATION_ID: a",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "name": "bugbot-cursor-unrelated",
+      "function": "buildReviewThreads",
+      "args": [
+        [
+          {
+            "id": "one",
+            "resolved": false,
+            "firstComment": {
+              "authorLogin": "cursor",
+              "body": "unrelated",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "name": "bugbot-None-bugbot",
+      "function": "buildReviewThreads",
+      "args": [
+        [
+          {
+            "id": "one",
+            "resolved": false,
+            "firstComment": {
+              "authorLogin": null,
+              "body": "bugbot",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "name": "bugbot-bugbot-run_id: lower",
+      "function": "buildReviewThreads",
+      "args": [
+        [
+          {
+            "id": "one",
+            "resolved": false,
+            "firstComment": {
+              "authorLogin": "bugbot",
+              "body": "run_id: lower",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "name": "empty-comment",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [
+                    {
+                      "id": "one",
+                      "isResolved": false,
+                      "comments": {
+                        "nodes": []
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false,
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "stack-missing-seed",
+      "function": "orderStack",
+      "args": [
+        {
+          "owner": "owner",
+          "repo": "repo",
+          "number": 42
+        },
+        []
+      ]
+    },
+    {
+      "name": "branch-order",
+      "function": "orderStack",
+      "args": [
+        {
+          "owner": "owner",
+          "repo": "repo",
+          "number": 42
+        },
+        [
+          {
+            "number": 42,
+            "headRefName": "feature",
+            "baseRefName": "bottom"
+          },
+          {
+            "number": 46,
+            "headRefName": "late",
+            "baseRefName": "feature"
+          },
+          {
+            "number": 44,
+            "headRefName": "early",
+            "baseRefName": "feature"
+          },
+          {
+            "number": 45,
+            "headRefName": "child",
+            "baseRefName": "early"
+          }
+        ]
+      ]
+    },
+    {
+      "name": "duplicate-child-seen",
+      "function": "orderStack",
+      "args": [
+        {
+          "owner": "owner",
+          "repo": "repo",
+          "number": 42
+        },
+        [
+          {
+            "number": 42,
+            "headRefName": "feature",
+            "baseRefName": "bottom"
+          },
+          {
+            "number": 43,
+            "headRefName": "up",
+            "baseRefName": "feature"
+          },
+          {
+            "number": 43,
+            "headRefName": "other",
+            "baseRefName": "feature"
+          }
+        ]
+      ]
+    },
+    {
+      "name": "thread-isResolved-0",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [
+                    {
+                      "id": "one",
+                      "isResolved": 0,
+                      "comments": {
+                        "nodes": [
+                          {
+                            "body": "please fix",
+                            "author": {
+                              "login": "someone"
+                            },
+                            "createdAt": "now",
+                            "path": "a.ts",
+                            "line": 1
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false,
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "thread-id-None",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [
+                    {
+                      "id": null,
+                      "isResolved": false,
+                      "comments": {
+                        "nodes": [
+                          {
+                            "body": "please fix",
+                            "author": {
+                              "login": "someone"
+                            },
+                            "createdAt": "now",
+                            "path": "a.ts",
+                            "line": 1
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false,
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "comment-line-True",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [
+                    {
+                      "id": "one",
+                      "isResolved": false,
+                      "comments": {
+                        "nodes": [
+                          {
+                            "body": "please fix",
+                            "author": {
+                              "login": "someone"
+                            },
+                            "createdAt": "now",
+                            "path": "a.ts",
+                            "line": true
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false,
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "comment-line-1",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [
+                    {
+                      "id": "one",
+                      "isResolved": false,
+                      "comments": {
+                        "nodes": [
+                          {
+                            "body": "please fix",
+                            "author": {
+                              "login": "someone"
+                            },
+                            "createdAt": "now",
+                            "path": "a.ts",
+                            "line": "1"
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false,
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "comment-author-{}",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [
+                    {
+                      "id": "one",
+                      "isResolved": false,
+                      "comments": {
+                        "nodes": [
+                          {
+                            "body": "please fix",
+                            "author": {},
+                            "createdAt": "now",
+                            "path": "a.ts",
+                            "line": 1
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false,
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "invalid-page-bool",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [],
+                  "pageInfo": {
+                    "hasNextPage": "true",
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "empty-cursor",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [],
+                  "pageInfo": {
+                    "hasNextPage": true,
+                    "endCursor": ""
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bugbot-keyed-and-keyless",
+      "function": "buildReviewThreads",
+      "args": [
+        [
+          {
+            "id": "0",
+            "resolved": false,
+            "firstComment": {
+              "authorLogin": "bugbot",
+              "body": "RUN_ID: a",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          },
+          {
+            "id": "1",
+            "resolved": false,
+            "firstComment": {
+              "authorLogin": "bugbot",
+              "body": "RUN_ID: a",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          },
+          {
+            "id": "2",
+            "resolved": true,
+            "firstComment": {
+              "authorLogin": "cursor",
+              "body": "severity CURSOR_AUTOMATION_ID: b",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          },
+          {
+            "id": "3",
+            "resolved": false,
+            "firstComment": {
+              "authorLogin": "bugbot",
+              "body": "keyless",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          },
+          {
+            "id": "4",
+            "resolved": false,
+            "firstComment": {
+              "authorLogin": "human",
+              "body": "RUN_ID: c",
+              "path": null,
+              "line": null,
+              "createdAt": "now"
+            }
+          }
+        ]
+      ]
+    },
+    {
+      "name": "comment-order-author-before-line",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [
+                    {
+                      "id": "one",
+                      "isResolved": false,
+                      "comments": {
+                        "nodes": [
+                          {
+                            "author": {
+                              "login": 5
+                            },
+                            "body": "x",
+                            "path": null,
+                            "line": 1.5,
+                            "createdAt": "t"
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false,
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "comment-order-body-before-path-line",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [
+                    {
+                      "id": "one",
+                      "isResolved": false,
+                      "comments": {
+                        "nodes": [
+                          {
+                            "author": {
+                              "login": "ok"
+                            },
+                            "body": 5,
+                            "path": 6,
+                            "line": 1.5,
+                            "createdAt": "t"
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false,
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "comment-order-path-before-line",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [
+                    {
+                      "id": "one",
+                      "isResolved": false,
+                      "comments": {
+                        "nodes": [
+                          {
+                            "author": {
+                              "login": "ok"
+                            },
+                            "body": "x",
+                            "path": 5,
+                            "line": 1.5,
+                            "createdAt": "t"
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false,
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "comment-order-line-before-created-at",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [
+                    {
+                      "id": "one",
+                      "isResolved": false,
+                      "comments": {
+                        "nodes": [
+                          {
+                            "author": {
+                              "login": "ok"
+                            },
+                            "body": "x",
+                            "path": null,
+                            "line": 1.5,
+                            "createdAt": 5
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false,
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "comment-order-created-at-last",
+      "function": "parseReviewThreadPage",
+      "args": [
+        {
+          "data": {
+            "repository": {
+              "pullRequest": {
+                "reviewThreads": {
+                  "nodes": [
+                    {
+                      "id": "one",
+                      "isResolved": false,
+                      "comments": {
+                        "nodes": [
+                          {
+                            "author": {
+                              "login": "ok"
+                            },
+                            "body": "x",
+                            "path": null,
+                            "line": null,
+                            "createdAt": 5
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "pageInfo": {
+                    "hasNextPage": false,
+                    "endCursor": null
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "parsing": [
+    [],
+    [
+      "--queued-stack",
+      "--stack-prs",
+      "#10, 11,#12",
+      "--interval",
+      "2.5",
+      "--sweep-interval",
+      "30",
+      "--timeout",
+      "0",
+      "--max-query-errors",
+      "3",
+      "--allow-draft",
+      "--pretty"
+    ],
+    [
+      "--pr",
+      ""
+    ],
+    [
+      "--pr",
+      "\ufeff2\u2028"
+    ],
+    [
+      "--pr",
+      "\u00852"
+    ],
+    [
+      "--pr",
+      "0"
+    ],
+    [
+      "--pr",
+      "-1"
+    ],
+    [
+      "--pr",
+      "+1"
+    ],
+    [
+      "--pr",
+      "01"
+    ],
+    [
+      "--pr",
+      "1.5"
+    ],
+    [
+      "--pr",
+      "1e2"
+    ],
+    [
+      "--pr",
+      "0x10"
+    ],
+    [
+      "--pr",
+      "0b11"
+    ],
+    [
+      "--pr",
+      "0o10"
+    ],
+    [
+      "--pr",
+      "-0x1"
+    ],
+    [
+      "--pr",
+      "1_0"
+    ],
+    [
+      "--pr",
+      "Infinity"
+    ],
+    [
+      "--pr",
+      "NaN"
+    ],
+    [
+      "--pr",
+      "1e309"
+    ],
+    [
+      "--pr",
+      "\uff11\uff12"
+    ],
+    [
+      "--pr",
+      "#42"
+    ],
+    [
+      "--interval",
+      ""
+    ],
+    [
+      "--interval",
+      "0"
+    ],
+    [
+      "--interval",
+      "-1"
+    ],
+    [
+      "--interval",
+      "1.5"
+    ],
+    [
+      "--interval",
+      ".5"
+    ],
+    [
+      "--interval",
+      "#42"
+    ],
+    [
+      "--sweep-interval",
+      "0"
+    ],
+    [
+      "--sweep-interval",
+      "1.5"
+    ],
+    [
+      "--timeout",
+      ""
+    ],
+    [
+      "--timeout",
+      "-1"
+    ],
+    [
+      "--timeout",
+      "1.5"
+    ],
+    [
+      "--max-query-errors",
+      "0"
+    ],
+    [
+      "--max-query-errors",
+      "1.5"
+    ],
+    [
+      "--max-query-errors",
+      "9007199254740993"
+    ],
+    [
+      "--unknown"
+    ],
+    [
+      "--stack",
+      "--queued-stack"
+    ],
+    [
+      "--stack-prs",
+      "1,2"
+    ],
+    [
+      "--queued-stack",
+      "--stack-prs",
+      "1,0x1"
+    ],
+    [
+      "--queued-stack",
+      "--stack-prs",
+      "#0b11, 0x4"
+    ],
+    [
+      "--owner",
+      "--pretty"
+    ],
+    [
+      "--owner=--pretty"
+    ],
+    [
+      "--owner",
+      "-h"
+    ],
+    [
+      "--owner",
+      "--"
+    ],
+    [
+      "--owner",
+      "x",
+      "--owner",
+      "y"
+    ],
+    [
+      "--pretty",
+      "stray",
+      "--owner",
+      "x"
+    ],
+    [
+      "--",
+      "--pretty"
+    ],
+    [
+      "--pretty=false"
+    ],
+    [
+      "--bad",
+      "-h"
+    ],
+    [
+      "-h",
+      "--bad"
+    ],
+    [
+      "stray",
+      "-h"
+    ],
+    [
+      "--interval",
+      "0",
+      "-h"
+    ],
+    [
+      "--interval=-1"
+    ],
+    [
+      "--pr"
+    ],
+    [
+      "-hp"
+    ],
+    [
+      "--help=true"
+    ],
+    [
+      "--he"
+    ],
+    [
+      "--owner",
+      "x",
+      "--",
+      "-h"
+    ],
+    [
+      "--stack",
+      "--queued-stack",
+      "-h"
+    ]
+  ]
+}

@@ -1,0 +1,50 @@
+# GitHub draft publisher
+
+[Script](../scripts/publish_draft.py). Push the current branch and create or
+reuse its GitHub PR, then verify the head. Requires Python 3.11+, `git` and
+authenticated `gh`.
+
+## Run
+
+Use only when [Opening a PR](../playbooks/opening-a-pr.md) selects the GitHub
+CLI publication path. Resolve the installed script path and keep the project
+repository as the working directory. Write the prepared PR body outside it.
+
+```bash
+python3 "{% if harness == "claude" %}{{ skill_root }}{% else %}<nstack-flow skill directory>{% endif %}/scripts/publish_draft.py" --base <base> --title "<title>" --body-file <body-file>
+```
+
+Use `--help` for the exact arguments. `--remote` selects the Git remote and
+defaults to `origin`. It is not the separate Origin forge CLI. The script uses
+the current `gh` repository and authentication context without switching them.
+
+The checkout must be on a feature branch, have the selected remote and a known
+base ref, and contain commits ahead of that base. Detached HEAD, the base
+branch itself, unreadable/missing body input and unavailable authentication
+are blockers. Existing uncommitted tracked edits remain uncommitted; they are
+reported rather than silently included in a commit.
+
+## Effects and result
+
+The script pushes without force, reuses an existing open same-repository PR
+for this branch, or creates a new draft. It verifies the open PR's head against
+local HEAD. Existing non-draft PRs are not converted and can block publication.
+An existing PR with a different base is reported, not silently retargeted.
+It never marks ready, merges, enables auto-merge or watches CI.
+
+Exit 0 returns JSON with `ok: true`, the URL, draft state, base, branch, head
+SHA and whether tracked uncommitted edits remain. Exit 1 for a classified
+publication failure returns `ok: false` with an error and repair.
+CLI usage errors exit 2; unexpected process/decoding failures remain errors.
+
+Head verification may repeat read-only PR queries while GitHub catches up.
+It defaults to five attempts, two seconds apart, controlled by
+`NSTACK_PUBLISH_ATTEMPTS` and `NSTACK_PUBLISH_RETRY_DELAY`. This is not a retry
+of PR creation. A later failure can occur after the branch was pushed or a PR
+created; inspect the reported state before rerunning and never claim delivery
+without a verified result.
+
+The helper does not authorize committing or publishing unreviewed work.
+Opening a PR owns the publication gate, body format and built-in-tool
+preference. A built-in tool failure does not authorize this fallback.
+Afterward, remove only the caller's temporary body file and preserve evidence.

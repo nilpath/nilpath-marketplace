@@ -10,6 +10,19 @@ Supporting files with a `.j2` suffix are rendered per harness and lose that suff
 
 For example, the researching and planning `agents/openai.yaml.j2` templates render only for Codex. Their generated `agents/openai.yaml` metadata and its parent directory are absent from the Claude and Copilot skill output.
 
+### Harness-native prose
+
+The `prose:` map in each harness configuration supplies native wording to
+templates. Use `{{ schedule }}` for the available scheduling mechanism and
+`{{ schedule_hourly }}` for the hourly plan marker. The plan and its checker
+consume the same marker; do not copy it into separate conditionals.
+When embedding a snippet in Python source, serialize it with `| tojson`.
+
+These strings adapt native mechanism names without adding scheduling policy
+or renderer logic. Preserve the calling playbook's cadence and stopping rules.
+Follow the native scheduler's instructions for schedule management.
+A rendered instruction is not proof that the capability exists.
+
 ## Directory Structure
 
 ```mermaid

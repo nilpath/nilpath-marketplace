@@ -1,0 +1,5 @@
+{
+  "exit": 1,
+  "stdout": "0 PR sections, 4 problems\n",
+  "stderr": "<PLAN>:1: no \"## How to read this\" section\n<PLAN>:1: no \"## Program checklist\" section\n<PLAN>:1: no \"## Close the program\" section\n<PLAN>:1: no PR sections between Program checklist and Close the program\n"
+}
