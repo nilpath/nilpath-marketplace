@@ -5,15 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from jinja2 import Environment, StrictUndefined
+from jinja2.sandbox import SandboxedEnvironment
 
 from .config import HarnessConfig, SourceConfig
 
 
 def make_environment() -> Environment:
-    # Standard delimiters are safe: templating is opt-in via the .j2 suffix and
-    # the authored corpus contains no literal {{ or {% in templated files
-    # (supporting files with literal braces use {% raw %} guards).
-    return Environment(
+    return SandboxedEnvironment(
         undefined=StrictUndefined,
         keep_trailing_newline=True,
         autoescape=False,

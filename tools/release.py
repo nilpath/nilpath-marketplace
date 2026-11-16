@@ -355,7 +355,8 @@ def changed_paths(root, sha):
 
 def check_source_only(root, base_sha):
     text(base_sha, SHA)
-    paths = run(root, "git", "diff", "--no-renames", "--name-only", "-z", base_sha, "HEAD").decode().split("\0")
+    merge_base = git(root, "merge-base", base_sha, "HEAD")
+    paths = run(root, "git", "diff", "--no-renames", "--name-only", "-z", merge_base, "HEAD").decode().split("\0")
     changed = sorted(path for path in paths if owns(path))
     require(not changed, "Ordinary PR changes build-owned paths:\n" + "\n".join(changed))
 
@@ -509,16 +510,20 @@ def propose(root, decisions=(), proposal_date=None):
                 after = yaml.safe_load(blob(root, sha, component.source))
                 if {k: v for k, v in before.items() if k != "defaults"} == {k: v for k, v in after.items() if k != "defaults"}:
                     direct = []
-            if not direct and shared and component.source != "src/marketplace.yaml":
-                if not shipped_changed(root, sha, component.name, cfg) and component.name not in pending:
+            if not direct and shared:
+                if component.name not in pending and (
+                        component.source == "src/marketplace.yaml" or not shipped_changed(root, sha, component.name, cfg)):
                     explanations.append(f"{component.name}: {sha} shared change leaves shipped trees unchanged.")
                     continue
             elif not direct:
                 continue
             new = boundary is None
-            shared_effect = shared and not new and component.source != "src/marketplace.yaml" and (
-                shipped_changed(root, sha, component.name, cfg) or component.name in pending)
+            shared_effect = shared and not new and (component.name in pending or (
+                component.source != "src/marketplace.yaml" and shipped_changed(root, sha, component.name, cfg)))
             candidates[(component.name, sha)] = (component, boundary, paths, direct, shared_effect, new)
+        if component.name in pending and not any(name == component.name for name, _ in candidates):
+            candidates[(component.name, input_sha)] = (
+                component, boundary, changed_paths(root, input_sha), [], True, boundary is None)
     for sha in sorted(considered):
         if not any(path.startswith(("src/", "tools/buildkit/", "dist/")) or path in REGISTRIES
                    for _, path in changed_paths(root, sha)):
@@ -569,14 +574,13 @@ def propose(root, decisions=(), proposal_date=None):
             selected.setdefault(name, []).append((sha, suggestion, component, boundary))
     accepted_keys = {(d.component, d.commit) for d in accepted}
     require(set(decisions_map) <= used | accepted_keys, "Stale or unrelated resolution decision")
-    if selected:
-        for name in sorted(pending - selected.keys()):
-            sha = next((sha for component, sha in reversed(candidates) if component == name), input_sha)
-            if not any(row["component"] == name for row in requests):
-                requests.append({
-                    "component": name, "commit": sha, "suggestion": "patch",
-                    "reason": "Full regeneration changes this component without a release version. A bump is required.",
-                })
+    for name in sorted(pending - selected.keys()):
+        sha = next(sha for component, sha in reversed(candidates) if component == name)
+        if not any(row["component"] == name for row in requests):
+            requests.append({
+                "component": name, "commit": sha, "suggestion": "patch",
+                "reason": "Full regeneration changes this component without a release version. A bump is required.",
+            })
     if not candidates:
         explanations.append("Repository-only changes do not bump shipped components.")
     if not requests and not selected and tuple(decisions) == accepted:
@@ -779,7 +783,7 @@ def prepare(root, plan):
         plan["generated"] = []
         finish_plan(plan)
         updates = expected_updates(plan, originals)
-        if plan["state"] == "ReadyPlan" and plan["releases"]:
+        if plan["state"] == "ReadyPlan":
             from buildkit.build import build
             from buildkit.config import load_config
             import shutil
@@ -804,14 +808,40 @@ def prepare(root, plan):
         updates = expected_updates(plan, originals)
         updates = {p: b for p, b in updates.items() if not owns(p)}
     modes = update_modes(plan)
+    deletions = {path for path, raw in updates.items() if raw is None}
+    puts = updates.keys() - deletions
+    blocking_dirs = set()
     for path, raw in updates.items():
         target = root / path
         require(not target.is_symlink() and target.parent.resolve().is_relative_to(root.resolve()),
                 "Refusing symlink or path escape")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if raw is None:
-            target.unlink(missing_ok=True)
-        else:
+        if raw is None and not target.exists():
+            continue
+        for parent in target.parents:
+            if parent == root:
+                break
+            require(not parent.is_symlink(), "Refusing symlink parent")
+            require(not parent.is_file() or parent.relative_to(root).as_posix() in deletions,
+                    f"File blocking prepared path {path}")
+        if target.is_dir():
+            children = list(target.rglob("*"))
+            allowed = deletions if raw is not None else puts
+            require(all(not child.is_symlink() and (
+                child.is_dir() or child.relative_to(root).as_posix() in allowed) for child in children),
+                f"Untracked content blocking prepared path {path}")
+            if raw is not None:
+                blocking_dirs.update(child for child in children if child.is_dir())
+                blocking_dirs.add(target)
+    for path in deletions:
+        target = root / path
+        if target.is_file():
+            target.unlink()
+    for directory in sorted(blocking_dirs, key=lambda p: len(p.parts), reverse=True):
+        directory.rmdir()
+    for path, raw in updates.items():
+        if raw is not None:
+            target = root / path
+            target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(raw)
             target.chmod(int(modes.get(path, "100644"), 8) & 0o777)
 
@@ -861,7 +891,8 @@ def bundle(root, request):
             actual = root / path
             mode = modes.get(path, "100644")
             if raw is None:
-                require(not actual.exists() and not actual.is_symlink(), "Prepared deletion still exists")
+                require((not actual.exists() or actual.is_dir()) and not actual.is_symlink(),
+                        "Prepared deletion still exists")
                 edit = next(e for e in plan["generated"] if e["path"] == path)
                 files.append({**edit, "content": None})
                 continue
@@ -873,7 +904,7 @@ def bundle(root, request):
             if plan["schema"] == 2:
                 row["op"] = "put"
             files.append(row)
-        modified = set(git(root, "diff", "HEAD", "--name-only").splitlines())
+        modified = set(git(root, "diff", "--no-renames", "HEAD", "--name-only").splitlines())
         untracked = set(git(root, "ls-files", "--others", "--exclude-standard").splitlines())
         require(modified | untracked == set(expected), "Unexpected preparation changes")
     result = {"request": request, "plan": plan, "files": files}
@@ -1035,13 +1066,15 @@ def check_proposal(root, base_sha):
         expected = reconstructed[1]
     else:
         expected = expected_updates(plan, originals)
-    actual = set(git(root, "diff", "--name-only", plan["input_sha"], "HEAD").splitlines())
+    actual = set(git(root, "diff", "--no-renames", "--name-only", plan["input_sha"], "HEAD").splitlines())
     require(actual == set(expected), "Transaction contains unexpected paths")
     modes = update_modes(plan)
     for path, raw in expected.items():
         row = git(root, "ls-tree", "HEAD", "--", path)
         if raw is None:
-            require(not row and not (root / path).exists(), "Deleted proposal path still exists")
+            require((not row or row.split()[1] == "tree") and (
+                not (root / path).exists() or (root / path).is_dir()) and not (root / path).is_symlink(),
+                "Deleted proposal path still exists")
             continue
         require(row.startswith(modes.get(path, "100644") + " blob "), f"Invalid proposal file mode for {path}")
         require(blob(root, "HEAD", path) == raw and (root / path).read_bytes() == raw,

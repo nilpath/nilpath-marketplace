@@ -413,7 +413,7 @@ def test_exact_updates_keep_historical_strings_and_legacy_bytes(repo):
 
 
 def test_none_resolution_persists_without_tag_or_version(repo):
-    sha = change(repo, "unknown wording")
+    sha = change(repo, "unknown wording", path="notes.md")
     decision = r.Decision("alpha", sha, "none", "No shipped behavior change.")
     plan = r.propose(repo, (decision,)).plan
     assert (plan["state"], plan["releases"], plan["requests"]) == ("ReadyPlan", [], [])
@@ -421,6 +421,12 @@ def test_none_resolution_persists_without_tag_or_version(repo):
     commit(repo, "chore(release): record reviewed exclusions")
     result = r.propose(repo, (decision,))
     assert isinstance(result, r.NoChanges)
+    change(repo, "fix(beta): independent guidance", name="beta")
+    independent = r.propose(repo, (decision,)).plan
+    assert [(row["component"], row["target"]) for row in independent["releases"]] == [("beta", "0.4.9")]
+    r.prepare(repo, independent)
+    commit(repo, "chore(release): release beta")
+    assert isinstance(r.propose(repo, (decision,)), r.NoChanges)
     next_sha = change(repo, "another unknown")
     result = r.propose(repo, (decision,))
     assert [row["commit"] for row in result.plan["requests"]] == [next_sha]
@@ -433,7 +439,7 @@ def test_unrelated_resolution_fails(repo):
 
 
 def test_accepted_none_cannot_be_removed_or_rebound(repo):
-    sha = change(repo, "unknown wording")
+    sha = change(repo, "unknown wording", path="notes.md")
     decision = r.Decision("alpha", sha, "none", "Reviewed exclusion.")
     r.prepare(repo, r.propose(repo, (decision,)).plan)
     commit(repo, "chore(release): exclusions")
@@ -675,6 +681,213 @@ def test_none_cannot_publish_an_unselected_changed_component(repo):
     assert r.version_field((repo / "src/plugins/alpha/plugin.yaml").read_bytes()) == "1.2.3"
 
 
+@pytest.mark.parametrize("with_plugin_change", [False, True])
+def test_pending_marketplace_renderer_decision_is_consumable_through_cli(repo, with_plugin_change):
+    source = repo / "tools/buildkit/src/buildkit/manifests.py"
+    original = source.read_text()
+    needle = '"description": marketplace["description"],'
+    assert original.count(needle) == 2
+    source.write_text(original.replace(needle, '"description": marketplace["description"] + " updated",'))
+    if with_plugin_change:
+        skill = repo / "src/plugins/alpha/skills/one/SKILL.md.j2"
+        skill.write_text(skill.read_text() + "\nUpdated guidance.\n")
+    sha = commit(repo, "fix: correct registry rendering")
+    cli = [sys.executable, str(repo / "tools/release.py")]
+    result = subprocess.run([*cli, "plan", "--root", str(repo)], text=True, capture_output=True)
+    assert result.returncode == 0, result.stderr
+    plan = json.loads(result.stdout)
+    assert plan["state"] == "NeedsDecisions"
+    assert {row["component"] for row in plan["requests"]} == (
+        {"alpha", "nilpath-marketplace"} if with_plugin_change else {"nilpath-marketplace"})
+    decisions = [
+        {"component": row["component"], "commit": row["commit"],
+         "bump": "patch", "reason": "Release the registry and guidance correction."}
+        for row in plan["requests"]
+    ]
+    request_path = repo.parent / f"{repo.name}-request.json"
+    request_path.write_bytes(r.canonical(request(sha, decisions=decisions)))
+    prepared = subprocess.run(
+        [*cli, "prepare", "--root", str(repo), "--request", str(request_path)],
+        text=True, capture_output=True,
+    )
+    assert prepared.returncode == 0, prepared.stderr
+    ready = json.loads(prepared.stdout)
+    assert {row["component"]: row["target"] for row in ready["releases"]} == (
+        {"alpha": "1.2.4", "nilpath-marketplace": "0.1.1"}
+        if with_plugin_change else {"nilpath-marketplace": "0.1.1"}
+    )
+    for path in (".claude-plugin/marketplace.json", ".github/plugin/marketplace.json"):
+        assert json.loads((repo / path).read_text())["metadata"]["description"].endswith(" updated")
+
+
+def test_pending_none_cannot_persist_and_a_new_bump_can_cover_the_component(repo):
+    sha = change(repo, "fix(alpha): defer guidance")
+    none = r.Decision("alpha", sha, "none", "Defer this change.")
+    plan = r.propose(repo, (none,)).plan
+    assert (plan["state"], plan["releases"]) == ("NeedsDecisions", [])
+    assert [(row["component"], row["commit"]) for row in plan["requests"]] == [("alpha", sha)]
+    forged = copy.deepcopy(plan)
+    forged.update(state="ReadyPlan", requests=[])
+    r.finish_plan(forged)
+    with pytest.raises(r.ReleaseError, match="without a version bump: alpha"):
+        r.prepare(repo, forged)
+    assert not (repo / ".release/plan.json").exists()
+    assert (repo / ".release/decisions.toml").read_text() == "# Empty\n"
+    later = change(repo, "fix(alpha): release accumulated guidance")
+    ready = r.propose(repo, (none,)).plan
+    assert [(row["component"], row["commits"]) for row in ready["releases"]] == [("alpha", [later])]
+    r.prepare(repo, ready)
+    commit(repo, "chore(release): release accumulated alpha changes")
+    beta = change(repo, "fix(beta): independent guidance", name="beta")
+    independent = r.propose(repo, (none,)).plan
+    assert independent["requests"] == []
+    assert [(row["component"], row["target"], row["commits"]) for row in independent["releases"]] == [
+        ("beta", "0.4.9", [beta])]
+    r.prepare(repo, independent)
+    commit(repo, "chore(release): release beta")
+    assert isinstance(r.propose(repo, (none,)), r.NoChanges)
+
+
+@pytest.mark.parametrize("modify_generated", [False, True])
+def test_ordinary_pr_ownership_uses_merge_base_after_main_releases(repo, modify_generated):
+    command(repo, "git", "checkout", "-qb", "topic")
+    change(repo, "fix(alpha): topic guidance")
+    if modify_generated:
+        write(repo, "dist/claude/plugins/alpha/skills/one/SKILL.md", "unversioned\n")
+        commit(repo, "fix: change generated content")
+    command(repo, "git", "checkout", "-q", "main")
+    change(repo, "fix(beta): main guidance", name="beta")
+    r.prepare(repo, r.propose(repo).plan)
+    base = commit(repo, "chore(release): release beta")
+    command(repo, "git", "checkout", "-q", "topic")
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "tools/release.py"), "check-source-only",
+         "--root", str(repo), "--base-sha", base], text=True, capture_output=True,
+    )
+    assert result.returncode == int(modify_generated), result.stderr
+    if modify_generated:
+        assert "Ordinary PR changes build-owned paths:" in result.stderr
+        assert "dist/claude/plugins/alpha/skills/one/SKILL.md" in result.stderr
+    else:
+        assert result.stdout == "Ordinary PR preserves build-owned paths.\n"
+
+
+@pytest.mark.parametrize("job", ["test-static", "release-plan"])
+def test_ci_exports_installed_venv_before_proposal_cli(repo, tmp_path, job):
+    import yaml
+
+    base = change(repo, "fix(alpha): proposal guidance")
+    r.prepare(repo, r.propose(repo).plan)
+    commit(repo, "chore(release): proposal")
+    workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
+    steps = workflow["jobs"][job]["steps"]
+    gate = next(i for i, step in enumerate(steps) if "tools/release.py check-pr" in step.get("run", ""))
+    runner = tmp_path / "runner"
+    runner.mkdir()
+    (runner / "nilpath-ci").symlink_to(Path(sys.executable).parent.parent, target_is_directory=True)
+    stub_bin = tmp_path / "bin"
+    stub_bin.mkdir()
+    (stub_bin / "make").write_text("#!/bin/sh\nexit 0\n")
+    (stub_bin / "make").chmod(0o755)
+    github_path = tmp_path / "github-path"
+    initial_path = f"{stub_bin}:/usr/bin:/bin:/usr/sbin:/sbin"
+    assert shutil.which("git-cliff", path=initial_path) is None
+    env = {**os.environ, "RUNNER_TEMP": str(runner), "GITHUB_PATH": str(github_path), "PATH": initial_path}
+    for step in steps[:gate]:
+        if "make install" in step.get("run", "") or "GITHUB_PATH" in step.get("run", ""):
+            result = subprocess.run(["bash", "-e", "-c", step["run"]], env=env, text=True, capture_output=True)
+            assert result.returncode == 0, result.stderr
+    exported = github_path.read_text().splitlines() if github_path.exists() else []
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "tools/release.py"), "check-proposal",
+         "--root", str(repo), "--base-sha", base],
+        env={**env, "PATH": os.pathsep.join([*exported, initial_path])}, text=True, capture_output=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "Exact proposal checks passed.\n"
+    stale = subprocess.run(
+        [sys.executable, str(ROOT / "tools/release.py"), "check-proposal",
+         "--root", str(repo), "--base-sha", command(repo, "git", "rev-parse", base + "^")],
+        env={**env, "PATH": os.pathsep.join([*exported, initial_path])}, text=True, capture_output=True,
+    )
+    assert stale.returncode == 1
+    assert "Proposal input is no longer current main" in stale.stderr
+
+
+@pytest.mark.parametrize("directory_to_file", [False, True])
+def test_generated_filesystem_transitions_bundle_and_validate_after_commit(repo, directory_to_file):
+    source = repo / "src/plugins/alpha/skills/one/data"
+    if directory_to_file:
+        write(repo, "src/plugins/alpha/skills/one/data/nested/item.txt", "old support\n")
+    else:
+        source.write_text("old support\n")
+    accept_shipping_baseline(repo)
+    if directory_to_file:
+        shutil.rmtree(source)
+        source.write_text("#!/bin/sh\nexit 0\n")
+        source.chmod(0o755)
+    else:
+        source.unlink()
+        write(repo, "src/plugins/alpha/skills/one/data/nested/run.sh", "#!/bin/sh\nexit 0\n")
+        (source / "nested/run.sh").chmod(0o755)
+    sha = commit(repo, "fix(alpha): replace support layout")
+    decision = r.Decision("alpha", sha, "patch", "Review the support layout transition.")
+    plan = r.propose(repo, (decision,)).plan
+    r.prepare(repo, plan)
+    sealed = copy.deepcopy(plan)
+    r.prepare(repo, plan)
+    assert plan == sealed
+    artifact = r.bundle(repo, request(sha, decisions=[decision.__dict__]))
+    assert r.verify_bundle(repo, artifact["request"], artifact)["plan_id"] == plan["plan_id"]
+    for harness in ("claude", "copilot", "codex"):
+        target = repo / f"dist/{harness}/plugins/alpha/skills/one/data"
+        executable = target if directory_to_file else target / "nested/run.sh"
+        assert executable.read_bytes() == b"#!/bin/sh\nexit 0\n"
+        assert executable.stat().st_mode & 0o777 == 0o755
+        assert not (target / "nested/item.txt").exists()
+    commit(repo, "chore(release): prepare fixture")
+    r.check_proposal(repo, sha)
+
+
+def test_prepare_validates_all_filesystem_targets_before_any_writes(repo):
+    change(repo, "fix(alpha): updated guidance")
+    write(repo, "src/plugins/alpha/skills/one/z-new.txt", "new support\n")
+    commit(repo, "fix(alpha): add support")
+    plan = r.propose(repo).plan
+    blocked = repo / "dist/copilot/plugins/alpha/skills/one/z-new.txt"
+    blocked.mkdir()
+    (blocked / "untracked.txt").write_text("preserve me\n")
+    before = r.generated_snapshot(repo)
+    with pytest.raises(r.ReleaseError, match="blocking"):
+        r.prepare(repo, plan)
+    assert r.generated_snapshot(repo) == before
+    assert not (repo / ".release/plan.json").exists()
+    assert r.version_field((repo / "src/plugins/alpha/plugin.yaml").read_bytes()) == "1.2.3"
+    assert (blocked / "untracked.txt").read_text() == "preserve me\n"
+
+
+@pytest.mark.parametrize("staged", [False, True])
+def test_similar_generated_rename_validates_after_writer_style_commit(repo, staged):
+    command(repo, "git", "config", "diff.renames", "true")
+    source = "src/plugins/alpha/skills/one/"
+    write(repo, source + "original.txt", "".join(f"Support line {number}\n" for number in range(100)))
+    accept_shipping_baseline(repo)
+    (repo / (source + "original.txt")).rename(repo / (source + "renamed.txt"))
+    with (repo / (source + "renamed.txt")).open("a") as renamed:
+        renamed.write("Updated support guidance.\n")
+    sha = commit(repo, "fix(alpha): rename support text")
+    decision = r.Decision("alpha", sha, "patch", "Review the support file rename.")
+    plan = r.propose(repo, (decision,)).plan
+    r.prepare(repo, plan)
+    if staged:
+        command(repo, "git", "add", ".")
+    artifact = r.bundle(repo, request(sha, decisions=[decision.__dict__]))
+    assert {row["op"] for row in artifact["files"]} == {"put", "delete"}
+    commit(repo, "chore(release): prepare fixture")
+    assert any(row.startswith("R") for row in command(repo, "git", "diff", "--name-status", sha, "HEAD").splitlines())
+    r.check_proposal(repo, sha)
+
+
 def test_prepare_rejects_missing_component_coverage_before_writing(repo):
     change(repo, "fix(beta): beta repair", "beta")
     change(repo, "fix(alpha): alpha repair")
@@ -904,7 +1117,8 @@ def test_historical_updates_require_original_tool_and_policy_identities(repo, ba
 @pytest.mark.parametrize("decision_only", [True, False])
 @pytest.mark.parametrize("committed", [True, False])
 def test_check_rejects_deleted_plan_for_all_transaction_kinds(repo, decision_only, committed):
-    sha = change(repo, "unknown wording" if decision_only else "fix(alpha): release")
+    sha = change(repo, "unknown wording" if decision_only else "fix(alpha): release",
+                 path="notes.md" if decision_only else "skills/one/SKILL.md.j2")
     decisions = (r.Decision("alpha", sha, "none", "Reviewed exclusion."),) if decision_only else ()
     r.prepare(repo, r.propose(repo, decisions).plan)
     commit(repo, "chore(release): accepted")
@@ -1416,7 +1630,8 @@ def test_first_draft_still_requires_ci_and_incomplete_history_blocks(prepared):
 
 @pytest.mark.parametrize("decision_only", [True, False])
 def test_remote_history_cannot_be_hidden_by_deleting_active_plan(repo, decision_only):
-    sha = change(repo, "unknown wording" if decision_only else "fix(alpha): repair")
+    sha = change(repo, "unknown wording" if decision_only else "fix(alpha): repair",
+                 path="notes.md" if decision_only else "skills/one/SKILL.md.j2")
     decisions = (r.Decision("alpha", sha, "none", "Reviewed exclusion."),) if decision_only else ()
     gh = FakeGitHub(repo)
     if decisions:
@@ -1832,7 +2047,7 @@ def test_historical_validation_checks_payload_file_modes(prepared, monkeypatch, 
 
 @pytest.fixture
 def decision_merge(repo):
-    sha = change(repo, "unknown wording")
+    sha = change(repo, "unknown wording", path="notes.md")
     decision = r.Decision("alpha", sha, "none", "Reviewed exclusion.")
     gh = FakeGitHub(repo)
     r.prepare(repo, r.propose(repo).plan)

@@ -39,7 +39,9 @@ jobs:
         with:
           version: "0.12.23"
           python-version: "3.11"
-      - run: make install VENV="$RUNNER_TEMP/nilpath-ci"
+      - run: |
+          make install VENV="$RUNNER_TEMP/nilpath-ci"
+          echo "$RUNNER_TEMP/nilpath-ci/bin" >> "$GITHUB_PATH"
       - name: Check artifact ownership before any preview render
         if: github.event_name == 'pull_request'
         env:
@@ -63,7 +65,9 @@ jobs:
         with:
           version: "0.12.23"
           python-version: "3.11"
-      - run: make install VENV="$RUNNER_TEMP/nilpath-ci"
+      - run: |
+          make install VENV="$RUNNER_TEMP/nilpath-ci"
+          echo "$RUNNER_TEMP/nilpath-ci/bin" >> "$GITHUB_PATH"
       - name: Check release history and exact proposal boundary
         env:
           EVENT_NAME: ${{ github.event_name }}

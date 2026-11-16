@@ -82,7 +82,7 @@ jobs:
         if: steps.snapshot.outputs.kind == 'proposal'
         working-directory: candidate
         run: '"$RUNNER_TEMP/nilpath-release/bin/python" tools/release.py prepare --request "$RUNNER_TEMP/request.json"'
-      - name: Verify prepared output
+      - name: Test prepared source preview
         if: steps.snapshot.outputs.kind == 'proposal'
         working-directory: candidate
         run: make test-static VENV="$RUNNER_TEMP/nilpath-release"

@@ -483,24 +483,39 @@ class TestProseHelpers:
         finally:
             harness.raw["prose"] = saved
 
+    def test_python_internals_are_not_available_to_templates(self):
+        from jinja2.sandbox import SecurityError
+
+        with pytest.raises(SecurityError):
+            make_environment().from_string("{{ cycler.__init__.__globals__.os.name }}").render()
+
+    def test_normal_jinja_rendering_still_works(self, cfg):
+        from buildkit.render import render_text
+
+        assert render_text(
+            make_environment(), "{{ harness | upper }} {{ ['one', 'two'] | join(', ') }}\n",
+            cfg.harnesses["claude"], cfg,
+        ) == "CLAUDE one, two\n"
+
 
 class TestEmptyPluginTrees:
-    def test_authoring_tools_only_in_claude_tree(self):
+    def test_authoring_tools_only_in_claude_tree(self, tmp_path):
         import json
 
-        assert (REPO_ROOT / "dist/claude/plugins/authoring-tools/skills").is_dir()
-        assert not (REPO_ROOT / "dist/copilot/plugins/authoring-tools").exists()
-        assert not (REPO_ROOT / "dist/codex/plugins/authoring-tools").exists()
+        build(REPO_ROOT, out_root=tmp_path)
+        assert (tmp_path / "dist/claude/plugins/authoring-tools/skills").is_dir()
+        assert not (tmp_path / "dist/copilot/plugins/authoring-tools").exists()
+        assert not (tmp_path / "dist/codex/plugins/authoring-tools").exists()
         codex_registry = json.loads(
-            (REPO_ROOT / ".agents/plugins/marketplace.json").read_text()
+            (tmp_path / ".agents/plugins/marketplace.json").read_text()
         )
         assert "authoring-tools" not in [p["name"] for p in codex_registry["plugins"]]
         copilot_registry = json.loads(
-            (REPO_ROOT / ".github/plugin/marketplace.json").read_text()
+            (tmp_path / ".github/plugin/marketplace.json").read_text()
         )
         assert "authoring-tools" not in [p["name"] for p in copilot_registry["plugins"]]
         claude_registry = json.loads(
-            (REPO_ROOT / ".claude-plugin/marketplace.json").read_text()
+            (tmp_path / ".claude-plugin/marketplace.json").read_text()
         )
         assert "authoring-tools" in [p["name"] for p in claude_registry["plugins"]]
 
