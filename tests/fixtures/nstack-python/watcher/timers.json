@@ -14,13 +14,6 @@
       "expectedSleepSeconds": 0.001
     },
     {
-      "seconds": 0.0009999,
-      "requestedMilliseconds": 0.9999,
-      "clampedMilliseconds": 1,
-      "outcome": "resolved",
-      "expectedSleepSeconds": 0.001
-    },
-    {
       "seconds": 0.0019,
       "requestedMilliseconds": 1.9,
       "clampedMilliseconds": 1,
@@ -42,18 +35,12 @@
       "expectedSleepSeconds": 0.001
     },
     {
-      "seconds": 2500000,
-      "requestedMilliseconds": 2500000000,
-      "clampedMilliseconds": 1,
-      "outcome": "resolved",
-      "expectedSleepSeconds": 0.001
-    },
-    {
       "seconds": 1e+308,
       "requestedMilliseconds": "Infinity",
       "clampedMilliseconds": 1,
       "outcome": "resolved",
       "expectedSleepSeconds": 0.001
     }
-  ]
+  ],
+  "selection": "Originally 7 observations. Keeps sub-millisecond clamping, fractional-millisecond truncation, ordinary delay truncation, signed-32-bit overflow and multiplication to Infinity. Removes a second sub-millisecond delay and a second finite overflow."
 }

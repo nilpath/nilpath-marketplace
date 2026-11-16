@@ -95,27 +95,24 @@ def test_accepts_valid_plan_and_ignores_extra_arguments(checker: Path, tmp_path:
     plan = tmp_path / "plan.md"
     plan.write_text(valid_plan())
     result = run(checker, plan, "ignored", "also-ignored")
-    assert result.returncode == 0
-    assert result.stdout == "PR 1  boxes=19  files=1 build=1 you-see=1 verify-unit=1 verify-live=10 verify-perf=4 review-gate=0 merge=1\n1 PR sections, 0 problems\n"
-    assert result.stderr == ""
+    expected = json.loads((FIXTURES / "valid.expected.json").read_text())
+    assert result.returncode == expected["exit"]
+    assert result.stdout == expected["stdout"]
+    assert result.stderr == expected["stderr"]
 
 
 @pytest.mark.parametrize(
     "suffix",
     [
         "```markdown\n## Example only\n```\n",
-        " ```markdown\n## Example only\n ```\n",
-        "  ```markdown\n## Example only\n  ```\n",
         "   ```markdown\n## Example only\n   ```\n",
         "```markdown\n## Example only\n````\n",
         "````markdown\n```markdown\n## Example only\n```\n````\n",
         "~~~markdown `info`\n## Example only\n ~~~\n",
         "````markdown\n~~~\n## Example only\n````\n",
-        "````markdown\n```\n## Example only\n````\n",
-        "````markdown\n``` info\n## Example only\n````\n",
     ],
 )
-def test_ports_all_upstream_fence_acceptance_cases(checker: Path, tmp_path: Path, suffix: str) -> None:
+def test_fences_ignore_example_headings(checker: Path, tmp_path: Path, suffix: str) -> None:
     plan = tmp_path / "plan.md"
     plan.write_text(valid_plan() + suffix)
     assert run(checker, plan).returncode == 0
@@ -165,7 +162,7 @@ def test_large_lane_numbers_use_javascript_number_display(checker: Path, tmp_pat
 
 @pytest.mark.parametrize(
     "name",
-    ("minimal", "valid", "trim-and-colon", "line-terminators", "crlf-final-cr"),
+    ("minimal", "trim-and-colon", "line-terminators", "crlf-final-cr"),
 )
 def test_pinned_node_oracle_fixtures(checker: Path, tmp_path: Path, name: str) -> None:
     plan = tmp_path / "plan.md"

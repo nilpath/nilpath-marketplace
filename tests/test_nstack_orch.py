@@ -1,4 +1,7 @@
-"""Behavioral tests and frozen upstream oracles for the standalone orch CLI."""
+"""Behavioral tests and frozen upstream oracles for the standalone orch CLI.
+
+Snapshots share captured file contents; setup writes replace repetitive commands.
+"""
 
 from datetime import datetime
 import errno
@@ -808,7 +811,12 @@ def test_pinned_cli_oracle(tmp_path, scenario):
             "code": result.returncode, "stdout": result.stdout, "stderr": result.stderr,
             "files": snapshot_store(tmp_path / "store"),
         })
-        expected = step["expected"]
+        expected = {
+            **step["expected"],
+            "files": expand_paths(
+                [ORACLE["file_snapshots"][name] for name in step["expected"]["files"]], tmp_path,
+            ),
+        }
         if step.get("presentation") == "help":
             assert actual["code"] == expected["code"] == 0
             assert actual["stderr"] == expected["stderr"] == ""
@@ -830,7 +838,10 @@ def test_pinned_cli_oracle(tmp_path, scenario):
             assert actual == expected, step["argv"]
         if "forge_calls" in step:
             calls = [json.loads(line) for line in log.read_text().splitlines()] if log.exists() else []
-            assert calls == step["forge_calls"]
+            assert calls == [
+                {"argv": scenario["queries"][index]["argv"], "cwd": str(tmp_path / "repo")}
+                for index in step["forge_calls"]
+            ]
 
 
 def test_no_site_packages_or_js_runtime(tmp_path):

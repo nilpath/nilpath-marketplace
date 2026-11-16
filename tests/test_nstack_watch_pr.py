@@ -17,8 +17,29 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src/plugins/nstack/skills/nstack-flow/scripts/watch-pr/watch_pr.py"
 FIXTURES = ROOT / "tests/fixtures/nstack-python/watcher"
-INPUTS = json.loads((FIXTURES / "inputs.json").read_text())
-EXPECTED = json.loads((FIXTURES / "expected.json").read_text(), parse_int=float)
+
+
+def load_oracle(filename, **json_options):
+    """Expand exact captured records and shallow runtime defaults, without the watcher."""
+    fixture = json.loads((FIXTURES / filename).read_text(), **json_options)
+
+    def expand(value):
+        if isinstance(value, dict):
+            if set(value) == {"$ref"}:
+                return expand(fixture["shared"][value["$ref"]])
+            return {key: expand(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [expand(item) for item in value]
+        return value
+
+    for group in ("runtime", "pure", "parsing"):
+        fixture[group] = expand(fixture[group])
+    fixture["runtime"] = [{**fixture["runtimeDefaults"], **row} for row in fixture["runtime"]]
+    return fixture
+
+
+INPUTS = load_oracle("inputs.json")
+EXPECTED = load_oracle("expected.json", parse_int=float)
 TIMERS = json.loads((FIXTURES / "timers.json").read_text())["cases"]
 CONTEXT = {"owner": "owner", "repo": "repo", "number": 42}
 OPTIONS = {"interval": 10, "sweepInterval": 300, "timeout": 0, "maxQueryErrors": 5, "allowDraft": False}
