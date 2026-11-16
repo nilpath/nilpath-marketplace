@@ -25,6 +25,9 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from check_generated import BOT, BOT_ID, PROPOSAL_MARKER, proposal_candidate
+
 sys.path.insert(0, str(Path(__file__).resolve().parent / "buildkit/src"))
 from buildkit.ownership import REGISTRIES, owns, snapshot as generated_snapshot
 
@@ -43,10 +46,7 @@ DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 VERSION = re.compile(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\Z")
 BUMPS = {"none": 0, "patch": 1, "minor": 2, "major": 3, "initial": 4}
-PROPOSAL_MARKER = "<!-- nilpath-release-proposal:"
 COMPLETION_MARKER = "<!-- nilpath-release-complete:"
-BOT = "github-actions[bot]"
-BOT_ID = 41898282
 ACTIONS_APP_ID = 15368
 
 
@@ -351,14 +351,6 @@ def check_current_versions(root, components, records):
 def changed_paths(root, sha):
     rows = git(root, "diff-tree", "--root", "--no-commit-id", "--name-status", "-r", "--no-renames", sha)
     return [tuple(line.split("\t", 1)) for line in rows.splitlines()]
-
-
-def check_source_only(root, base_sha):
-    text(base_sha, SHA)
-    merge_base = git(root, "merge-base", base_sha, "HEAD")
-    paths = run(root, "git", "diff", "--no-renames", "--name-only", "-z", merge_base, "HEAD").decode().split("\0")
-    changed = sorted(path for path in paths if owns(path))
-    require(not changed, "Ordinary PR changes build-owned paths:\n" + "\n".join(changed))
 
 
 def git_entries(root, sha):
@@ -974,7 +966,8 @@ def renderer_identity(root=None, sha=None):
     root = root or Path(__file__).resolve().parent.parent
     files = git_entries(root, sha) if sha else (
         p.relative_to(root).as_posix() for p in (root / "tools/buildkit/src/buildkit").rglob("*.py"))
-    paths = {"tools/release.py", "cliff.toml", "pyproject.toml", "uv.lock", "tools/buildkit/pyproject.toml"}
+    paths = {"tools/release.py", "tools/check_generated.py", "cliff.toml",
+             "pyproject.toml", "uv.lock", "tools/buildkit/pyproject.toml"}
     paths.update(p for p in files if p.startswith("tools/buildkit/src/buildkit/")
                  and p.endswith(".py") and "__pycache__" not in PurePosixPath(p).parts)
     return digest(canonical({p: digest(blob(root, sha, p) if sha else (root / p).read_bytes()) for p in sorted(paths)}))
@@ -1218,13 +1211,6 @@ def open_proposals(gh):
             owned_proposal(pr, gh.repository)
             proposals.append(pr)
     return proposals
-
-
-def proposal_candidate(pr, repository):
-    return (pr.get("user", {}).get("login") == BOT and pr["user"].get("id") == BOT_ID
-            and (pr.get("head", {}).get("repo") or {}).get("full_name") == repository
-            and (pr["head"].get("ref", "").startswith("release/proposal-")
-                 or PROPOSAL_MARKER in (pr.get("body") or "")))
 
 
 def plan_at(gh, sha):
@@ -1722,14 +1708,15 @@ def create_proposal(gh, artifact, verification):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("plan", "prepare", "bundle", "check", "check-proposal", "check-source-only", "check-pr", "verify-bundle"):
-        command = commands.add_parser(name)
+    for name in ("plan", "prepare", "bundle", "check", "check-proposal", "check-pr", "verify-bundle"):
+        help_text = "Validate release history or an exact bot-owned proposal." if name == "check-pr" else None
+        command = commands.add_parser(name, description=help_text)
         command.add_argument("--root", type=Path, default=Path.cwd())
         if name in {"plan", "prepare", "bundle"}:
             command.add_argument("--request", type=Path, required=name != "plan")
         if name == "bundle":
             command.add_argument("--output", type=Path, required=True)
-        if name in {"check-proposal", "check-source-only", "check-pr"}:
+        if name in {"check-proposal", "check-pr"}:
             command.add_argument("--base-sha", required=True)
         if name == "verify-bundle":
             command.add_argument("--request", type=Path, required=True)
@@ -1799,13 +1786,8 @@ def main(argv=None):
                 require(owned_proposal(pr, event["repository"]["full_name"]) == plan["plan_id"], "Proposal marker mismatch")
                 check_proposal(root, args.base_sha)
             else:
-                check_source_only(root, args.base_sha)
                 verify_transaction(root)
-            print("PR artifact ownership and release checks passed.")
-            return 0
-        if args.command == "check-source-only":
-            check_source_only(root, args.base_sha)
-            print("Ordinary PR preserves build-owned paths.")
+            print("PR release checks passed.")
             return 0
         if args.command == "check-proposal":
             check_proposal(root, args.base_sha)

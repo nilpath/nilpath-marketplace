@@ -49,7 +49,8 @@ def repo(tmp_path):
     for path in ("pyproject.toml", "uv.lock"):
         shutil.copy(ROOT / path, tmp_path / path)
     (tmp_path / "tools").mkdir()
-    shutil.copy(ROOT / "tools/release.py", tmp_path / "tools/release.py")
+    for path in ("tools/release.py", "tools/check_generated.py"):
+        shutil.copy(ROOT / path, tmp_path / path)
     shutil.copytree(ROOT / "tools/buildkit/src/buildkit", tmp_path / "tools/buildkit/src/buildkit",
                     ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copy(ROOT / "tools/buildkit/pyproject.toml", tmp_path / "tools/buildkit/pyproject.toml")
@@ -547,21 +548,21 @@ def test_ordinary_pr_rejects_every_generated_git_change(repo, path, operation):
     else:
         write(repo, path, "released\n")
     if operation == "rename-in":
-        write(repo, path + ".outside", "ordinary file\n")
+        write(repo, "ordinary.txt", "ordinary file\n")
     base = commit(repo, "chore: released snapshot")
     if operation == "delete":
         (repo / path).unlink()
     elif operation == "mode":
         (repo / path).chmod(0o755)
     elif operation == "rename":
-        (repo / path).rename(repo / (path + ".renamed"))
+        (repo / path).rename(repo / "ordinary.txt")
     elif operation == "rename-in":
-        (repo / (path + ".outside")).rename(repo / path)
+        (repo / "ordinary.txt").rename(repo / path)
     else:
         write(repo, path, "unversioned\n")
     commit(repo, "fix: ordinary generated edit")
     result = subprocess.run(
-        [sys.executable, "-S", str(ROOT / "tools/release.py"), "check-source-only",
+        [sys.executable, "-S", str(ROOT / "tools/check_generated.py"),
          "--root", str(repo), "--base-sha", base], capture_output=True, text=True,
     )
     assert result.returncode == 1
@@ -574,15 +575,16 @@ def test_source_only_pr_preserves_installation_snapshot(repo):
     base = commit(repo, "chore: released snapshot")
     change(repo, "fix(alpha): source-only repair")
     result = subprocess.run(
-        [sys.executable, "-S", str(ROOT / "tools/release.py"), "check-source-only",
+        [sys.executable, "-S", str(ROOT / "tools/check_generated.py"),
          "--root", str(repo), "--base-sha", base], capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr
+    assert result.stdout == "Ordinary PR preserves build-owned paths.\n"
     assert (repo / "dist/claude/plugins/alpha/file").read_text() == "released\n"
 
 
-@pytest.mark.parametrize("owner", ["human", "fork", "wrong-id", "wrong-login"])
-def test_copied_proposal_identity_cannot_bypass_ownership_or_render_first(repo, monkeypatch, capsys, owner):
+@pytest.mark.parametrize("owner", ["human", "fork", "deleted-fork", "wrong-id", "wrong-login"])
+def test_copied_proposal_identity_cannot_bypass_generated_check(repo, owner):
     base = command(repo, "git", "rev-parse", "HEAD")
     write(repo, "dist/claude/plugins/alpha/file", "unversioned content\n")
     write(repo, "src/plugins/alpha/skills/one/SKILL.md.j2", "{{ invalid template")
@@ -599,11 +601,17 @@ def test_copied_proposal_identity_cannot_bypass_ownership_or_render_first(repo, 
         pr["user"]["id"] = 1
     if owner == "fork":
         pr["head"]["repo"]["full_name"] = "other/fork"
+    if owner == "deleted-fork":
+        pr["head"]["repo"] = None
     event = repo.parent / f"{repo.name}-event.json"
     event.write_bytes(r.canonical({"repository": {"full_name": "nilpath/test"}, "pull_request": pr}))
-    monkeypatch.setenv("GITHUB_EVENT_PATH", str(event))
-    assert r.main(["check-pr", "--root", str(repo), "--base-sha", base]) == 1
-    assert "Ordinary PR changes build-owned paths" in capsys.readouterr().err
+    result = subprocess.run(
+        [sys.executable, "-S", str(ROOT / "tools/check_generated.py"), "--root", str(repo), "--base-sha", base],
+        env={**os.environ, "GITHUB_EVENT_PATH": str(event)}, capture_output=True, text=True,
+    )
+    assert result.returncode == 1
+    assert "Ordinary PR changes build-owned paths" in result.stderr
+    assert "deferred" not in result.stdout
 
 
 @pytest.mark.parametrize("extra", [False, True])
@@ -622,12 +630,34 @@ def test_bot_proposal_uses_exact_transaction_checks(repo, monkeypatch, capsys, e
     event = repo.parent / f"{repo.name}-event.json"
     event.write_bytes(r.canonical({"repository": {"full_name": "nilpath/test"}, "pull_request": pr}))
     monkeypatch.setenv("GITHUB_EVENT_PATH", str(event))
+    guard = subprocess.run(
+        [sys.executable, "-S", str(ROOT / "tools/check_generated.py"),
+         "--root", str(repo), "--base-sha", plan["input_sha"]], capture_output=True, text=True,
+    )
+    assert guard.returncode == 0, guard.stderr
+    assert guard.stdout == (
+        "Generated-file validation deferred to the required release-plan job for this bot-owned proposal.\n"
+    )
     assert r.main(["check-pr", "--root", str(repo), "--base-sha", plan["input_sha"]]) == int(extra)
     output = capsys.readouterr()
     if extra:
         assert "unexpected paths" in output.err
     else:
-        assert output.out == "PR artifact ownership and release checks passed.\n"
+        assert output.out == "PR release checks passed.\n"
+
+
+def test_ordinary_pr_release_validation_does_not_repeat_generated_check(repo, monkeypatch, capsys):
+    base = command(repo, "git", "rev-parse", "HEAD")
+    write(repo, "dist/claude/plugins/alpha/file", "unversioned content\n")
+    head = commit(repo, "fix: ordinary generated edit")
+    event = repo.parent / f"{repo.name}-event.json"
+    event.write_bytes(r.canonical({
+        "repository": {"full_name": "nilpath/test"},
+        "pull_request": {"user": {"login": "maintainer", "id": 1}, "head": {"sha": head}},
+    }))
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(event))
+    assert r.main(["check-pr", "--root", str(repo), "--base-sha", base]) == 0
+    assert capsys.readouterr().out == "PR release checks passed.\n"
 
 
 def accept_shipping_baseline(root):
@@ -761,7 +791,7 @@ def test_ordinary_pr_ownership_uses_merge_base_after_main_releases(repo, modify_
     base = commit(repo, "chore(release): release beta")
     command(repo, "git", "checkout", "-q", "topic")
     result = subprocess.run(
-        [sys.executable, str(ROOT / "tools/release.py"), "check-source-only",
+        [sys.executable, "-S", str(ROOT / "tools/check_generated.py"),
          "--root", str(repo), "--base-sha", base], text=True, capture_output=True,
     )
     assert result.returncode == int(modify_generated), result.stderr
@@ -772,15 +802,24 @@ def test_ordinary_pr_ownership_uses_merge_base_after_main_releases(repo, modify_
         assert result.stdout == "Ordinary PR preserves build-owned paths.\n"
 
 
-@pytest.mark.parametrize("job", ["test-static", "release-plan"])
-def test_ci_exports_installed_venv_before_proposal_cli(repo, tmp_path, job):
+def test_release_plan_ci_exports_installed_venv_before_proposal_cli(repo, tmp_path):
     import yaml
 
     base = change(repo, "fix(alpha): proposal guidance")
-    r.prepare(repo, r.propose(repo).plan)
-    commit(repo, "chore(release): proposal")
+    plan = r.propose(repo).plan
+    r.prepare(repo, plan)
+    head = commit(repo, "chore(release): proposal")
+    event = tmp_path / "event.json"
+    event.write_bytes(r.canonical({
+        "repository": {"full_name": "nilpath/test"},
+        "pull_request": {
+            "user": {"login": r.BOT, "id": r.BOT_ID},
+            "head": {"ref": "release/proposal-" + plan["plan_id"], "sha": head, "repo": {"full_name": "nilpath/test"}},
+            "base": {"ref": "main", "repo": {"full_name": "nilpath/test"}}, "body": r.proposal_body(plan),
+        },
+    }))
     workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
-    steps = workflow["jobs"][job]["steps"]
+    steps = workflow["jobs"]["release-plan"]["steps"]
     gate = next(i for i, step in enumerate(steps) if "tools/release.py check-pr" in step.get("run", ""))
     runner = tmp_path / "runner"
     runner.mkdir()
@@ -792,23 +831,23 @@ def test_ci_exports_installed_venv_before_proposal_cli(repo, tmp_path, job):
     github_path = tmp_path / "github-path"
     initial_path = f"{stub_bin}:/usr/bin:/bin:/usr/sbin:/sbin"
     assert shutil.which("git-cliff", path=initial_path) is None
-    env = {**os.environ, "RUNNER_TEMP": str(runner), "GITHUB_PATH": str(github_path), "PATH": initial_path}
+    env = {**os.environ, "RUNNER_TEMP": str(runner), "GITHUB_PATH": str(github_path), "PATH": initial_path,
+           "EVENT_NAME": "pull_request", "BASE_SHA": base, "GITHUB_EVENT_PATH": str(event)}
     for step in steps[:gate]:
         if "make install" in step.get("run", "") or "GITHUB_PATH" in step.get("run", ""):
             result = subprocess.run(["bash", "-e", "-c", step["run"]], env=env, text=True, capture_output=True)
             assert result.returncode == 0, result.stderr
     exported = github_path.read_text().splitlines() if github_path.exists() else []
     result = subprocess.run(
-        [sys.executable, str(ROOT / "tools/release.py"), "check-proposal",
-         "--root", str(repo), "--base-sha", base],
+        ["bash", "-e", "-c", steps[gate]["run"]], cwd=repo,
         env={**env, "PATH": os.pathsep.join([*exported, initial_path])}, text=True, capture_output=True,
     )
     assert result.returncode == 0, result.stderr
-    assert result.stdout == "Exact proposal checks passed.\n"
+    assert result.stdout == "PR release checks passed.\n"
     stale = subprocess.run(
-        [sys.executable, str(ROOT / "tools/release.py"), "check-proposal",
-         "--root", str(repo), "--base-sha", command(repo, "git", "rev-parse", base + "^")],
-        env={**env, "PATH": os.pathsep.join([*exported, initial_path])}, text=True, capture_output=True,
+        ["bash", "-e", "-c", steps[gate]["run"]], cwd=repo,
+        env={**env, "PATH": os.pathsep.join([*exported, initial_path]),
+             "BASE_SHA": command(repo, "git", "rev-parse", base + "^")}, text=True, capture_output=True,
     )
     assert stale.returncode == 1
     assert "Proposal input is no longer current main" in stale.stderr
@@ -1283,7 +1322,9 @@ def test_actual_read_only_verifier_cli_emits_the_complete_verified_bundle(prepar
     assert command(root, "git", "diff", "--binary", "HEAD") == before
 
 
-@pytest.mark.parametrize("path", ["tools/release.py", "tools/buildkit/src/buildkit/build.py", "pyproject.toml"])
+@pytest.mark.parametrize("path", [
+    "tools/release.py", "tools/check_generated.py", "tools/buildkit/src/buildkit/build.py", "pyproject.toml",
+])
 def test_changed_input_renderer_requires_a_fresh_dispatch(repo, path):
     target = repo / path
     target.write_text(target.read_text() + "\n# Different dispatcher identity.\n")
@@ -2000,7 +2041,7 @@ def test_first_draft_uses_historical_bytes_after_current_generation_changes(prep
 
 @pytest.mark.parametrize("path", [
     ".github/workflows/ci.yml", ".github/workflows/release.yml", "tools/release.py",
-    "tools/pr_conventions.sh", "cliff.toml", "README.md", "CHANGELOG.md",
+    "tools/check_generated.py", "tools/pr_conventions.sh", "cliff.toml", "README.md", "CHANGELOG.md",
 ])
 @pytest.mark.parametrize("merged", [False, True])
 def test_historical_validation_never_trusts_changed_payload_or_pr_owned_verifiers(prepared, monkeypatch, path, merged):

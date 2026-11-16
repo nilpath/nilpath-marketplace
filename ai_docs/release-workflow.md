@@ -282,15 +282,25 @@ Run `plan` on main history. It cannot infer GitHub merge state from a local
 proposal commit. On a proposal branch, inspect `.release/plan.json` and use
 `check-proposal` instead. Fetch current main before that check.
 `check` validates historical provenance, including deletion of either versioned
-or decision-only plans. CI uses `check-pr` with the PR event to select ordinary
-ownership checks or exact proposal validation. A copied branch name or marker
-does not grant a generated-file exception.
-It rejects extra commits, rebases, stale inputs, unexpected trees, and unsafe
-file modes. A deliberately bypassed invalid merge still fails draft validation
+or decision-only plans. In CI, the `pr-title` job runs
+`python3 -S tools/check_generated.py --base-sha "$BASE_SHA"` alongside title
+validation. The standalone check compares the PR head to its merge base with
+the current base SHA and rejects ordinary changes to build-owned paths.
+A copied branch name or marker does not grant a generated-file exception.
+Only same-repository proposals owned by the exact GitHub Actions bot identity
+defer generated-file validation to the independently required `release-plan`
+job. The guard reports that deferral without claiming to validate the output.
+The `test-static` job only installs dependencies and tests fresh source output.
+
+The `release-plan` job uses `check-pr` with the PR event to select release-history
+checks or exact proposal validation. It does not repeat the ordinary
+generated-file check. Exact proposal validation rejects extra commits, rebases,
+stale inputs, unexpected trees, and unsafe file modes.
+A deliberately bypassed invalid merge still fails draft validation
 and requires a separately reviewed repair. There is no history-reset bypass.
 
 Local `tools/release.py` commands are `plan`, `prepare`, `bundle`, `check`,
-`check-source-only`, `check-pr`, `check-proposal`, and `verify-bundle`.
+`check-pr`, `check-proposal`, and `verify-bundle`.
 The GitHub commands are `snapshot` and `write`.
 The read-only planner discovers components through buildkit configuration.
 The separate inspect and write jobs invoke `snapshot` and `write` from the

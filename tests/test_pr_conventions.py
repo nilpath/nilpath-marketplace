@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -92,7 +93,7 @@ def test_workflow_handles_title_edits_and_passes_title_as_data(tmp_path):
     assert set(workflow["on"]["pull_request"]["types"]) >= {"opened", "synchronize", "reopened", "edited"}
     job = workflow["jobs"]["pr-title"]
     assert job["if"] == "github.event_name == 'pull_request'"
-    step = job["steps"][-1]
+    step = next(step for step in job["steps"] if step.get("name") == "Check Conventional Commit title")
     assert step["env"]["PR_TITLE"] == "${{ github.event.pull_request.title }}"
     marker = tmp_path / "injected"
     title = f"feat: $(touch {marker})"
@@ -103,14 +104,68 @@ def test_workflow_handles_title_edits_and_passes_title_as_data(tmp_path):
     assert not marker.exists()
 
 
-def test_ci_checks_artifact_ownership_before_preview_rendering():
+def test_ci_checks_generated_ownership_once_alongside_title_validation():
     workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
-    steps = workflow["jobs"]["test-static"]["steps"]
-    gate = next(i for i, step in enumerate(steps) if "check-pr --base-sha" in step.get("run", ""))
-    preview = next(i for i, step in enumerate(steps) if "make test-static" in step.get("run", ""))
-    assert gate < preview
-    assert steps[gate]["if"] == "github.event_name == 'pull_request'"
-    assert steps[gate]["env"]["BASE_SHA"] == "${{ github.event.pull_request.base.sha }}"
+    jobs = workflow["jobs"]
+    guards = [(job, step) for job, config in jobs.items() for step in config["steps"]
+              if "tools/check_generated.py" in step.get("run", "")]
+    assert [job for job, _ in guards] == ["pr-title"]
+    assert guards[0][1]["name"] == "Check generated-file ownership"
+    assert guards[0][1]["env"]["BASE_SHA"] == "${{ github.event.pull_request.base.sha }}"
+    checkout = next(step for step in jobs["pr-title"]["steps"] if step.get("uses", "").startswith("actions/checkout@"))
+    assert checkout["with"]["fetch-depth"] == "0"
+    assert checkout["with"]["ref"] == "${{ github.event.pull_request.head.sha }}"
+    release_checks = [job for job, config in jobs.items() for step in config["steps"]
+                      if "tools/release.py check-pr" in step.get("run", "")]
+    assert release_checks == ["release-plan"]
+    test_commands = [step["run"] for step in jobs["test-static"]["steps"] if "run" in step]
+    assert test_commands == [
+        'make install VENV="$RUNNER_TEMP/nilpath-ci"',
+        'make test-static VENV="$RUNNER_TEMP/nilpath-ci"',
+    ]
+
+
+@pytest.mark.parametrize("change", ["source", "generated", "head-mismatch"])
+def test_ci_generated_check_works_without_release_tool_or_site_packages(tmp_path, change):
+    for path in ("tools/check_generated.py", "tools/buildkit/src/buildkit/__init__.py",
+                 "tools/buildkit/src/buildkit/ownership.py"):
+        target = tmp_path / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(ROOT / path, target)
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    commit = ["git", "-c", "user.name=Tester", "-c", "user.email=test@example.com", "commit", "-qm", "chore: fixture"]
+    subprocess.run(commit, cwd=tmp_path, check=True)
+    base = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=tmp_path, text=True).strip()
+    path = tmp_path / ("dist/file" if change == "generated" else "source.txt")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("changed\n")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    subprocess.run(commit, cwd=tmp_path, check=True)
+    head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=tmp_path, text=True).strip()
+    event = tmp_path / "event.json"
+    event.write_text(json.dumps({
+        "repository": {"full_name": "nilpath/test"},
+        "pull_request": {"user": {"login": "human", "id": 1},
+                         "head": {"sha": base if change == "head-mismatch" else head}},
+    }))
+    workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
+    step = next(step for step in workflow["jobs"]["pr-title"]["steps"]
+                if "tools/check_generated.py" in step.get("run", ""))
+    result = subprocess.run(
+        ["bash", "-e", "-c", step["run"]], cwd=tmp_path, capture_output=True, text=True,
+        env={"PATH": os.pathsep.join([str(Path(sys.executable).parent), "/usr/bin", "/bin"]),
+             "BASE_SHA": base, "GITHUB_EVENT_PATH": str(event)},
+    )
+    if change == "source":
+        assert result.returncode == 0, result.stderr
+        assert result.stdout == "Ordinary PR preserves build-owned paths.\n"
+    elif change == "generated":
+        assert result.returncode == 1
+        assert result.stderr == "check-generated: Ordinary PR changes build-owned paths:\ndist/file\n"
+    else:
+        assert result.returncode == 1
+        assert result.stderr == "check-generated: PR head mismatch\n"
 
 
 def test_writer_consumes_only_the_read_only_verifier_dependency():
