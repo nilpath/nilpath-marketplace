@@ -100,7 +100,7 @@ Close calls:
 Not in nstack:
 
 - pstack-only skills and playbooks are not installed by nstack. Don't recommend an upstream command as if it shipped here.
-- Cursor's Custom Modes and `/loop` are not portable nstack features.
+- Cursor's Custom Modes are not portable nstack features. nstack ships no scheduler of its own. Recurring wakeups use this client's native capability and instructions.
 - Marking ready, merging, and auto-merge remain manual. Publication ends as a draft pull request. Bounded PR babysitting is supported with observation, implementation, and external-action authority kept separate.
 
 ## Playbooks and principles

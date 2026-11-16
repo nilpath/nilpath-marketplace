@@ -14,7 +14,7 @@ SUB_BLOCKS = [
 PROGRAM_H3 = ["Arm the program", "Spawn owners", "PR mechanics", "Verdict and merge", "Boot recipe"]
 PROGRAM_MARKERS = [
     "git show origin/main:",
-    "{% if harness == "claude" %}/loop 1h{% else %}native recurring automation every 1h{% endif %}",
+    {{ schedule_hourly | tojson }},
     "status message",
 ]
 HOW_TO_READ_MARKERS = [

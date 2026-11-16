@@ -19,8 +19,9 @@ def valid_plan(cadence: str = "/loop 1h") -> str:
     return (FIXTURES / "valid.input").read_text().replace("/loop 1h", cadence)
 
 
-def render_checker(tmp_path: Path, harness: str) -> Path:
-    config = load_config(ROOT)
+def render_checker(tmp_path: Path, harness: str, config=None) -> Path:
+    if config is None:
+        config = load_config(ROOT)
     rendered = render_file(
         make_environment(), SOURCE, config.harnesses[harness], config,
         skill_name="nstack-flow",
@@ -54,6 +55,33 @@ def test_harness_requires_its_rendered_cadence(tmp_path: Path, harness: str) -> 
     result = run(checker, plan)
     assert result.returncode == 1
     assert f'Program checklist lacks "{cadence}"' in result.stderr
+
+
+@pytest.mark.parametrize("harness", ("claude", "copilot", "codex"))
+def test_scheduling_prose_reaches_callers_and_checker(tmp_path: Path, harness: str) -> None:
+    config = load_config(ROOT)
+    config.harnesses[harness].raw["prose"].update(
+        schedule="the fixture scheduler",
+        schedule_hourly='native audit every "60 minutes"',
+    )
+    env = make_environment()
+    playbooks = SOURCE.parent.parent / "playbooks"
+    babysit = render_file(env, playbooks / "babysit.md.j2", config.harnesses[harness], config, skill_name="nstack-flow")
+    template = render_file(env, playbooks / "multi-phase-plan.md.j2", config.harnesses[harness], config, skill_name="nstack-flow")
+    assert "under the fixture scheduler when available" in babysit
+    assert '`native audit every "60 minutes"`' in template
+    assert "On the operator's go, arm the audit tick" in template
+
+    checker = render_checker(tmp_path, harness, config)
+    plan = tmp_path / "plan.md"
+    plan.write_text(valid_plan('native audit every "60 minutes"'))
+    accepted = run(checker, plan)
+    assert accepted.returncode == 0
+    assert accepted.stderr == ""
+    plan.write_text(valid_plan())
+    rejected = run(checker, plan)
+    assert rejected.returncode == 1
+    assert 'Program checklist lacks "native audit every "60 minutes""' in rejected.stderr
 
 
 def test_missing_path_has_usage_and_exit_two(checker: Path) -> None:

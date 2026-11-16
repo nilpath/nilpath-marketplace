@@ -39,6 +39,8 @@ prose:
   skill: 'the `{full}` skill'
   todo: 'the `TodoWrite` tool'
   ask_user: 'the `AskUserQuestion` tool'
+  schedule: 'the native `/loop` command in dynamic mode'
+  schedule_hourly: '/loop 1h'
 models:
   map: { small: haiku, medium: sonnet, large: opus, xlarge: fable }
 reasoning:
