@@ -101,3 +101,33 @@ def test_workflow_handles_title_edits_and_passes_title_as_data(tmp_path):
     assert result.returncode == 0, result.stderr
     assert result.stdout == "OK: title is a Conventional Commit\n"
     assert not marker.exists()
+
+
+def test_ci_checks_artifact_ownership_before_preview_rendering():
+    workflow = yaml.load((ROOT / ".github/workflows/ci.yml").read_text(), Loader=yaml.BaseLoader)
+    steps = workflow["jobs"]["test-static"]["steps"]
+    gate = next(i for i, step in enumerate(steps) if "check-pr --base-sha" in step.get("run", ""))
+    preview = next(i for i, step in enumerate(steps) if "make test-static" in step.get("run", ""))
+    assert gate < preview
+    assert steps[gate]["if"] == "github.event_name == 'pull_request'"
+    assert steps[gate]["env"]["BASE_SHA"] == "${{ github.event.pull_request.base.sha }}"
+
+
+def test_writer_consumes_only_the_read_only_verifier_dependency():
+    workflow = yaml.load((ROOT / ".github/workflows/release.yml").read_text(), Loader=yaml.BaseLoader)
+    verify, writer = (workflow["jobs"][name] for name in ("verify", "write"))
+    assert verify["needs"] == "inspect"
+    assert verify["permissions"] == {"contents": "read", "pull-requests": "read"}
+    assert writer["needs"] == "verify"
+    download = next(step for step in writer["steps"] if step.get("uses", "").startswith("actions/download-artifact@"))
+    assert download["with"]["artifact-ids"] == "${{ needs.verify.outputs.artifact_id }}"
+    write = writer["steps"][-1]
+    assert write["env"]["VERIFICATION_ARTIFACT_ID"] == "${{ needs.verify.outputs.artifact_id }}"
+    assert "--verification-artifact-id" in write["run"]
+    assert not any("make build" in step.get("run", "") for step in workflow["jobs"]["inspect"]["steps"])
+    candidate_steps = [step for step in workflow["jobs"]["inspect"]["steps"]
+                       if step.get("working-directory") == "candidate"]
+    assert all(step["if"] == "steps.snapshot.outputs.kind == 'proposal'" for step in candidate_steps)
+    historical = next(step for step in workflow["jobs"]["inspect"]["steps"]
+                      if step.get("if") == "steps.snapshot.outputs.kind == 'drafts'")
+    assert "python -S dispatcher/tools/release.py bundle --root candidate" in historical["run"]

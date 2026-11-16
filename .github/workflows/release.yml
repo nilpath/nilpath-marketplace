@@ -69,28 +69,33 @@ jobs:
           version: "0.12.23"
           python-version: "3.11"
       - name: Install declared local dependencies
+        if: steps.snapshot.outputs.kind == 'proposal'
         working-directory: candidate
         run: |
           make install VENV="$RUNNER_TEMP/nilpath-release"
           echo "$RUNNER_TEMP/nilpath-release/bin" >> "$GITHUB_PATH"
       - name: Check input before source updates
+        if: steps.snapshot.outputs.kind == 'proposal'
         working-directory: candidate
         run: make test-static VENV="$RUNNER_TEMP/nilpath-release"
-      - name: Prepare source and documentation transaction
+      - name: Prepare versions and generated transaction
         if: steps.snapshot.outputs.kind == 'proposal'
         working-directory: candidate
         run: '"$RUNNER_TEMP/nilpath-release/bin/python" tools/release.py prepare --request "$RUNNER_TEMP/request.json"'
-      - name: Regenerate only through the existing build
-        if: steps.snapshot.outputs.kind == 'proposal'
-        working-directory: candidate
-        run: make build VENV="$RUNNER_TEMP/nilpath-release"
       - name: Verify prepared output
         if: steps.snapshot.outputs.kind == 'proposal'
         working-directory: candidate
         run: make test-static VENV="$RUNNER_TEMP/nilpath-release"
       - name: Export data only
+        if: steps.snapshot.outputs.kind == 'proposal'
         working-directory: candidate
         run: '"$RUNNER_TEMP/nilpath-release/bin/python" tools/release.py bundle --request "$RUNNER_TEMP/request.json" --output "$RUNNER_TEMP/release-bundle/proposal.json"'
+      - name: Export recorded merge without executing historical code
+        if: steps.snapshot.outputs.kind == 'drafts'
+        run: |
+          python -S dispatcher/tools/release.py bundle --root candidate \
+            --request "$RUNNER_TEMP/request.json" \
+            --output "$RUNNER_TEMP/release-bundle/proposal.json"
       - uses: actions/upload-artifact@v7.0.2
         id: upload
         with:
@@ -100,8 +105,66 @@ jobs:
           overwrite: false
           retention-days: 7
 
-  write:
+  verify:
     needs: inspect
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: dispatcher
+          persist-credentials: false
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.11"
+      - name: Independently resolve immutable input
+        id: snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -S dispatcher/tools/release.py snapshot --output "$RUNNER_TEMP/request.json"
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ steps.snapshot.outputs.input_sha }}
+          path: input
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.12.23"
+          python-version: "3.11"
+      - name: Install dispatcher-owned renderer dependencies
+        working-directory: dispatcher
+        run: |
+          make install VENV="$RUNNER_TEMP/nilpath-verifier"
+          echo "$RUNNER_TEMP/nilpath-verifier/bin" >> "$GITHUB_PATH"
+      - uses: actions/download-artifact@v8.0.2
+        with:
+          artifact-ids: ${{ needs.inspect.outputs.artifact_id }}
+          path: ${{ runner.temp }}/release-bundle
+          merge-multiple: true
+      - name: Independently reconstruct and compare the complete transaction
+        run: |
+          "$RUNNER_TEMP/nilpath-verifier/bin/python" dispatcher/tools/release.py verify-bundle \
+            --root input --request "$RUNNER_TEMP/request.json" \
+            --artifact "$RUNNER_TEMP/release-bundle/proposal.json" \
+            --output "$RUNNER_TEMP/release-verified/verified.json"
+      - uses: actions/upload-artifact@v7.0.2
+        id: upload
+        with:
+          name: release-verified-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-verified/verified.json
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 7
+
+  write:
+    needs: verify
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -121,10 +184,14 @@ jobs:
           python-version: "3.11"
       - uses: actions/download-artifact@v8.0.2
         with:
-          artifact-ids: ${{ needs.inspect.outputs.artifact_id }}
-          path: ${{ runner.temp }}/release-bundle
+          artifact-ids: ${{ needs.verify.outputs.artifact_id }}
+          path: ${{ runner.temp }}/release-verified
           merge-multiple: true
       - name: Validate data and reconcile GitHub
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python -S dispatcher/tools/release.py write --artifact "$RUNNER_TEMP/release-bundle/proposal.json"
+          VERIFICATION_ARTIFACT_ID: ${{ needs.verify.outputs.artifact_id }}
+        run: |
+          python -S dispatcher/tools/release.py write \
+            --artifact "$RUNNER_TEMP/release-verified/verified.json" \
+            --verification-artifact-id "$VERIFICATION_ARTIFACT_ID"

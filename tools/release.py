@@ -1,7 +1,7 @@
 """Plan component releases, prepare proposals, and reconcile GitHub drafts.
 
 GitHub operations use only the standard library and execute no candidate code.
-Buildkit and YAML imports belong only to local planning operations.
+Renderer and YAML imports belong only to local planning operations.
 """
 
 from __future__ import annotations
@@ -25,6 +25,9 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
+sys.path.insert(0, str(Path(__file__).resolve().parent / "buildkit/src"))
+from buildkit.ownership import REGISTRIES, owns, snapshot as generated_snapshot
+
 
 CLIFF_VERSION = "2.13.1"
 BOUNDARY = b"<!-- release-legacy-boundary -->\n"
@@ -40,11 +43,6 @@ DIGEST = re.compile(r"[0-9a-f]{64}\Z")
 NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 VERSION = re.compile(r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\Z")
 BUMPS = {"none": 0, "patch": 1, "minor": 2, "major": 3, "initial": 4}
-REGISTRIES = (
-    ".claude-plugin/marketplace.json",
-    ".agents/plugins/marketplace.json",
-    ".github/plugin/marketplace.json",
-)
 PROPOSAL_MARKER = "<!-- nilpath-release-proposal:"
 COMPLETION_MARKER = "<!-- nilpath-release-complete:"
 BOT = "github-actions[bot]"
@@ -171,11 +169,13 @@ def decisions_bytes(decisions):
 
 
 def validate_plan(plan):
+    require(isinstance(plan, dict), "Invalid plan")
+    schema = plan.get("schema")
+    require(type(schema) is int and schema in {1, 2}, "Unsupported plan schema")
     fields(plan, (
         "schema", "state", "input_sha", "proposal_date", "releases", "decisions",
         "requests", "explanations", "decisions_digest", "policy_digest", "tool_versions", "plan_id",
-    ))
-    require(type(plan["schema"]) is int and plan["schema"] == 1, "Unsupported plan schema")
+    ) + (("generated",) if schema == 2 else ()))
     require(plan["state"] in {"NeedsDecisions", "ReadyPlan"}, "Invalid transaction state")
     text(plan["input_sha"], SHA)
     require(date.fromisoformat(plan["proposal_date"]).isoformat() == plan["proposal_date"], "Invalid date")
@@ -221,6 +221,21 @@ def validate_plan(plan):
         require(plan["requests"] and not plan["releases"], "Blocked plans cannot apply partial bumps")
     else:
         require(not plan["requests"], "Ready plan has unanswered requests")
+    if schema == 2:
+        require(plan["tool_versions"]["policy"] == "2", "Unsupported historical policy, reviewed repair required")
+        require(isinstance(plan["generated"], list), "Invalid generated operations")
+        seen_paths = []
+        for edit in plan["generated"]:
+            fields(edit, ("op", "path", "mode", "sha256"))
+            require(edit["op"] in {"put", "delete"}, "Invalid generated operation")
+            path = safe_path(edit["path"])
+            require(owns(path), "Generated operation outside build ownership")
+            require(edit["mode"] in {"100644", "100755"}, "Unsafe generated mode")
+            text(edit["sha256"], DIGEST)
+            seen_paths.append(path)
+        require(seen_paths == sorted(set(seen_paths)), "Noncanonical or duplicate generated operations")
+        require(not plan["generated"] or plan["state"] == "ReadyPlan" and plan["releases"],
+                "Only versioned releases may change generated output")
     identity = {key: value for key, value in plan.items() if key != "plan_id"}
     require(digest(canonical(identity)) == plan["plan_id"], "Plan identity mismatch")
     return decisions
@@ -228,10 +243,12 @@ def validate_plan(plan):
 
 def validate_current_plan(plan):
     validate_plan(plan)
-    require(plan["tool_versions"] == {"git-cliff": CLIFF_VERSION, "policy": "1"}, "Unsupported current tools")
+    require(plan["tool_versions"] == {"git-cliff": CLIFF_VERSION, "policy": str(plan["schema"])},
+            "Unsupported current tools")
 
 
 def finish_plan(plan):
+    plan.pop("plan_id", None)
     plan["decisions_digest"] = digest(canonical(plan["decisions"]))
     plan["plan_id"] = digest(canonical(plan))
     validate_current_plan(plan)
@@ -264,6 +281,8 @@ def version_field(raw):
 
 def source_inventory(root):
     from buildkit.config import load_config
+    require(not any(p.is_symlink() for p in (root / "src", *(root / "src").rglob("*"))),
+            "Release sources cannot contain symlinks")
     cfg = load_config(root)
     baselines = tomllib.loads((root / ".release/baselines.toml").read_text())
     fields(baselines, ("baseline",))
@@ -334,6 +353,72 @@ def changed_paths(root, sha):
     return [tuple(line.split("\t", 1)) for line in rows.splitlines()]
 
 
+def check_source_only(root, base_sha):
+    text(base_sha, SHA)
+    paths = run(root, "git", "diff", "--no-renames", "--name-only", "-z", base_sha, "HEAD").decode().split("\0")
+    changed = sorted(path for path in paths if owns(path))
+    require(not changed, "Ordinary PR changes build-owned paths:\n" + "\n".join(changed))
+
+
+def git_entries(root, sha):
+    result = {}
+    for row in run(root, "git", "ls-tree", "-rz", sha).split(b"\0"):
+        if row:
+            meta, path = row.decode().split("\t", 1)
+            mode, kind, object_sha = meta.split()
+            result[safe_path(path)] = (mode, kind, object_sha)
+    return result
+
+
+def committed_generated(root, sha):
+    result = {}
+    for path, (mode, kind, _) in git_entries(root, sha).items():
+        if owns(path):
+            require(kind == "blob" and mode in {"100644", "100755"}, f"Invalid generated file mode for {path}")
+            result[path] = (mode, blob(root, sha, path))
+    return result
+
+
+def generated_delta(before, after):
+    return [
+        {"op": "put" if path in after else "delete", "path": path,
+         "mode": (after if path in after else before)[path][0],
+         "sha256": digest((after if path in after else before)[path][1])}
+        for path in sorted(before.keys() | after.keys()) if before.get(path) != after.get(path)
+    ]
+
+
+def generated_components(before, after, cfg):
+    affected = set()
+    for path in before.keys() | after.keys():
+        if before.get(path) == after.get(path):
+            continue
+        if path in REGISTRIES:
+            old = load_json(before[path][1]) if path in before else {}
+            new = load_json(after[path][1]) if path in after else {}
+            old_plugins = {p["name"]: p for p in old.pop("plugins", [])}
+            new_plugins = {p["name"]: p for p in new.pop("plugins", [])}
+            changed_plugins = {name for name in old_plugins.keys() | new_plugins.keys()
+                               if old_plugins.get(name) != new_plugins.get(name)}
+            affected.update(changed_plugins)
+            if old != new or not changed_plugins or path in before and path in after and before[path][0] != after[path][0]:
+                affected.add(cfg.marketplace["name"])
+            continue
+        owners = [path.removeprefix(h.dist_root + "/plugins/").split("/")[0]
+                  for h in cfg.harnesses.values() if path.startswith(h.dist_root + "/plugins/")]
+        require(len(owners) == 1, f"No component owns generated path {path}")
+        affected.add(owners[0])
+    return affected
+
+
+def pending_generated(root, cfg):
+    from buildkit.build import build
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp)
+        build(root, out_root=out)
+        return generated_components(committed_generated(root, "HEAD"), generated_snapshot(out), cfg)
+
+
 def shipped_changed(root, sha, component, cfg):
     parents = git(root, "show", "-s", "--format=%P", sha).split()
     require(len(parents) == 1, "Shared attribution requires a linear commit")
@@ -375,6 +460,7 @@ def propose(root, decisions=(), proposal_date=None):
     root = root.resolve()
     input_sha = git(root, "rev-parse", "HEAD")
     components, cfg = source_inventory(root)
+    pending = pending_generated(root, cfg)
     records = previous_transactions(root)
     effective = {}
     for sha, plan in reversed(records):
@@ -424,13 +510,14 @@ def propose(root, decisions=(), proposal_date=None):
                 if {k: v for k, v in before.items() if k != "defaults"} == {k: v for k, v in after.items() if k != "defaults"}:
                     direct = []
             if not direct and shared and component.source != "src/marketplace.yaml":
-                if not shipped_changed(root, sha, component.name, cfg):
+                if not shipped_changed(root, sha, component.name, cfg) and component.name not in pending:
                     explanations.append(f"{component.name}: {sha} shared change leaves shipped trees unchanged.")
                     continue
             elif not direct:
                 continue
             new = boundary is None
-            shared_effect = shared and not new and component.source != "src/marketplace.yaml" and shipped_changed(root, sha, component.name, cfg)
+            shared_effect = shared and not new and component.source != "src/marketplace.yaml" and (
+                shipped_changed(root, sha, component.name, cfg) or component.name in pending)
             candidates[(component.name, sha)] = (component, boundary, paths, direct, shared_effect, new)
     for sha in sorted(considered):
         if not any(path.startswith(("src/", "tools/buildkit/", "dist/")) or path in REGISTRIES
@@ -482,17 +569,25 @@ def propose(root, decisions=(), proposal_date=None):
             selected.setdefault(name, []).append((sha, suggestion, component, boundary))
     accepted_keys = {(d.component, d.commit) for d in accepted}
     require(set(decisions_map) <= used | accepted_keys, "Stale or unrelated resolution decision")
+    if selected:
+        for name in sorted(pending - selected.keys()):
+            sha = next((sha for component, sha in reversed(candidates) if component == name), input_sha)
+            if not any(row["component"] == name for row in requests):
+                requests.append({
+                    "component": name, "commit": sha, "suggestion": "patch",
+                    "reason": "Full regeneration changes this component without a release version. A bump is required.",
+                })
     if not candidates:
         explanations.append("Repository-only changes do not bump shipped components.")
     if not requests and not selected and tuple(decisions) == accepted:
         return NoChanges(tuple(explanations))
     plan = {
-        "schema": 1, "state": "NeedsDecisions" if requests else "ReadyPlan",
+        "schema": 2, "state": "NeedsDecisions" if requests else "ReadyPlan",
         "input_sha": input_sha, "proposal_date": proposal_date or git(root, "show", "-s", "--format=%cs", input_sha),
         "releases": [], "decisions": [asdict(d) for d in decisions], "requests": requests,
         "explanations": explanations, "policy_digest": policy_digest({
             p: (root / p).read_bytes() for p in ("cliff.toml", "tools/release.py")}),
-        "tool_versions": {"git-cliff": CLIFF_VERSION, "policy": "1"},
+        "tool_versions": {"git-cliff": CLIFF_VERSION, "policy": "2"}, "generated": [],
     }
     if not requests:
         for name, rows in sorted(selected.items()):
@@ -545,19 +640,22 @@ def changelog_update(raw, plan):
     return schema1_changelog_update(raw, plan)
 
 
-def expected_updates(plan, originals):
+def expected_updates(plan, originals, payload=None):
     """Derive the only files the writer is permitted to apply, without YAML."""
     validate_current_plan(plan)
+    if plan["schema"] == 2:
+        return _schema2_updates(plan, originals, payload or {})
     updates = _schema1_updates(plan, originals, changelog_update)
     require(updates == historical_updates(plan, originals),
             "Current generation violates schema-1 byte contract, reviewed schema repair required")
     return updates
 
 
-def historical_updates(plan, originals):
-    """Keep the schema-1 byte contract independent of current generation."""
+def historical_updates(plan, originals, payload=None):
+    """Verify recorded schema bytes without executing historical code."""
     validate_plan(plan)
-    require(plan["tool_versions"]["policy"] == "1", "Unsupported historical policy, reviewed repair required")
+    require(plan["tool_versions"]["policy"] == str(plan["schema"]),
+            "Unsupported historical policy, reviewed repair required")
     try:
         source = ast.parse(originals["tools/release.py"])
     except (SyntaxError, ValueError) as exc:
@@ -566,7 +664,34 @@ def historical_updates(plan, originals):
             if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant)
             and any(isinstance(target, ast.Name) and target.id == "CLIFF_VERSION" for target in node.targets)]
     require(pins == [plan["tool_versions"]["git-cliff"]], "Historical tool identity mismatch")
+    if plan["schema"] == 2:
+        return _schema2_updates(plan, originals, payload or {})
     return _schema1_updates(plan, originals, schema1_changelog_update)
+
+
+def _schema2_updates(plan, originals, payload):
+    updates = _schema1_updates(plan, {p: b for p, b in originals.items() if not owns(p)}, schema1_changelog_update)
+    for edit in plan["generated"]:
+        path = edit["path"]
+        if edit["op"] == "delete":
+            require(path in originals and digest(originals[path]) == edit["sha256"],
+                    f"Deletion input mismatch for {path}")
+            updates[path] = None
+        else:
+            raw = payload.get(path)
+            require(isinstance(raw, bytes) and digest(raw) == edit["sha256"], f"Generated payload mismatch for {path}")
+            updates[path] = raw
+    return updates
+
+
+def update_modes(plan):
+    return {edit["path"]: edit["mode"] for edit in plan.get("generated", [])}
+
+
+def check_deletion_modes(plan, tree):
+    for edit in plan.get("generated", []):
+        if edit["op"] == "delete":
+            require(tree.get(edit["path"], {}).get("mode") == edit["mode"], "Deletion input mode mismatch")
 
 
 def _schema1_updates(plan, originals, render_changelog):
@@ -622,6 +747,8 @@ def _schema1_updates(plan, originals, render_changelog):
 
 
 def relevant_path(path, plan):
+    if plan["schema"] == 2 and owns(path):
+        return any(edit["path"] == path and edit["op"] == "delete" for edit in plan["generated"])
     if path in {"README.md", "CHANGELOG.md", ".release/plan.json", ".release/decisions.toml",
                 "cliff.toml", "tools/release.py", *REGISTRIES}:
         return True
@@ -636,25 +763,57 @@ def relevant_path(path, plan):
 
 def tracked_originals(root, plan, sha):
     result = {}
-    for path in git(root, "ls-tree", "-r", "--name-only", sha).splitlines():
+    for path, (mode, kind, _) in git_entries(root, sha).items():
         if relevant_path(path, plan):
-            row = git(root, "ls-tree", sha, "--", path)
-            require(row.startswith("100644 blob "), f"Invalid release file mode for {path}")
+            allowed = {"100644", "100755"} if plan["schema"] == 2 and owns(path) else {"100644"}
+            require(kind == "blob" and mode in allowed, f"Invalid release file mode for {path}")
             result[path] = blob(root, sha, path)
     return result
 
 
 def prepare(root, plan):
+    validate_current_plan(plan)
     require(git(root, "rev-parse", "HEAD") == plan["input_sha"], "Stale preparation input")
     originals = tracked_originals(root, plan, plan["input_sha"])
-    for path, raw in expected_updates(plan, originals).items():
-        if path.startswith("dist/") or path in REGISTRIES:
-            continue
+    if plan["schema"] == 2:
+        plan["generated"] = []
+        finish_plan(plan)
+        updates = expected_updates(plan, originals)
+        if plan["state"] == "ReadyPlan" and plan["releases"]:
+            from buildkit.build import build
+            from buildkit.config import load_config
+            import shutil
+            with tempfile.TemporaryDirectory() as tmp:
+                render_root = Path(tmp)
+                shutil.copytree(root / "src", render_root / "src", symlinks=False)
+                for path, raw in updates.items():
+                    if path.startswith("src/"):
+                        (render_root / path).write_bytes(raw)
+                build(render_root)
+                after = generated_snapshot(render_root)
+            before = committed_generated(root, plan["input_sha"])
+            changed = generated_components(before, after, load_config(root))
+            selected = {item["component"] for item in plan["releases"]}
+            require(changed <= selected, "Full regeneration changes components without a version bump: "
+                    + ", ".join(sorted(changed - selected)))
+            plan["generated"] = generated_delta(before, after)
+            finish_plan(plan)
+            originals.update({p: row[1] for p, row in before.items()})
+            updates = expected_updates(plan, originals, {p: row[1] for p, row in after.items()})
+    else:
+        updates = expected_updates(plan, originals)
+        updates = {p: b for p, b in updates.items() if not owns(p)}
+    modes = update_modes(plan)
+    for path, raw in updates.items():
         target = root / path
         require(not target.is_symlink() and target.parent.resolve().is_relative_to(root.resolve()),
                 "Refusing symlink or path escape")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(raw)
+        if raw is None:
+            target.unlink(missing_ok=True)
+        else:
+            target.write_bytes(raw)
+            target.chmod(int(modes.get(path, "100644"), 8) & 0o777)
 
 
 def validate_request(request):
@@ -695,13 +854,26 @@ def bundle(root, request):
     elif plan:
         validate_plan(plan)
         originals = tracked_originals(root, plan, request["input_sha"])
-        expected = expected_updates(plan, originals)
+        payload = {p: b for p, (_, b) in generated_snapshot(root).items()} if plan["schema"] == 2 else {}
+        expected = expected_updates(plan, originals, payload)
+        modes = update_modes(plan)
         for path, raw in expected.items():
             actual = root / path
-            require(not actual.is_symlink() and actual.is_file(), "Missing or unsafe prepared file")
+            mode = modes.get(path, "100644")
+            if raw is None:
+                require(not actual.exists() and not actual.is_symlink(), "Prepared deletion still exists")
+                edit = next(e for e in plan["generated"] if e["path"] == path)
+                files.append({**edit, "content": None})
+                continue
+            require(not actual.is_symlink() and actual.is_file()
+                    and actual.parent.resolve().is_relative_to(root.resolve()), "Missing or unsafe prepared file")
             require(actual.read_bytes() == raw, f"Prepared content mismatch for {path}")
-            files.append({"path": path, "mode": "100644", "content": base64.b64encode(raw).decode(), "sha256": digest(raw)})
-        modified = set(git(root, "diff", "--name-only").splitlines())
+            require(("100755" if actual.stat().st_mode & 0o111 else "100644") == mode, "Prepared mode mismatch")
+            row = {"path": path, "mode": mode, "content": base64.b64encode(raw).decode(), "sha256": digest(raw)}
+            if plan["schema"] == 2:
+                row["op"] = "put"
+            files.append(row)
+        modified = set(git(root, "diff", "HEAD", "--name-only").splitlines())
         untracked = set(git(root, "ls-files", "--others", "--exclude-standard").splitlines())
         require(modified | untracked == set(expected), "Unexpected preparation changes")
     result = {"request": request, "plan": plan, "files": files}
@@ -721,9 +893,24 @@ def validate_artifact(artifact):
     require(isinstance(artifact["files"], list), "Invalid files")
     files = {}
     for row in artifact["files"]:
-        fields(row, ("path", "mode", "content", "sha256"))
+        schema2 = artifact["plan"] is not None and artifact["plan"]["schema"] == 2
+        fields(row, ("path", "mode", "content", "sha256") + (("op",) if schema2 else ()))
         path = safe_path(row["path"])
-        require(path not in files and row["mode"] == "100644", "Duplicate path or unsafe mode")
+        allowed = {"100644", "100755"} if schema2 and owns(path) else {"100644"}
+        require(path not in files and row["mode"] in allowed, "Duplicate path or unsafe mode")
+        if schema2:
+            require(row["op"] in {"put", "delete"}, "Invalid file operation")
+            if owns(path):
+                edit = next((e for e in artifact["plan"]["generated"] if e["path"] == path), None)
+                require(edit == {k: v for k, v in row.items() if k != "content"},
+                        "Generated file operation differs from plan")
+            else:
+                require(row["op"] == "put", "Only build-owned paths may be deleted")
+            if row["op"] == "delete":
+                require(row["content"] is None and owns(path), "Invalid deletion")
+                text(row["sha256"], DIGEST)
+                files[path] = None
+                continue
         require(isinstance(row["content"], str), "Invalid file content")
         try:
             raw = base64.b64decode(row["content"], validate=True)
@@ -735,6 +922,80 @@ def validate_artifact(artifact):
     if artifact["request"]["kind"] == "drafts":
         require(not files and artifact["plan"] is not None, "Invalid drafts artifact")
     return files
+
+
+def reconstruct(root, input_sha, decisions):
+    with tempfile.TemporaryDirectory() as tmp:
+        clean = Path(tmp) / "input"
+        run(root, "git", "-c", "core.hooksPath=/dev/null", "clone", "--quiet",
+            "--no-local", "--no-checkout", str(root), str(clean))
+        git(clean, "-c", "core.hooksPath=/dev/null", "checkout", "--quiet", "--detach", input_sha)
+        result = propose(clean, decisions)
+        if isinstance(result, NoChanges):
+            return None
+        prepare(clean, result.plan)
+        originals = tracked_originals(clean, result.plan, input_sha)
+        payload = {p: b for p, (_, b) in generated_snapshot(clean).items()}
+        return result.plan, expected_updates(result.plan, originals, payload)
+
+
+def renderer_identity(root=None, sha=None):
+    root = root or Path(__file__).resolve().parent.parent
+    files = git_entries(root, sha) if sha else (
+        p.relative_to(root).as_posix() for p in (root / "tools/buildkit/src/buildkit").rglob("*.py"))
+    paths = {"tools/release.py", "cliff.toml", "pyproject.toml", "uv.lock", "tools/buildkit/pyproject.toml"}
+    paths.update(p for p in files if p.startswith("tools/buildkit/src/buildkit/")
+                 and p.endswith(".py") and "__pycache__" not in PurePosixPath(p).parts)
+    return digest(canonical({p: digest(blob(root, sha, p) if sha else (root / p).read_bytes()) for p in sorted(paths)}))
+
+
+def verify_bundle(root, request, artifact):
+    validate_request(request)
+    validate_artifact(artifact)
+    require(artifact["request"] == request, "Artifact snapshot is stale or mismatched")
+    require(git(root, "rev-parse", "HEAD") == request["input_sha"], "Verifier checkout differs from immutable input")
+    if request["kind"] == "proposal":
+        require(renderer_identity(root, request["input_sha"]) == renderer_identity(),
+                "Input and dispatcher renderer identities differ. Start a fresh dispatch.")
+        reconstructed = reconstruct(root, request["input_sha"], decisions_from_data(request["decisions"]))
+        if reconstructed is None:
+            require(artifact["plan"] is None and not artifact["files"], "Candidate differs from clean reconstruction")
+        else:
+            plan, files = reconstructed
+            require(plan == artifact["plan"] and files == validate_artifact(artifact),
+                    "Candidate differs from clean reconstruction")
+            modes = update_modes(plan)
+            for row in artifact["files"]:
+                require(row["mode"] == modes.get(row["path"], "100644"), "Candidate mode differs from reconstruction")
+    else:
+        plan = load_json(blob(root, request["input_sha"], ".release/plan.json"))
+        validate_plan(plan)
+        require(plan == artifact["plan"], "Merged bundle differs from immutable input")
+    return {
+        "schema": 1, "request": request, "artifact_digest": artifact["digest"],
+        "plan_id": artifact["plan"]["plan_id"] if artifact["plan"] is not None else None,
+        "renderer_identity": renderer_identity(),
+    }
+
+
+def validate_verification(artifact, verification):
+    fields(verification, ("schema", "request", "artifact_digest", "plan_id", "renderer_identity"))
+    require(type(verification["schema"]) is int and verification["schema"] == 1, "Unsupported verification schema")
+    require(verification["request"] == artifact["request"]
+            and verification["artifact_digest"] == artifact["digest"]
+            and verification["plan_id"] == (artifact["plan"]["plan_id"] if artifact["plan"] is not None else None)
+            and verification["renderer_identity"] == renderer_identity(),
+            "Independent verification identity mismatch")
+
+
+def verification_provenance(gh, artifact_id, request):
+    text(artifact_id, re.compile(r"[1-9]\d*\Z"))
+    artifact = gh.get("actions/artifacts/" + artifact_id)
+    require(artifact.get("id") == int(artifact_id) and artifact.get("expired") is False
+            and artifact.get("name") == f"release-verified-{request['run_id']}-{request['run_attempt']}"
+            and artifact.get("workflow_run", {}).get("id") == int(request["run_id"])
+            and artifact["workflow_run"].get("head_sha") == request["dispatcher_sha"],
+            "Independent verifier artifact provenance mismatch")
 
 
 def verify_transaction(root):
@@ -768,12 +1029,21 @@ def check_proposal(root, base_sha):
     require(git(root, "show", "-s", "--format=%P", "HEAD").split() == [plan["input_sha"]],
             "Proposal must be one immutable commit on its recorded input")
     originals = tracked_originals(root, plan, plan["input_sha"])
-    expected = expected_updates(plan, originals)
+    if plan["schema"] == 2:
+        reconstructed = reconstruct(root, plan["input_sha"], decisions_from_data(plan["decisions"]))
+        require(reconstructed is not None and reconstructed[0] == plan, "Proposal differs from clean reconstruction")
+        expected = reconstructed[1]
+    else:
+        expected = expected_updates(plan, originals)
     actual = set(git(root, "diff", "--name-only", plan["input_sha"], "HEAD").splitlines())
     require(actual == set(expected), "Transaction contains unexpected paths")
+    modes = update_modes(plan)
     for path, raw in expected.items():
         row = git(root, "ls-tree", "HEAD", "--", path)
-        require(row.startswith("100644 blob "), f"Invalid proposal file mode for {path}")
+        if raw is None:
+            require(not row and not (root / path).exists(), "Deleted proposal path still exists")
+            continue
+        require(row.startswith(modes.get(path, "100644") + " blob "), f"Invalid proposal file mode for {path}")
         require(blob(root, "HEAD", path) == raw and (root / path).read_bytes() == raw,
                 f"Transaction mismatch for {path}")
     verify_transaction(root)
@@ -862,12 +1132,13 @@ class GitHub:
             result[path] = item
         return result
 
-    def content(self, tree, path, optional=False):
+    def content(self, tree, path, optional=False, executable=False):
         item = tree.get(path)
         if item is None:
             require(optional, f"Missing required file {path}")
             return None
-        require(item["mode"] == "100644" and item["type"] == "blob", f"Unsafe mode for {path}")
+        allowed = {"100644", "100755"} if executable else {"100644"}
+        require(item["mode"] in allowed and item["type"] == "blob", f"Unsafe mode for {path}")
         data = self.get("git/blobs/" + item["sha"])
         require(data.get("encoding") == "base64" and isinstance(data.get("content"), str), "Invalid blob encoding")
         try:
@@ -947,10 +1218,9 @@ def active_proposal(gh, pr, expected_head):
     require(plan is not None, "Missing proposal plan")
     require(owned_proposal(pr, gh.repository) == plan["plan_id"], "Proposal plan marker mismatch")
     base_tree = gh.tree(plan["input_sha"])
-    original = {p: gh.content(base_tree, p) for p in base_tree if relevant_path(p, plan)}
-    expected = historical_updates(plan, original)
+    expected = recorded_updates(gh, plan, base_tree, head_tree)
     expected[".release/decisions.toml"] = gh.content(head_tree, ".release/decisions.toml")
-    matching_tree(gh, expected_head, base_tree, expected)
+    matching_tree(gh, expected_head, base_tree, expected, update_modes(plan))
     return ActiveProposal(pr, plan, read_decisions(expected[".release/decisions.toml"]))
 
 
@@ -1072,14 +1342,14 @@ def check_provenance(gh, pr, head):
     run = max(exact, key=lambda row: row["id"])
     require(run["status"] == "completed" and run["conclusion"] == "success", "Exact-head CI has not succeeded")
     jobs = gh.pages(f"actions/runs/{run['id']}/attempts/{run['run_attempt']}/jobs", "jobs")
-    for name in ("test-static", "release-plan"):
+    for name in ("pr-title", "test-static", "release-plan"):
         matches = [job for job in jobs if job["name"] == name]
         require(len(matches) == 1 and matches[0]["head_sha"] == head
                 and matches[0]["status"] == "completed" and matches[0]["conclusion"] == "success",
                 f"Missing successful exact-head {name} job")
     checks = gh.pages(f"commits/{head}/check-runs?filter=latest", "check_runs")
     for job in jobs:
-        if job["name"] not in {"test-static", "release-plan"}:
+        if job["name"] not in {"pr-title", "test-static", "release-plan"}:
             continue
         matches = [check for check in checks if check["name"] == job["name"] and check["head_sha"] == head
                    and check["app"]["id"] == ACTIONS_APP_ID
@@ -1134,8 +1404,8 @@ def reviewed_release(gh, proposal_pr, merged_sha, supplied_plan):
     if not plan["releases"] and decision_receipt(gh, reviewed):
         return reviewed
     input_tree = gh.tree(plan["input_sha"])
-    originals = {p: gh.content(input_tree, p) for p in input_tree if relevant_path(p, plan)}
-    matching_tree(gh, merged_sha, input_tree, historical_updates(plan, originals))
+    expected = recorded_updates(gh, plan, input_tree, gh.tree(merged_sha))
+    matching_tree(gh, merged_sha, input_tree, expected, update_modes(plan))
     check_provenance(gh, gh.get(f"pulls/{proposal_pr}"), reviewed.head_sha)
     return reviewed
 
@@ -1291,10 +1561,23 @@ def proposal_body(plan, old=None):
     return "\n".join(lines)
 
 
-def matching_tree(gh, sha, original_tree, files):
+def recorded_updates(gh, plan, input_tree, final_tree):
+    originals = {p: gh.content(input_tree, p, executable=plan["schema"] == 2 and owns(p))
+                 for p in input_tree if relevant_path(p, plan) and input_tree[p]["type"] != "tree"}
+    payload = {edit["path"]: gh.content(final_tree, edit["path"], executable=True)
+               for edit in plan.get("generated", []) if edit["op"] == "put"}
+    check_deletion_modes(plan, input_tree)
+    return historical_updates(plan, originals, payload)
+
+
+def matching_tree(gh, sha, original_tree, files, modes=None):
+    modes = modes or {}
     expected = {p: (i["mode"], i["sha"]) for p, i in original_tree.items() if i["type"] != "tree"}
     for path, raw in files.items():
-        expected[path] = ("100644", blob_sha(raw))
+        if raw is None:
+            expected.pop(path, None)
+        else:
+            expected[path] = (modes.get(path, "100644"), blob_sha(raw))
     actual = {p: (i["mode"], i["sha"]) for p, i in gh.tree(sha).items() if i["type"] != "tree"}
     require(expected == actual, "Transaction contains unexpected files, modes or bytes")
 
@@ -1316,8 +1599,9 @@ def supersede(gh, old, replacement):
             "Supersession was not confirmed")
 
 
-def create_proposal(gh, artifact):
+def create_proposal(gh, artifact, verification):
     files = validate_artifact(artifact)
+    validate_verification(artifact, verification)
     request, plan = artifact["request"], artifact["plan"]
     require(request["kind"] == "proposal", "Not a proposal artifact")
     require(gh.main_sha() == request["input_sha"], "Stale preparation input")
@@ -1331,8 +1615,13 @@ def create_proposal(gh, artifact):
         return None
     require(plan["input_sha"] == request["input_sha"] and plan["decisions"] == request["decisions"], "Plan/request mismatch")
     original_tree = gh.tree(request["input_sha"])
-    originals = {p: gh.content(original_tree, p) for p in original_tree if relevant_path(p, plan)}
-    require(files == expected_updates(plan, originals), "Artifact contains unauthorized file changes")
+    originals = {p: gh.content(original_tree, p, executable=plan["schema"] == 2 and owns(p))
+                 for p in original_tree if relevant_path(p, plan) and original_tree[p]["type"] != "tree"}
+    check_deletion_modes(plan, original_tree)
+    require(files == expected_updates(plan, originals, files), "Artifact contains unauthorized file changes")
+    modes = update_modes(plan)
+    require(all(row["mode"] == modes.get(row["path"], "100644") for row in artifact["files"]),
+            "Artifact contains unauthorized file modes")
     if replacement:
         recovered = active_proposal(gh, replacement, replacement["head"]["sha"])
         require(recovered.decisions == decisions_from_data(recovered.plan["decisions"]),
@@ -1343,14 +1632,13 @@ def create_proposal(gh, artifact):
         require([p["sha"] for p in candidate["parents"]] == [recovered.plan["input_sha"]],
                 "Replacement parent mismatch")
         replacement_tree = gh.tree(recovered.plan["input_sha"])
-        replacement_originals = {p: gh.content(replacement_tree, p) for p in replacement_tree
-                                 if relevant_path(p, recovered.plan)}
         matching_tree(gh, replacement["head"]["sha"], replacement_tree,
-                      historical_updates(recovered.plan, replacement_originals))
+                      recorded_updates(gh, recovered.plan, replacement_tree, gh.tree(replacement["head"]["sha"])),
+                      update_modes(recovered.plan))
         supersede(gh, active.pr, replacement)
         active = recovered
     if active and active.plan == plan:
-        matching_tree(gh, active.pr["head"]["sha"], original_tree, files)
+        matching_tree(gh, active.pr["head"]["sha"], original_tree, files, modes)
         print(f"Matching proposal already exists: {active.pr['number']}")
         return active.pr["number"]
     branch = f"release/proposal-{plan['plan_id']}"
@@ -1361,12 +1649,16 @@ def create_proposal(gh, artifact):
         commit_sha = text(matches[0]["commit"]["sha"], SHA)
         candidate = gh.get("git/commits/" + commit_sha)
         require([p["sha"] for p in candidate["parents"]] == [request["input_sha"]], "Existing branch parent mismatch")
-        matching_tree(gh, commit_sha, original_tree, files)
+        matching_tree(gh, commit_sha, original_tree, files, modes)
     else:
         entries = []
         for path, raw in sorted(files.items()):
+            if raw is None:
+                entries.append({"path": path, "mode": modes[path], "type": "blob", "sha": None})
+                continue
             new_blob = gh.post("git/blobs", {"content": base64.b64encode(raw).decode(), "encoding": "base64"})
-            entries.append({"path": path, "mode": "100644", "type": "blob", "sha": text(new_blob["sha"], SHA)})
+            require(new_blob["sha"] == blob_sha(raw), "Created blob identity mismatch")
+            entries.append({"path": path, "mode": modes.get(path, "100644"), "type": "blob", "sha": text(new_blob["sha"], SHA)})
         input_commit = gh.get("git/commits/" + request["input_sha"])
         base_tree = text(input_commit["tree"]["sha"], SHA)
         tree = gh.post("git/trees", {"base_tree": base_tree, "tree": entries})
@@ -1376,6 +1668,7 @@ def create_proposal(gh, artifact):
             "parents": [request["input_sha"]],
         })
         commit_sha = text(commit["sha"], SHA)
+        matching_tree(gh, commit_sha, original_tree, files, modes)
         require(gh.main_sha() == request["input_sha"], "Main moved before proposal creation")
         created_ref = gh.post("git/refs", {"ref": "refs/heads/" + branch, "sha": commit_sha})
         require(created_ref["ref"] == "refs/heads/" + branch and created_ref["object"]["sha"] == commit_sha
@@ -1396,17 +1689,23 @@ def create_proposal(gh, artifact):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("plan", "prepare", "bundle", "check", "check-proposal"):
+    for name in ("plan", "prepare", "bundle", "check", "check-proposal", "check-source-only", "check-pr", "verify-bundle"):
         command = commands.add_parser(name)
         command.add_argument("--root", type=Path, default=Path.cwd())
         if name in {"plan", "prepare", "bundle"}:
             command.add_argument("--request", type=Path, required=name != "plan")
         if name == "bundle":
             command.add_argument("--output", type=Path, required=True)
-        if name == "check-proposal":
+        if name in {"check-proposal", "check-source-only", "check-pr"}:
             command.add_argument("--base-sha", required=True)
+        if name == "verify-bundle":
+            command.add_argument("--request", type=Path, required=True)
+            command.add_argument("--artifact", type=Path, required=True)
+            command.add_argument("--output", type=Path, required=True)
     commands.add_parser("snapshot").add_argument("--output", type=Path, required=True)
-    commands.add_parser("write").add_argument("--artifact", type=Path, required=True)
+    writer = commands.add_parser("write")
+    writer.add_argument("--artifact", type=Path, required=True)
+    writer.add_argument("--verification-artifact-id", required=True)
     args = parser.parse_args(argv)
     try:
         if args.command in {"snapshot", "write"}:
@@ -1434,18 +1733,47 @@ def main(argv=None):
             require(list(args.artifact.parent.iterdir()) == [args.artifact], "Artifact must contain exactly one bundle")
             raw = args.artifact.read_bytes()
             require(len(raw) <= 10_000_000, "Artifact exceeds limit")
-            artifact = load_json(raw)
+            verified = load_json(raw)
+            fields(verified, ("artifact", "verification"))
+            artifact = verified["artifact"]
             require(artifact["request"] == request, "Artifact snapshot is stale or mismatched")
+            verification_provenance(gh, args.verification_artifact_id, request)
             if request["kind"] == "proposal":
-                number = create_proposal(gh, artifact)
+                number = create_proposal(gh, artifact, verified["verification"])
                 print(f"Proposal result {number}.")
             else:
                 validate_artifact(artifact)
+                validate_verification(artifact, verified["verification"])
                 reviewed = reviewed_release(gh, request["proposal_pr"], request["merged_sha"], artifact["plan"])
                 reconcile_drafts(gh, reviewed)
                 print("Reviewed draft reconciliation complete.")
             return 0
         root = args.root.resolve()
+        if args.command == "verify-bundle":
+            request = load_json(args.request.read_bytes())
+            artifact = load_json(args.artifact.read_bytes())
+            verification = verify_bundle(root, request, artifact)
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_bytes(canonical({"artifact": artifact, "verification": verification}) + b"\n")
+            print("Independent clean reconstruction passed.")
+            return 0
+        if args.command == "check-pr":
+            event = load_json(Path(os.environ["GITHUB_EVENT_PATH"]).read_bytes())
+            pr = event["pull_request"]
+            require(pr["head"]["sha"] == git(root, "rev-parse", "HEAD"), "PR head mismatch")
+            if proposal_candidate(pr, event["repository"]["full_name"]):
+                plan = load_json((root / ".release/plan.json").read_bytes())
+                require(owned_proposal(pr, event["repository"]["full_name"]) == plan["plan_id"], "Proposal marker mismatch")
+                check_proposal(root, args.base_sha)
+            else:
+                check_source_only(root, args.base_sha)
+                verify_transaction(root)
+            print("PR artifact ownership and release checks passed.")
+            return 0
+        if args.command == "check-source-only":
+            check_source_only(root, args.base_sha)
+            print("Ordinary PR preserves build-owned paths.")
+            return 0
         if args.command == "check-proposal":
             check_proposal(root, args.base_sha)
             print("Exact proposal checks passed.")
@@ -1466,10 +1794,10 @@ def main(argv=None):
         if isinstance(result, NoChanges):
             print(json.dumps({"state": "NoChanges", "explanations": result.explanations}))
         else:
-            print(json.dumps(result.plan, indent=2))
             if args.command == "prepare":
                 require(request["input_sha"] == result.plan["input_sha"], "Request input mismatch")
                 prepare(root, result.plan)
+            print(json.dumps(result.plan, indent=2))
         return 0
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f"release: {exc}", file=sys.stderr)

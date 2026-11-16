@@ -1,13 +1,18 @@
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from buildkit.build import build
 
 ROOT = Path(__file__).parent.parent
 
-# The Claude harness render is the tree validated by the structure tests.
-CLAUDE_PLUGINS_DIR = ROOT / "dist" / "claude" / "plugins"
+_preview = TemporaryDirectory(prefix="nilpath-tests-")
+RENDERED_ROOT = Path(_preview.name)
+build(ROOT, out_root=RENDERED_ROOT)
+CLAUDE_PLUGINS_DIR = RENDERED_ROOT / "dist" / "claude" / "plugins"
 PLUGIN_DIRS = sorted(p for p in CLAUDE_PLUGINS_DIR.iterdir() if p.is_dir())
 
 SRC_PLUGINS_DIR = ROOT / "src" / "plugins"
-MARKETPLACE_JSON = ROOT / ".claude-plugin" / "marketplace.json"
+MARKETPLACE_JSON = RENDERED_ROOT / ".claude-plugin" / "marketplace.json"
 CHANGELOG_MD = ROOT / "CHANGELOG.md"
 
 

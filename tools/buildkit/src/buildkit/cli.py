@@ -57,7 +57,7 @@ def build(repo_root: Path, target: str) -> None:
 @click.option("--target", type=click.Choice(["all", *ALL_TARGETS]), default="all")
 @click.pass_obj
 def check(repo_root: Path, target: str) -> None:
-    """Fail if committed output drifts from a fresh build (CI gate)."""
+    """Compare the release snapshot with a fresh build."""
     diffs = run_check(repo_root, _parse_targets(target))
     if diffs:
         for diff in diffs:

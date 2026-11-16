@@ -16,19 +16,9 @@ from .manifests import (
     write_marketplace_registries,
 )
 from .render import make_environment, render_file
+from .ownership import OWNED_PATHS, snapshot
 
 ALL_TARGETS = ("claude", "copilot", "codex")
-
-# Repo-relative paths fully managed (regenerated) by the build. The three
-# registry files live at fixed discovery locations outside dist/:
-# Claude Code, Codex, and Copilot CLI respectively.
-OWNED_PATHS = (
-    Path("dist"),
-    Path(".claude-plugin") / "marketplace.json",
-    Path(".agents") / "plugins" / "marketplace.json",
-    Path(".github") / "plugin" / "marketplace.json",
-)
-
 
 @dataclass
 class BuildResult:
@@ -257,19 +247,12 @@ def check(repo_root: Path, targets: tuple[str, ...] = ALL_TARGETS) -> list[str]:
     with tempfile.TemporaryDirectory() as tmp:
         tmp_root = Path(tmp)
         build(repo_root, targets, out_root=tmp_root)
-        for rel in OWNED_PATHS:
-            expected_root, actual_root = tmp_root / rel, repo_root / rel
-            expected = {
-                p.relative_to(tmp_root): p for p in expected_root.rglob("*") if p.is_file()
-            } if expected_root.is_dir() else ({rel: expected_root} if expected_root.exists() else {})
-            actual = {
-                p.relative_to(repo_root): p for p in actual_root.rglob("*") if p.is_file()
-            } if actual_root.is_dir() else ({rel: actual_root} if actual_root.exists() else {})
-            for missing in sorted(set(expected) - set(actual)):
-                diffs.append(f"missing: {missing}")
-            for extra in sorted(set(actual) - set(expected)):
-                diffs.append(f"stale: {extra}")
-            for common in sorted(set(expected) & set(actual)):
-                if expected[common].read_bytes() != actual[common].read_bytes():
-                    diffs.append(f"differs: {common}")
+        expected, actual = snapshot(tmp_root), snapshot(repo_root)
+        for missing in sorted(set(expected) - set(actual)):
+            diffs.append(f"missing: {missing}")
+        for extra in sorted(set(actual) - set(expected)):
+            diffs.append(f"stale: {extra}")
+        for common in sorted(set(expected) & set(actual)):
+            if expected[common] != actual[common]:
+                diffs.append(f"differs: {common}")
     return diffs

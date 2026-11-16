@@ -2,10 +2,11 @@
 
 from copy import deepcopy
 from pathlib import Path
+import shutil
 
 import pytest
 
-from buildkit.build import BuildResult, _build_hooks, _build_skill, build
+from buildkit.build import BuildResult, _build_hooks, _build_skill, build, check
 from buildkit.config import HarnessConfig, PluginConfig, load_config
 from buildkit.fm import (
     FrontmatterError,
@@ -18,6 +19,17 @@ from buildkit.toolmap import parse_entry, resolve_model_tier, split_tool_list, t
 from buildkit.render import make_environment
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def test_release_snapshot_comparison_detects_mode_only_changes(tmp_path):
+    shutil.copytree(REPO_ROOT / "src", tmp_path / "src")
+    build(tmp_path)
+    assert check(tmp_path) == []
+    path = "dist/claude/plugins/git-tools/skills/git-commits/SKILL.md"
+    original = (tmp_path / path).read_bytes()
+    (tmp_path / path).chmod(0o755)
+    assert (tmp_path / path).read_bytes() == original
+    assert check(tmp_path) == [f"differs: {path}"]
 
 
 @pytest.fixture(scope="module")

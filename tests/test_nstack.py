@@ -14,7 +14,7 @@ import frontmatter
 import pytest
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
+from paths import ROOT, RENDERED_ROOT
 HARNESSES = ("claude", "copilot", "codex")
 VERSION = yaml.safe_load((ROOT / "src" / "plugins" / "nstack" / "plugin.yaml").read_text())["version"]
 SKILLS = {
@@ -109,7 +109,7 @@ PLAYBOOKS = {"feature.md", "bug-fix.md", "investigation.md"}
 
 
 def plugin_dir(harness: str) -> Path:
-    return ROOT / "dist" / harness / "plugins" / "nstack"
+    return RENDERED_ROOT / "dist" / harness / "plugins" / "nstack"
 
 
 @pytest.mark.parametrize("harness", HARNESSES)
@@ -216,9 +216,9 @@ def test_agents_have_no_fixed_model_and_reader_is_read_only(harness):
 
 
 def test_registries_route_to_nstack():
-    claude = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text())
-    copilot = json.loads((ROOT / ".github" / "plugin" / "marketplace.json").read_text())
-    codex = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text())
+    claude = json.loads((RENDERED_ROOT / ".claude-plugin" / "marketplace.json").read_text())
+    copilot = json.loads((RENDERED_ROOT / ".github" / "plugin" / "marketplace.json").read_text())
+    codex = json.loads((RENDERED_ROOT / ".agents" / "plugins" / "marketplace.json").read_text())
     by_name = lambda reg: {p["name"]: p for p in reg["plugins"]}  # noqa: E731
     assert by_name(claude)["nstack"]["source"] == "./dist/claude/plugins/nstack"
     assert by_name(claude)["nstack"]["version"] == VERSION
@@ -366,7 +366,7 @@ def test_role_catalog_matches_the_skills(harness, tmp_path):
 
 @pytest.mark.parametrize("harness", HARNESSES)
 def test_component_names_are_unique_across_the_marketplace(harness):
-    plugins = ROOT / "dist" / harness / "plugins"
+    plugins = RENDERED_ROOT / "dist" / harness / "plugins"
     skills = [p.parent.name for p in plugins.glob("*/skills/*/SKILL.md")]
     assert len(skills) == len(set(skills)), sorted(s for s in skills if skills.count(s) > 1)
     agents = [p.name.split(".")[0] for p in plugins.glob("*/**/agents/**/*") if p.is_file() and p.suffix in {".md", ".toml"}]

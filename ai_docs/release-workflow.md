@@ -42,9 +42,8 @@ directly. A separate global or CI-only git-cliff installation is not needed.
 Use `make install VENV=/path/to/new/environment` for an isolated installation.
 
 1. Edit shipping sources under `src/`.
-2. Run `make build check`.
-3. Run `make test-static`.
-4. Include source and generated output in the ordinary PR.
+2. Run `make test-static`.
+3. Include sources only in the ordinary PR.
 
 Never edit `dist/` or the three root registries directly.
 `src/plugins/<plugin>/plugin.yaml` owns each plugin's current version.
@@ -53,7 +52,11 @@ Buildkit generates all client manifests and registries.
 Keep current-version README fields, but do not change historical nstack or
 pstack references.
 
-CI checks committed output before any rebuild.
+CI rejects ordinary changes to build-owned paths before rendering a preview.
+This includes additions, deletions, renames, byte changes, and executable modes.
+Tests inspect a fresh temporary render, not committed installation files.
+`make check` validates sources. The low-level `nilpath-build check` still compares
+the committed snapshot with a fresh build for release verification.
 It uses Python 3.11 and the existing Make targets with a command-line `VENV`
 override. The workflows pin uv 0.12.23 and git-cliff 2.13.1.
 The root `uv.lock` does not lock buildkit's installation. These installs are not
@@ -98,8 +101,8 @@ component's accepted baseline.
 
 1. Open the bot's draft preparation PR.
 2. If the proposal needs decisions, follow the next section before reviewing versions.
-3. Inspect source versions, exact README fields, changelog sections, generated
-   manifests, reviewed decisions, and `.release/plan.json`.
+3. Inspect source versions, exact README fields, changelog sections, all generated
+   changes, reviewed decisions, and `.release/plan.json`.
 4. Click **Approve workflows to run**.
 5. Wait for successful `pr-title`, `test-static`, and `release-plan` checks on the exact
    proposal head.
@@ -184,6 +187,13 @@ Marketplace metadata changes require their own explicit decision.
 The adapter owns increment arithmetic. Git-cliff parses and renders the selected
 commits, including unconventional messages. A skipped commit requires an explicit
 component-bound decision and reason.
+Preparation performs one full regeneration. Every component whose generated
+content changes must have a release version, including shared changes and
+marketplace-owned registry fields. A changed component with `none` or an
+unresolved decision blocks the full release rather than publishing unversioned
+content. Decision-only transactions do not regenerate installation files.
+Older shared commits retain their committed-output evidence. Source-only shared
+commits use pending rendered impact and conservative component/SHA decisions.
 The note date comes from the immutable input commit, so regeneration is repeatable.
 Deleting or renaming a component's source identity fails rather than inventing a
 current version. Keep source metadata for a removal release, or review a separate
@@ -265,7 +275,6 @@ PYTHONPATH=tools/buildkit/src ~/.virtualenvs/nilpath-marketplace/bin/python tool
 # On a proposal branch, check the exact proposal against current main.
 PYTHONPATH=tools/buildkit/src ~/.virtualenvs/nilpath-marketplace/bin/python tools/release.py check-proposal \
   --base-sha "$(git rev-parse origin/main)"
-make build check
 make test-static
 ```
 
@@ -273,20 +282,29 @@ Run `plan` on main history. It cannot infer GitHub merge state from a local
 proposal commit. On a proposal branch, inspect `.release/plan.json` and use
 `check-proposal` instead. Fetch current main before that check.
 `check` validates historical provenance, including deletion of either versioned
-or decision-only plans. CI selects `check-proposal` explicitly for release PRs.
+or decision-only plans. CI uses `check-pr` with the PR event to select ordinary
+ownership checks or exact proposal validation. A copied branch name or marker
+does not grant a generated-file exception.
 It rejects extra commits, rebases, stale inputs, unexpected trees, and unsafe
 file modes. A deliberately bypassed invalid merge still fails draft validation
 and requires a separately reviewed repair. There is no history-reset bypass.
 
-`tools/release.py` provides the local `plan`, `prepare`, `bundle`, `check`, and
-`check-proposal` commands and the GitHub `snapshot` and `write` commands.
+Local `tools/release.py` commands are `plan`, `prepare`, `bundle`, `check`,
+`check-source-only`, `check-pr`, `check-proposal`, and `verify-bundle`.
+The GitHub commands are `snapshot` and `write`.
 The read-only planner discovers components through buildkit configuration.
 The separate inspect and write jobs invoke `snapshot` and `write` from the
-dispatcher revision with `python -S`, without buildkit or YAML dependencies.
-Local planning and GitHub writes share the strict plan and deterministic
-file-update contract. The write job downloads one data bundle. It never executes
-candidate code, installs candidate dependencies, extracts a candidate archive,
-or applies arbitrary files.
+dispatcher revision with `python -S`, without renderer or YAML dependencies.
+A separate read-only verifier installs dispatcher-owned dependencies and
+reconstructs the complete transaction from a clean immutable input checkout.
+Input and dispatcher renderer identities must match. A mismatch requires a fresh
+dispatch. The verifier compares decisions, plan, payloads, and modes before
+uploading a separate verified artifact.
+The writer receives that artifact ID from the verifier job dependency, not from
+the candidate bundle. It checks repository, input, dispatcher and renderer
+identities, workflow run and attempt, decisions, and plan ID before writing.
+It never renders templates, executes candidate code, installs candidate
+dependencies, or applies arbitrary files.
 Checkout credentials are not persisted. No workflow uses `pull_request_target`.
 
 ### Historical compatibility contract
@@ -307,13 +325,14 @@ Passing jobs from modified PR-owned verifiers do not substitute for this check.
 Human approval and Actions workflow, run, attempt, job, check-app, suite, URL, and
 exact-head association checks still apply.
 
-The schema-1 contract helpers are compatibility code, not the current generation
-policy. Do not change their byte behavior when changing the generator.
-Fresh artifacts still require current tools and policy, and generation that
-violates the fixed schema-1 contract fails explicitly. Unknown schemas and
-unsupported historical policies fail too. A byte-contract or schema change needs
-a separately reviewed compatibility repair before automation can handle those
-new bytes. The writer never silently regenerates an old proposal in place.
+The schema-1 helpers remain frozen compatibility code.
+Fresh schema-2 plans bind canonical generated put and delete operations into the
+plan ID. Each operation records the path, Git mode, and content digest.
+Deletions record the expected input identity. Bundles carry put bytes.
+Historical schema-2 validation uses recorded operations and Git blobs, not
+historical executable code or today's renderer. Every unaffected path, mode,
+and blob remains identical to the input. Unknown schemas and unsupported
+historical policies fail. The writer never regenerates an old proposal in place.
 
 The initial `.release/baselines.toml` anchors are the last commits that established
 each current source version. Review them as historical provenance, not another

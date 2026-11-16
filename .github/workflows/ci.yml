@@ -40,7 +40,12 @@ jobs:
           version: "0.12.23"
           python-version: "3.11"
       - run: make install VENV="$RUNNER_TEMP/nilpath-ci"
-      - name: Check committed output before any rebuild
+      - name: Check artifact ownership before any preview render
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: '"$RUNNER_TEMP/nilpath-ci/bin/python" tools/release.py check-pr --base-sha "$BASE_SHA"'
+      - name: Test a fresh temporary render
         run: make test-static VENV="$RUNNER_TEMP/nilpath-ci"
 
   release-plan:
@@ -61,11 +66,11 @@ jobs:
       - run: make install VENV="$RUNNER_TEMP/nilpath-ci"
       - name: Check release history and exact proposal boundary
         env:
-          PROPOSAL_BRANCH: ${{ startsWith(github.head_ref, 'release/proposal-') }}
-          PROPOSAL_MARKER: ${{ contains(github.event.pull_request.body, '<!-- nilpath-release-proposal:') }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          if [ "$PROPOSAL_BRANCH" = true ] || [ "$PROPOSAL_MARKER" = true ]; then
-            "$RUNNER_TEMP/nilpath-ci/bin/python" tools/release.py check-proposal --base-sha "$(git rev-parse origin/main)"
+          if [ "$EVENT_NAME" = pull_request ]; then
+            "$RUNNER_TEMP/nilpath-ci/bin/python" tools/release.py check-pr --base-sha "$BASE_SHA"
           else
             "$RUNNER_TEMP/nilpath-ci/bin/python" tools/release.py check
           fi

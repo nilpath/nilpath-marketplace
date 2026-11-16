@@ -16,7 +16,6 @@ build:
 	$(BUILDKIT) build
 
 check:
-	$(BUILDKIT) check
 	$(BUILDKIT) validate
 
 test: test-static test-behavioral

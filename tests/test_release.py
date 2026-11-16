@@ -42,26 +42,41 @@ def repo(tmp_path):
     command(tmp_path, "git", "init", "-q", "-b", "main")
     shutil.copytree(ROOT / "src/harnesses", tmp_path / "src/harnesses")
     shutil.copy(ROOT / "src/marketplace.yaml", tmp_path / "src/marketplace.yaml")
+    marketplace = tmp_path / "src/marketplace.yaml"
+    marketplace.write_bytes(r.replace_version(marketplace.read_bytes(), r.version_field(marketplace.read_bytes()), "0.1.0")
+                            + b"  description: Test fixture.\n")
     shutil.copy(ROOT / "cliff.toml", tmp_path / "cliff.toml")
+    for path in ("pyproject.toml", "uv.lock"):
+        shutil.copy(ROOT / path, tmp_path / path)
     (tmp_path / "tools").mkdir()
     shutil.copy(ROOT / "tools/release.py", tmp_path / "tools/release.py")
+    shutil.copytree(ROOT / "tools/buildkit/src/buildkit", tmp_path / "tools/buildkit/src/buildkit",
+                    ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copy(ROOT / "tools/buildkit/pyproject.toml", tmp_path / "tools/buildkit/pyproject.toml")
     shutil.copy(ROOT / "tools/pr_conventions.sh", tmp_path / "tools/pr_conventions.sh")
     shutil.copytree(ROOT / ".github/workflows", tmp_path / ".github/workflows")
     for name, version in (("alpha", "1.2.3"), ("beta", "0.4.8")):
         write(tmp_path, f"src/plugins/{name}/plugin.yaml", f"name: {name}\nversion: {version}\n")
         write(tmp_path, f"src/plugins/{name}/README.md", f"# {name}\n\nVersion: **{version}**\n\nHistorical 0.0.6 and pstack 0.15.30.\n")
-        write(tmp_path, f"src/plugins/{name}/skills/one/SKILL.md.j2", "original\n")
+        write(tmp_path, f"src/plugins/{name}/skills/one/SKILL.md.j2",
+              "---\nname: one\ndescription: A fixture skill.\ntargets: [claude, copilot, codex]\n---\n\nOriginal guidance.\n")
     write(tmp_path, "README.md", "| **alpha** | 1.2.3 | a |\n| **beta** | 0.4.8 | b |\nHistorical nstack 0.0.6.\n")
     (tmp_path / "CHANGELOG.md").write_bytes(r.PREFIX + b"# Old\n\n## [Unreleased]\nunchanged\n")
     write(tmp_path, ".release/decisions.toml", "# Empty\n")
     initial = commit(tmp_path, "feat: initialize")
     write(tmp_path, ".release/baselines.toml", f'[baseline]\nalpha = "{initial}"\nbeta = "{initial}"\nnilpath-marketplace = "{initial}"\n')
+    from buildkit.build import build
+    build(tmp_path)
     commit(tmp_path, "ci: adopt release automation")
     return tmp_path
 
 
 def change(root, message, name="alpha", path="skills/one/SKILL.md.j2"):
-    write(root, f"src/plugins/{name}/{path}", message + "\n")
+    body = message + "\n"
+    if path.endswith("SKILL.md.j2"):
+        skill_name = Path(path).parent.name
+        body = f"---\nname: {skill_name}\ndescription: A fixture skill.\ntargets: [claude, copilot, codex]\n---\n\n" + body
+    write(root, f"src/plugins/{name}/{path}", body)
     return commit(root, message)
 
 
@@ -70,6 +85,30 @@ def request(input_sha, **changes):
         "schema": 1, "kind": "proposal", "repository": "nilpath/test", **IDENTITY,
         "input_sha": input_sha, "proposal_pr": None, "expected_head": None,
         "merged_sha": None, "decisions": [], **changes,
+    }
+
+
+def create_proposal(gh, artifact):
+    verification = r.verify_bundle(gh.root, artifact["request"], artifact)
+    return r.create_proposal(gh, artifact, verification)
+
+
+def schema1_plan(root):
+    plan = r.propose(root).plan
+    plan["schema"] = 1
+    plan["tool_versions"]["policy"] = "1"
+    del plan["generated"]
+    return r.finish_plan(plan)
+
+
+def verified_document(root, artifact):
+    return {"artifact": artifact, "verification": r.verify_bundle(root, artifact["request"], artifact)}
+
+
+def verification_metadata():
+    return {
+        "id": 12, "expired": False, "name": "release-verified-42-1",
+        "workflow_run": {"id": 42, "head_sha": IDENTITY["dispatcher_sha"]},
     }
 
 
@@ -169,7 +208,10 @@ class FakeGitHub(r.GitHub):
             assert body["base_tree"] not in self.commits, "base_tree requires a tree object, not a commit"
             tree = copy.deepcopy(self.trees[body["base_tree"]])
             for entry in body["tree"]:
-                tree[entry["path"]] = entry
+                if entry["sha"] is None:
+                    del tree[entry["path"]]
+                else:
+                    tree[entry["path"]] = entry
             sha = hashlib.sha1(r.canonical(tree)).hexdigest()
             self.trees[sha] = tree
             return {"sha": sha, "truncated": False}
@@ -339,9 +381,10 @@ def test_shared_change_requires_shipped_difference_and_decision(repo):
     write(repo, "dist/claude/plugins/alpha/skills/one/SKILL.md", "changed")
     sha = commit(repo, "fix: shared builder output")
     result = r.propose(repo)
-    assert result.plan["requests"] == [{
-        "component": "alpha", "commit": sha, "suggestion": "patch",
-        "reason": "Shared code changes shipped output. Decide severity for this component."}]
+    assert result.plan["requests"] == [
+        {"component": "alpha", "commit": commit_sha, "suggestion": "patch",
+         "reason": "Shared code changes shipped output. Decide severity for this component."}
+        for commit_sha in (unchanged, sha)]
 
 
 def test_new_plugin_confirms_authored_version(repo):
@@ -464,6 +507,7 @@ def test_actual_prepare_cli_buildkit_and_bundle(repo):
     assert json.loads(result.stdout)["releases"][0]["target"] == "1.2.4"
     assert check(repo) == []
     bundle = r.bundle(repo, req)
+    assert json.loads(result.stdout) == bundle["plan"]
     files = r.validate_artifact(bundle)
     for harness, manifest in (("claude", ".claude-plugin/plugin.json"), ("copilot", "plugin.json"),
                               ("codex", ".codex-plugin/plugin.json")):
@@ -490,10 +534,14 @@ def test_actual_prepare_cli_buildkit_and_bundle(repo):
 
 
 @pytest.mark.parametrize("path", ["dist/claude/plugins/alpha/file", *r.REGISTRIES])
-@pytest.mark.parametrize("operation", ["add", "edit", "delete", "mode", "rename"])
+@pytest.mark.parametrize("operation", ["add", "edit", "delete", "mode", "rename", "rename-in"])
 def test_ordinary_pr_rejects_every_generated_git_change(repo, path, operation):
-    if operation != "add":
+    if operation in {"add", "rename-in"}:
+        (repo / path).unlink(missing_ok=True)
+    else:
         write(repo, path, "released\n")
+    if operation == "rename-in":
+        write(repo, path + ".outside", "ordinary file\n")
     base = commit(repo, "chore: released snapshot")
     if operation == "delete":
         (repo / path).unlink()
@@ -501,6 +549,8 @@ def test_ordinary_pr_rejects_every_generated_git_change(repo, path, operation):
         (repo / path).chmod(0o755)
     elif operation == "rename":
         (repo / path).rename(repo / (path + ".renamed"))
+    elif operation == "rename-in":
+        (repo / (path + ".outside")).rename(repo / path)
     else:
         write(repo, path, "unversioned\n")
     commit(repo, "fix: ordinary generated edit")
@@ -523,6 +573,194 @@ def test_source_only_pr_preserves_installation_snapshot(repo):
     )
     assert result.returncode == 0, result.stderr
     assert (repo / "dist/claude/plugins/alpha/file").read_text() == "released\n"
+
+
+@pytest.mark.parametrize("owner", ["human", "fork", "wrong-id", "wrong-login"])
+def test_copied_proposal_identity_cannot_bypass_ownership_or_render_first(repo, monkeypatch, capsys, owner):
+    base = command(repo, "git", "rev-parse", "HEAD")
+    write(repo, "dist/claude/plugins/alpha/file", "unversioned content\n")
+    write(repo, "src/plugins/alpha/skills/one/SKILL.md.j2", "{{ invalid template")
+    head = commit(repo, "fix: copied proposal")
+    pr = {
+        "user": {"login": r.BOT, "id": r.BOT_ID},
+        "head": {"ref": "release/proposal-copied", "sha": head, "repo": {"full_name": "nilpath/test"}},
+        "base": {"ref": "main", "repo": {"full_name": "nilpath/test"}},
+        "body": r.PROPOSAL_MARKER + "f" * 64 + " -->",
+    }
+    if owner in {"human", "wrong-login"}:
+        pr["user"]["login"] = "maintainer"
+    if owner in {"human", "wrong-id"}:
+        pr["user"]["id"] = 1
+    if owner == "fork":
+        pr["head"]["repo"]["full_name"] = "other/fork"
+    event = repo.parent / f"{repo.name}-event.json"
+    event.write_bytes(r.canonical({"repository": {"full_name": "nilpath/test"}, "pull_request": pr}))
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(event))
+    assert r.main(["check-pr", "--root", str(repo), "--base-sha", base]) == 1
+    assert "Ordinary PR changes build-owned paths" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("extra", [False, True])
+def test_bot_proposal_uses_exact_transaction_checks(repo, monkeypatch, capsys, extra):
+    change(repo, "fix(alpha): reviewed guidance")
+    plan = r.propose(repo).plan
+    r.prepare(repo, plan)
+    if extra:
+        write(repo, "unrelated.txt", "not a release update\n")
+    head = commit(repo, "chore(release): proposal")
+    pr = {
+        "user": {"login": r.BOT, "id": r.BOT_ID},
+        "head": {"ref": "release/proposal-" + plan["plan_id"], "sha": head, "repo": {"full_name": "nilpath/test"}},
+        "base": {"ref": "main", "repo": {"full_name": "nilpath/test"}}, "body": r.proposal_body(plan),
+    }
+    event = repo.parent / f"{repo.name}-event.json"
+    event.write_bytes(r.canonical({"repository": {"full_name": "nilpath/test"}, "pull_request": pr}))
+    monkeypatch.setenv("GITHUB_EVENT_PATH", str(event))
+    assert r.main(["check-pr", "--root", str(repo), "--base-sha", plan["input_sha"]]) == int(extra)
+    output = capsys.readouterr()
+    if extra:
+        assert "unexpected paths" in output.err
+    else:
+        assert output.out == "PR artifact ownership and release checks passed.\n"
+
+
+def accept_shipping_baseline(root):
+    from buildkit.build import build
+    build(root)
+    anchor = commit(root, "chore: establish shipping fixture")
+    write(root, ".release/baselines.toml",
+          "[baseline]\n" + "".join(f'{name} = "{anchor}"\n' for name in ("alpha", "beta", "nilpath-marketplace")))
+    return commit(root, "ci: accept shipping fixture")
+
+
+@pytest.mark.parametrize("shared_followup", [False, True])
+def test_mixed_legacy_generated_and_source_only_history_retains_every_shared_sha(repo, shared_followup):
+    from buildkit.build import build
+    market = repo / "src/marketplace.yaml"
+    market.write_text(market.read_text().replace("keywords: []", "keywords: [legacy]"))
+    build(repo)
+    legacy = commit(repo, "fix: legacy shared output without a bump")
+    if shared_followup:
+        market.write_text(market.read_text().replace("[legacy]", "[legacy, current]"))
+        current = commit(repo, "fix: source-only shared output")
+    else:
+        current = change(repo, "fix(alpha): source-only guidance")
+    plan = r.propose(repo).plan
+    assert plan["state"] == "NeedsDecisions"
+    assert [(row["component"], row["commit"]) for row in plan["requests"]] == (
+        [("alpha", legacy), ("alpha", current), ("beta", legacy), ("beta", current)]
+        if shared_followup else [("alpha", legacy), ("beta", legacy)])
+    decisions = tuple(r.Decision(row["component"], row["commit"], "patch", "Reviewed shared output.")
+                      for row in plan["requests"])
+    ready = r.propose(repo, decisions).plan
+    assert {row["component"]: row["commits"] for row in ready["releases"]} == {
+        "alpha": [legacy, current], "beta": [legacy, current] if shared_followup else [legacy],
+    }
+
+
+def test_none_cannot_publish_an_unselected_changed_component(repo):
+    beta = change(repo, "unknown beta guidance", "beta")
+    change(repo, "fix(alpha): release alpha")
+    decision = r.Decision("beta", beta, "none", "Defer beta.")
+    before = r.committed_generated(repo, "HEAD")
+    plan = r.propose(repo, (decision,)).plan
+    assert plan["state"] == "NeedsDecisions"
+    assert plan["releases"] == []
+    assert plan["requests"] == [{
+        "component": "beta", "commit": beta, "suggestion": "patch",
+        "reason": "Full regeneration changes this component without a release version. A bump is required.",
+    }]
+    r.prepare(repo, plan)
+    assert r.generated_snapshot(repo) == before
+    assert r.version_field((repo / "src/plugins/alpha/plugin.yaml").read_bytes()) == "1.2.3"
+
+
+def test_prepare_rejects_missing_component_coverage_before_writing(repo):
+    change(repo, "fix(beta): beta repair", "beta")
+    change(repo, "fix(alpha): alpha repair")
+    plan = r.propose(repo).plan
+    plan["releases"] = [row for row in plan["releases"] if row["component"] == "alpha"]
+    r.finish_plan(plan)
+    before = r.generated_snapshot(repo)
+    with pytest.raises(r.ReleaseError, match="without a version bump: beta"):
+        r.prepare(repo, plan)
+    assert r.generated_snapshot(repo) == before
+    assert not (repo / ".release/plan.json").exists()
+    assert r.version_field((repo / "src/plugins/alpha/plugin.yaml").read_bytes()) == "1.2.3"
+
+
+@pytest.mark.parametrize("before_targets,after_targets", [
+    ("claude, copilot, codex", "claude"),
+    ("claude", "claude, copilot, codex"),
+])
+def test_generated_transactions_add_delete_and_preserve_modes_and_unaffected_tree(repo, before_targets, after_targets):
+    from buildkit.build import check
+    source = repo / "src/plugins/alpha/skills/one/SKILL.md.j2"
+    source.write_text(source.read_text().replace("claude, copilot, codex", before_targets))
+    write(repo, "src/plugins/alpha/skills/one/obsolete.txt", "old support\n")
+    write(repo, "src/plugins/alpha/skills/one/run.sh", "#!/bin/sh\nexit 0\n")
+    write(repo, "unrelated.sh", "#!/bin/sh\nexit 0\n")
+    (repo / "unrelated.sh").chmod(0o755)
+    base = accept_shipping_baseline(repo)
+    source.write_text(source.read_text().replace(before_targets, after_targets))
+    (source.parent / "obsolete.txt").unlink()
+    (source.parent / "run.sh").chmod(0o755)
+    write(repo, "src/plugins/alpha/skills/one/added.txt", "new support\n")
+    sha = commit(repo, "fix(alpha): change supported targets and files")
+    decision = r.Decision("alpha", sha, "patch", "Reviewed file removal and target change.")
+    gh = FakeGitHub(repo)
+    original_tree = copy.deepcopy(gh.tree(sha))
+    r.prepare(repo, r.propose(repo).plan)
+    create_proposal(gh, r.bundle(repo, request(sha)))
+    edit_proposal_decisions(gh, (decision,))
+    plan = r.propose(repo, (decision,)).plan
+    r.prepare(repo, plan)
+    sealed = copy.deepcopy(plan)
+    r.prepare(repo, plan)
+    assert plan == sealed
+    assert check(repo) == []
+    operations = {row["path"]: row for row in plan["generated"]}
+    assert operations["dist/claude/plugins/alpha/skills/one/obsolete.txt"] == {
+        "op": "delete", "path": "dist/claude/plugins/alpha/skills/one/obsolete.txt",
+        "mode": "100644", "sha256": r.digest(b"old support\n"),
+    }
+    assert operations["dist/claude/plugins/alpha/skills/one/run.sh"]["mode"] == "100755"
+    assert operations["dist/claude/plugins/alpha/skills/one/added.txt"]["op"] == "put"
+    assert not any("/beta/" in row["path"] for row in plan["generated"])
+    if after_targets == "claude":
+        assert all(row["op"] == "delete" for row in plan["generated"]
+                   if row["path"].startswith("dist/copilot/plugins/alpha/"))
+    else:
+        assert operations["dist/copilot/plugins/alpha/plugin.json"]["op"] == "put"
+    artifact = r.bundle(repo, request(sha, decisions=[decision.__dict__], proposal_pr=1, expected_head="b" * 40))
+    verification = r.verify_bundle(repo, artifact["request"], artifact)
+    assert r.create_proposal(gh, artifact, verification) == 2
+    head = gh.prs[2]["head"]["sha"]
+    tree = gh.tree(head)
+    assert "dist/claude/plugins/alpha/skills/one/obsolete.txt" not in tree
+    assert tree["dist/claude/plugins/alpha/skills/one/run.sh"]["mode"] == "100755"
+    changed = {row["path"] for row in artifact["files"]}
+    assert {p: row for p, row in original_tree.items() if p not in changed} == {
+        p: row for p, row in tree.items() if p not in changed
+    }
+    commit(repo, "chore(release): prepare fixture")
+    r.check_proposal(repo, sha)
+    assert base != sha
+
+
+def test_versioned_component_without_shipped_targets_has_an_empty_generated_delta(repo):
+    write(repo, "src/plugins/gamma/plugin.yaml", "name: gamma\nversion: 1.0.0\n")
+    write(repo, "README.md", (repo / "README.md").read_text() + "| **gamma** | 1.0.0 | empty |\n")
+    anchor = commit(repo, "chore: establish unshipped component")
+    with (repo / ".release/baselines.toml").open("a") as baselines:
+        baselines.write(f'gamma = "{anchor}"\n')
+    commit(repo, "ci: accept gamma baseline")
+    sha = change(repo, "fix(gamma): repository guidance", "gamma", "notes.md")
+    plan = r.propose(repo).plan
+    r.prepare(repo, plan)
+    assert plan["generated"] == []
+    assert [(row["component"], row["target"]) for row in plan["releases"]] == [("gamma", "1.0.1")]
+    assert r.verify_bundle(repo, request(sha), r.bundle(repo, request(sha)))["plan_id"] == plan["plan_id"]
 
 
 def test_wrong_readme_selector_fails(repo):
@@ -572,14 +810,14 @@ def test_historical_plan_survives_tool_upgrade_but_new_contract_does_not(repo, m
     assert isinstance(r.propose(repo), r.NoChanges)
     with pytest.raises(r.ReleaseError, match="Unsupported current tools"):
         r.validate_current_plan(plan)
-    plan["schema"] = 2
+    plan["schema"] = 3
     with pytest.raises(r.ReleaseError, match="Unsupported plan schema"):
         r.validate_plan(plan)
 
 
 def test_schema1_bytes_survive_current_updater_changes_but_new_bytes_require_schema_repair(repo, monkeypatch):
     change(repo, "fix(alpha): repair")
-    plan = r.propose(repo).plan
+    plan = schema1_plan(repo)
     originals = r.tracked_originals(repo, plan, plan["input_sha"])
     expected = r.expected_updates(plan, originals)
     monkeypatch.setattr(r, "changelog_update", lambda raw, plan: b"New incompatible changelog\n")
@@ -587,6 +825,64 @@ def test_schema1_bytes_survive_current_updater_changes_but_new_bytes_require_sch
     with pytest.raises(r.ReleaseError, match="schema-1 byte contract"):
         r.prepare(repo, plan)
     assert not (repo / ".release/plan.json").exists()
+
+
+def test_schema1_recorded_proposal_remains_valid_without_rendering_historical_code(repo, monkeypatch):
+    from buildkit.build import build
+    change(repo, "fix(alpha): historical guidance")
+    build(repo)
+    input_sha = commit(repo, "chore: legacy source and generated commit")
+    plan = schema1_plan(repo)
+    r.prepare(repo, plan)
+    build(repo)
+    head = commit(repo, "chore(release): historical schema one")
+    gh = FakeGitHub(repo)
+    gh.load_commit(input_sha)
+    gh.main = input_sha
+    pr = {
+        "number": 1, "id": 1, "user": {"login": r.BOT, "id": r.BOT_ID},
+        "head": {"ref": "release/proposal-" + plan["plan_id"], "sha": head, "repo": {"full_name": gh.repository}},
+        "base": {"ref": "main", "repo": {"full_name": gh.repository}}, "body": r.proposal_body(plan),
+        "state": "open", "draft": True, "merged": False,
+    }
+    gh.prs[1] = pr
+    monkeypatch.setattr(r, "CLIFF_VERSION", "2.14.0")
+    monkeypatch.setattr(r, "reconstruct", lambda *args: pytest.fail("Historical validation must not execute a renderer"))
+    active = r.active_proposal(gh, pr, head)
+    assert (active.plan["schema"], active.plan["releases"][0]["target"]) == (1, "1.2.4")
+    assert r.previous_transactions(repo)[0] == (head, plan)
+    assert gh.writes == []
+
+
+def test_historical_draft_bundle_and_verification_never_execute_historical_code(repo, tmp_path_factory):
+    from buildkit.build import build
+    change(repo, "fix(alpha): historical repair")
+    build(repo)
+    write(repo, "tools/release.py", 'CLIFF_VERSION = "2.13.1"\nraise RuntimeError("Historical code executed")\n')
+    input_sha = commit(repo, "chore: historical renderer fixture")
+    plan = schema1_plan(repo)
+    r.prepare(repo, plan)
+    build(repo)
+    merged = commit(repo, "chore(release): historical schema one")
+    req = request(merged, kind="drafts", proposal_pr=1, expected_head=merged, merged_sha=merged)
+    io_root = tmp_path_factory.mktemp("historical-bundle")
+    request_path = io_root / "request.json"
+    request_path.write_bytes(r.canonical(req))
+    output = io_root / "bundle/proposal.json"
+    result = subprocess.run(
+        [sys.executable, "-S", str(ROOT / "tools/release.py"), "bundle", "--root", str(repo),
+         "--request", str(request_path), "--output", str(output)], capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    artifact = r.load_json(output.read_bytes())
+    assert artifact["plan"] == plan
+    assert artifact["files"] == []
+    assert r.verify_bundle(repo, req, artifact)["plan_id"] == plan["plan_id"]
+    gh = FakeGitHub(repo)
+    gh.load_commit(input_sha)
+    expected = r.recorded_updates(gh, plan, gh.tree(input_sha), gh.tree(merged))
+    r.matching_tree(gh, merged, gh.tree(input_sha), expected)
+    assert gh.writes == []
 
 
 @pytest.mark.parametrize("bad", ["tool", "policy", "digest"])
@@ -597,7 +893,7 @@ def test_historical_updates_require_original_tool_and_policy_identities(repo, ba
     if bad == "tool":
         plan["tool_versions"]["git-cliff"] = "2.14.0"
     elif bad == "policy":
-        plan["tool_versions"]["policy"] = "2"
+        plan["tool_versions"]["policy"] = "99"
     else:
         plan["policy_digest"] = "f" * 64
     plan["plan_id"] = r.digest(r.canonical({k: v for k, v in plan.items() if k != "plan_id"}))
@@ -685,14 +981,14 @@ def test_make_supplies_declared_git_cliff_without_global_path(tmp_path):
 
 def test_writer_creates_exact_draft_pr_and_retries_without_rewriting(prepared):
     _, gh, artifact = prepared
-    assert r.create_proposal(gh, artifact) == 1
+    assert create_proposal(gh, artifact) == 1
     pr = gh.prs[1]
     assert pr["draft"] is True
     assert pr["head"]["ref"].startswith("release/proposal-")
     source = gh.content(gh.tree(pr["head"]["sha"]), "src/plugins/alpha/plugin.yaml")
     assert source == b"name: alpha\nversion: 1.2.4\n"
     writes = copy.deepcopy(gh.writes)
-    assert r.create_proposal(gh, artifact) == 1
+    assert create_proposal(gh, artifact) == 1
     assert gh.writes == writes
 
 
@@ -707,7 +1003,7 @@ def test_malicious_artifact_never_reaches_mutation(prepared, path, mode):
     artifact["files"].append({"path": path, "mode": mode, "content": "ZXZpbA==", "sha256": r.digest(b"evil")})
     artifact["digest"] = r.digest(r.canonical({k: v for k, v in artifact.items() if k != "digest"}))
     with pytest.raises(r.ReleaseError):
-        r.create_proposal(gh, artifact)
+        create_proposal(gh, artifact)
     assert gh.writes == []
 
 
@@ -715,10 +1011,74 @@ def test_corrupt_artifact_and_duplicate_json_fields_fail_closed(prepared):
     _, gh, artifact = prepared
     artifact["files"][0]["content"] = "ZXZpbA=="
     with pytest.raises(r.ReleaseError, match="digest"):
-        r.create_proposal(gh, artifact)
+        create_proposal(gh, artifact)
     with pytest.raises(r.ReleaseError, match="Duplicate"):
         r.load_json(b'{"x":1,"x":2}')
     assert gh.writes == []
+
+
+def test_self_consistent_forged_generated_payload_fails_independent_reconstruction(prepared):
+    root, gh, artifact = prepared
+    path = "dist/claude/plugins/alpha/skills/one/SKILL.md"
+    forged = b"Unreviewed generated instruction.\n"
+    edit = next(row for row in artifact["plan"]["generated"] if row["path"] == path)
+    edit["sha256"] = r.digest(forged)
+    r.finish_plan(artifact["plan"])
+    for row in artifact["files"]:
+        if row["path"] == path:
+            row.update(content=base64.b64encode(forged).decode(), sha256=r.digest(forged))
+        elif row["path"] == ".release/plan.json":
+            raw = r.canonical(artifact["plan"]) + b"\n"
+            row.update(content=base64.b64encode(raw).decode(), sha256=r.digest(raw))
+    artifact["digest"] = r.digest(r.canonical({k: v for k, v in artifact.items() if k != "digest"}))
+    assert r.validate_artifact(artifact)[path] == forged
+    with pytest.raises(r.ReleaseError, match="differs from clean reconstruction"):
+        r.verify_bundle(root, artifact["request"], artifact)
+    assert gh.writes == []
+
+
+def test_independent_reconstruction_uses_git_input_not_dirty_candidate_sources(prepared):
+    root, _, artifact = prepared
+    source = root / "src/plugins/alpha/skills/one/SKILL.md.j2"
+    source.write_text("invalid candidate worktree template")
+    receipt = r.verify_bundle(root, artifact["request"], artifact)
+    assert receipt["plan_id"] == artifact["plan"]["plan_id"]
+    assert source.read_text() == "invalid candidate worktree template"
+
+
+def test_actual_read_only_verifier_cli_emits_the_complete_verified_bundle(prepared, tmp_path):
+    root, _, artifact = prepared
+    inputs = tmp_path / "input.json"
+    inputs.write_bytes(r.canonical(artifact["request"]))
+    candidate = tmp_path / "candidate.json"
+    candidate.write_bytes(r.canonical(artifact))
+    output = tmp_path / "verified/document.json"
+    before = command(root, "git", "diff", "--binary", "HEAD")
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "tools/release.py"), "verify-bundle", "--root", str(root),
+         "--request", str(inputs), "--artifact", str(candidate), "--output", str(output)],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "Independent clean reconstruction passed.\n"
+    verified = r.load_json(output.read_bytes())
+    assert verified["artifact"] == artifact
+    assert verified["verification"]["artifact_digest"] == artifact["digest"]
+    assert verified["verification"]["request"] == artifact["request"]
+    assert verified["verification"]["renderer_identity"] == r.renderer_identity()
+    assert command(root, "git", "diff", "--binary", "HEAD") == before
+
+
+@pytest.mark.parametrize("path", ["tools/release.py", "tools/buildkit/src/buildkit/build.py", "pyproject.toml"])
+def test_changed_input_renderer_requires_a_fresh_dispatch(repo, path):
+    target = repo / path
+    target.write_text(target.read_text() + "\n# Different dispatcher identity.\n")
+    change(repo, "fix(alpha): repair")
+    plan = r.propose(repo).plan
+    r.prepare(repo, plan)
+    artifact = r.bundle(repo, request(plan["input_sha"]))
+    with pytest.raises(r.ReleaseError, match="renderer identities differ"):
+        r.verify_bundle(repo, artifact["request"], artifact)
 
 
 def test_stale_input_and_symlink_source_fail_closed(prepared):
@@ -726,11 +1086,11 @@ def test_stale_input_and_symlink_source_fail_closed(prepared):
     old = gh.main
     gh.main = "a" * 40
     with pytest.raises(r.ReleaseError, match="Stale"):
-        r.create_proposal(gh, artifact)
+        create_proposal(gh, artifact)
     gh.main = old
     gh.trees[old]["src/plugins/alpha/plugin.yaml"]["mode"] = "120000"
     with pytest.raises(r.ReleaseError, match="Unsafe mode"):
-        r.create_proposal(gh, artifact)
+        create_proposal(gh, artifact)
     assert gh.writes == []
 
 
@@ -739,16 +1099,16 @@ def test_pr_creation_retry_reuses_transaction_branch(prepared, run_id, attempt):
     root, gh, artifact = prepared
     gh.fail = "pulls"
     with pytest.raises(r.ReleaseError, match="Injected"):
-        r.create_proposal(gh, artifact)
+        create_proposal(gh, artifact)
     retry = r.bundle(root, {**artifact["request"], "run_id": run_id, "run_attempt": attempt})
-    assert r.create_proposal(gh, retry) == 1
+    assert create_proposal(gh, retry) == 1
     assert list(gh.refs) == ["refs/heads/release/proposal-" + artifact["plan"]["plan_id"]]
     assert len([w for w in gh.writes if w[0] == "git/refs"]) == 1
 
 
 def reviewed_fixture(prepared, number=1):
     _, gh, artifact = prepared
-    assert r.create_proposal(gh, artifact) == number
+    assert create_proposal(gh, artifact) == number
     pr = gh.prs[number]
     head = pr["head"]["sha"]
     merged = "e" * 40
@@ -770,12 +1130,12 @@ def reviewed_fixture(prepared, number=1):
     gh.routes[f"commits/{head}/pulls?per_page=100&page=1"] = [copy.deepcopy(pr)]
     jobs = [{"id": 100 + i, "name": name, "head_sha": head, "status": "completed",
              "conclusion": "success", "html_url": f"https://github.com/nilpath/test/actions/runs/70/job/{100+i}"}
-            for i, name in enumerate(("test-static", "release-plan"))]
-    gh.routes["actions/runs/70/attempts/2/jobs?per_page=100&page=1"] = {"total_count": 2, "jobs": jobs}
+            for i, name in enumerate(("pr-title", "test-static", "release-plan"))]
+    gh.routes["actions/runs/70/attempts/2/jobs?per_page=100&page=1"] = {"total_count": 3, "jobs": jobs}
     checks = [{"id": 200 + i, "name": job["name"], "head_sha": head, "app": {"id": r.ACTIONS_APP_ID},
                "details_url": job["html_url"], "check_suite": {"id": 90}, "conclusion": "success"}
               for i, job in enumerate(jobs)]
-    gh.routes[f"commits/{head}/check-runs?filter=latest&per_page=100&page=1"] = {"total_count": 2, "check_runs": checks}
+    gh.routes[f"commits/{head}/check-runs?filter=latest&per_page=100&page=1"] = {"total_count": 3, "check_runs": checks}
     return gh, artifact["plan"], merged, head
 
 
@@ -873,7 +1233,7 @@ def test_resolution_reads_only_expected_head_and_keeps_old_pr_until_replacement(
     blocked = r.propose(repo).plan
     r.prepare(repo, blocked)
     artifact = r.bundle(repo, request(blocked["input_sha"]))
-    r.create_proposal(gh, artifact)
+    create_proposal(gh, artifact)
     old_head = gh.prs[1]["head"]["sha"]
     decision = r.Decision("alpha", sha, "none", "Reviewed exclusion.")
     edited_head = "b" * 40
@@ -891,10 +1251,10 @@ def test_resolution_reads_only_expected_head_and_keeps_old_pr_until_replacement(
     if failure:
         gh.fail = failure
         with pytest.raises(r.ReleaseError, match="Injected"):
-            r.create_proposal(gh, resolved)
+            create_proposal(gh, resolved)
         assert gh.prs[1]["state"] == "open"
         assert gh.prs[2]["draft"] is True
-    assert r.create_proposal(gh, resolved) == 2
+    assert create_proposal(gh, resolved) == 2
     assert gh.prs[1]["state"] == "closed"
     assert gh.prs[2]["draft"] is True
     assert gh.tags == {}
@@ -1062,7 +1422,7 @@ def test_remote_history_cannot_be_hidden_by_deleting_active_plan(repo, decision_
     if decisions:
         blocked = r.propose(repo).plan
         r.prepare(repo, blocked)
-        r.create_proposal(gh, r.bundle(repo, request(gh.main)))
+        create_proposal(gh, r.bundle(repo, request(gh.main)))
         edit_proposal_decisions(gh, decisions)
     plan = r.propose(repo, decisions).plan
     r.prepare(repo, plan)
@@ -1113,7 +1473,7 @@ def advance_main(root, gh):
 @pytest.mark.parametrize("new_main", [False, True])
 def test_automatic_supersession_recovers_two_active_prs_after_new_attempt(prepared, failure, new_main):
     root, gh, artifact = prepared
-    r.create_proposal(gh, artifact)
+    create_proposal(gh, artifact)
     gh.prs[1]["draft"] = False
     advance_main(root, gh)
     req = snapshot_prepare(gh)
@@ -1121,7 +1481,7 @@ def test_automatic_supersession_recovers_two_active_prs_after_new_attempt(prepar
     refreshed = r.bundle(root, req)
     gh.fail = failure
     with pytest.raises(r.ReleaseError, match="Injected"):
-        r.create_proposal(gh, refreshed)
+        create_proposal(gh, refreshed)
     assert [(p["number"], p["state"]) for p in gh.prs.values()] == [(1, "open"), (2, "open")]
     if new_main:
         advance_main(root, gh)
@@ -1129,18 +1489,18 @@ def test_automatic_supersession_recovers_two_active_prs_after_new_attempt(prepar
     retry["run_attempt"] = "2"
     if new_main:
         r.prepare(root, r.propose(root, r.decisions_from_data(retry["decisions"])).plan)
-    assert r.create_proposal(gh, r.bundle(root, retry)) == (3 if new_main else 2)
+    assert create_proposal(gh, r.bundle(root, retry)) == (3 if new_main else 2)
     assert [(p["number"], p["state"]) for p in gh.prs.values()] == (
         [(1, "closed"), (2, "closed"), (3, "open")] if new_main else [(1, "closed"), (2, "open")])
     assert len([w for w in gh.writes if w[0] == "pulls"]) == (3 if new_main else 2)
 
 
 def test_exact_decisions_survive_main_advance_and_unmerged_regeneration(repo):
-    sha = change(repo, "unknown wording")
+    sha = change(repo, "unknown wording", path="notes.md")
     gh = FakeGitHub(repo)
     blocked = r.propose(repo).plan
     r.prepare(repo, blocked)
-    r.create_proposal(gh, r.bundle(repo, request(gh.main)))
+    create_proposal(gh, r.bundle(repo, request(gh.main)))
     decision = r.Decision("alpha", sha, "none", "Reviewed exclusion.")
     edit_proposal_decisions(gh, (decision,))
     advance_main(repo, gh)
@@ -1153,7 +1513,7 @@ def test_exact_decisions_survive_main_advance_and_unmerged_regeneration(repo):
     assert plan["state"] == "ReadyPlan"
     assert plan["releases"][0]["component"] == "beta"
     r.prepare(repo, plan)
-    assert r.create_proposal(gh, r.bundle(repo, req)) == 2
+    assert create_proposal(gh, r.bundle(repo, req)) == 2
     advance_main(repo, gh)
     req = snapshot_prepare(gh)
     assert req["proposal_pr"] == 2 and req["decisions"] == [decision.__dict__]
@@ -1168,7 +1528,7 @@ def test_carried_decisions_reject_stale_or_conflicting_proposal_state(repo, bad)
     gh = FakeGitHub(repo)
     blocked = r.propose(repo).plan
     r.prepare(repo, blocked)
-    r.create_proposal(gh, r.bundle(repo, request(gh.main)))
+    create_proposal(gh, r.bundle(repo, request(gh.main)))
     decision = r.Decision("alpha", sha, "none", "Reviewed exclusion.")
     edit_proposal_decisions(gh, (decision,))
     advance_main(repo, gh)
@@ -1205,13 +1565,13 @@ def test_bypassed_unexpected_merged_tree_still_cannot_create_drafts(prepared):
 
 def test_supersession_recovery_refuses_original_head_change(prepared):
     root, gh, artifact = prepared
-    r.create_proposal(gh, artifact)
+    create_proposal(gh, artifact)
     advance_main(root, gh)
     req = snapshot_prepare(gh)
     r.prepare(root, r.propose(root, r.decisions_from_data(req["decisions"])).plan)
     gh.fail = "pulls/1"
     with pytest.raises(r.ReleaseError, match="Injected"):
-        r.create_proposal(gh, r.bundle(root, req))
+        create_proposal(gh, r.bundle(root, req))
     gh.prs[1]["head"]["sha"] = "a" * 40
     writes = copy.deepcopy(gh.writes)
     with pytest.raises(r.ReleaseError, match="changed original head"):
@@ -1241,15 +1601,53 @@ def test_writer_cli_snapshots_and_writes_only_same_attempt_bundle(
     assert r.load_json(output.read_bytes()) == artifact["request"]
     path = tmp_path / "bundle/proposal.json"
     path.parent.mkdir()
-    path.write_bytes(r.canonical(artifact))
-    assert r.main(["write", "--artifact", str(path)]) == 0
+    path.write_bytes(r.canonical(verified_document(root, artifact)))
+    gh.routes["actions/artifacts/12"] = verification_metadata()
+    assert r.main(["write", "--artifact", str(path), "--verification-artifact-id", "12"]) == 0
     assert gh.prs[1]["draft"] is True
     assert "Proposal result 1." in capsys.readouterr().out
     writes = copy.deepcopy(gh.writes)
     monkeypatch.setenv(identity_field, identity_value)
-    assert r.main(["write", "--artifact", str(path)]) == 1
+    assert r.main(["write", "--artifact", str(path), "--verification-artifact-id", "12"]) == 1
     assert "Artifact snapshot is stale or mismatched" in capsys.readouterr().err
     assert gh.writes == writes
+
+
+@pytest.mark.parametrize("bad", ["candidate", "run", "attempt", "dispatcher", "expired", "id", "receipt", "raw"])
+def test_writer_rejects_switched_verifier_artifacts_before_any_write(prepared, tmp_path, monkeypatch, capsys, bad):
+    root, gh, artifact = prepared
+    for key, value in {
+        "GITHUB_REPOSITORY": gh.repository, "GH_TOKEN": "fake", "GITHUB_SHA": gh.main,
+        "GITHUB_RUN_ID": "42", "GITHUB_RUN_ATTEMPT": "1", "DISPATCHER_SHA": "d" * 40,
+        "RELEASE_MODE": "prepare", "PROPOSAL_PR": "", "EXPECTED_HEAD": "", "MERGED_SHA": "",
+    }.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setattr(r, "GitHub", lambda repository, token: gh)
+    verified = verified_document(root, artifact)
+    metadata = verification_metadata()
+    if bad == "candidate":
+        metadata["name"] = "release-bundle-42-1"
+    elif bad == "run":
+        metadata["workflow_run"]["id"] = 43
+    elif bad == "attempt":
+        metadata["name"] = "release-verified-42-2"
+    elif bad == "dispatcher":
+        metadata["workflow_run"]["head_sha"] = "f" * 40
+    elif bad == "expired":
+        metadata["expired"] = True
+    elif bad == "id":
+        metadata["id"] = 13
+    elif bad == "receipt":
+        verified["verification"]["renderer_identity"] = "f" * 64
+    else:
+        verified = artifact
+    gh.routes["actions/artifacts/12"] = metadata
+    path = tmp_path / "verified/document.json"
+    path.parent.mkdir()
+    path.write_bytes(r.canonical(verified))
+    assert r.main(["write", "--artifact", str(path), "--verification-artifact-id", "12"]) == 1
+    assert "release:" in capsys.readouterr().err
+    assert gh.writes == []
 
 
 def test_real_gh_command_is_explicit_draft_verify_tag_and_sha(tmp_path, monkeypatch):
@@ -1287,6 +1685,7 @@ def test_actual_snapshot_and_write_cli_route_without_candidate_dependencies(tmp_
         },
         "/repos/nilpath/test/commits?" + urlencode({"sha": input_sha, "path": ".release/plan.json"})
         + "&per_page=100&page=1": [],
+        "/repos/nilpath/test/actions/artifacts/12": verification_metadata(),
     }
     driver = """
 import io, json, runpy, sys, urllib.request
@@ -1318,15 +1717,19 @@ runpy.run_path(sys.argv[0], run_name="__main__")
     artifact["digest"] = r.digest(r.canonical(artifact))
     path = tmp_path / "bundle/proposal.json"
     path.parent.mkdir()
-    path.write_bytes(r.canonical(artifact))
-    result = subprocess.run([*cli, "write", "--artifact", str(path)],
+    verification = {
+        "schema": 1, "request": request(input_sha), "artifact_digest": artifact["digest"],
+        "plan_id": None, "renderer_identity": r.renderer_identity(),
+    }
+    path.write_bytes(r.canonical({"artifact": artifact, "verification": verification}))
+    result = subprocess.run([*cli, "write", "--artifact", str(path), "--verification-artifact-id", "12"],
                             cwd=tmp_path, env=env, text=True, capture_output=True)
     assert result.returncode == 0, result.stderr
     assert result.stdout == "No component release changes.\nProposal result None.\n"
     artifact["request"]["repository"] = "other/repo"
     artifact["digest"] = r.digest(r.canonical({k: v for k, v in artifact.items() if k != "digest"}))
-    path.write_bytes(r.canonical(artifact))
-    result = subprocess.run([*cli, "write", "--artifact", str(path)],
+    path.write_bytes(r.canonical({"artifact": artifact, "verification": verification}))
+    result = subprocess.run([*cli, "write", "--artifact", str(path), "--verification-artifact-id", "12"],
                             cwd=tmp_path, env=env, text=True, capture_output=True)
     assert result.returncode == 1
     assert result.stderr == "release: Artifact snapshot is stale or mismatched\n"
@@ -1340,7 +1743,7 @@ def test_active_historical_proposals_refresh_after_current_tool_or_updater_chang
     sha = change(repo, "unknown wording" if blocked else "fix(alpha): repair")
     gh = FakeGitHub(repo)
     r.prepare(repo, r.propose(repo).plan)
-    r.create_proposal(gh, r.bundle(repo, request(gh.main)))
+    create_proposal(gh, r.bundle(repo, request(gh.main)))
     decision = r.Decision("alpha", sha, "none", "Reviewed exclusion.")
     if edited:
         edit_proposal_decisions(gh, (decision,))
@@ -1390,7 +1793,7 @@ def test_historical_validation_never_trusts_changed_payload_or_pr_owned_verifier
         gh, plan, merge_sha, head = reviewed_fixture(prepared)
     else:
         _, gh, artifact = prepared
-        r.create_proposal(gh, artifact)
+        create_proposal(gh, artifact)
         head = gh.prs[1]["head"]["sha"]
     monkeypatch.setattr(r, "CLIFF_VERSION", "2.14.0")
     monkeypatch.setattr(r, "changelog_update", lambda raw, plan: b"Changed current updater\n")
@@ -1414,7 +1817,7 @@ def test_historical_validation_checks_payload_file_modes(prepared, monkeypatch, 
         gh, plan, merge_sha, head = reviewed_fixture(prepared)
     else:
         _, gh, _ = prepared
-        r.create_proposal(gh, prepared[2])
+        create_proposal(gh, prepared[2])
         head = gh.prs[1]["head"]["sha"]
     monkeypatch.setattr(r, "CLIFF_VERSION", "2.14.0")
     gh.trees[head]["README.md"]["mode"] = "100755"
@@ -1433,7 +1836,7 @@ def decision_merge(repo):
     decision = r.Decision("alpha", sha, "none", "Reviewed exclusion.")
     gh = FakeGitHub(repo)
     r.prepare(repo, r.propose(repo).plan)
-    r.create_proposal(gh, r.bundle(repo, request(gh.main)))
+    create_proposal(gh, r.bundle(repo, request(gh.main)))
     edit_proposal_decisions(gh, (decision,))
     r.prepare(repo, r.propose(repo, (decision,)).plan)
     req = request(gh.main, decisions=[decision.__dict__], proposal_pr=1, expected_head="b" * 40)
@@ -1604,13 +2007,13 @@ def test_discovery_ignores_foreign_open_and_merged_lookalikes(prepared, owner, l
         r.snapshot(gh, mode="prepare", proposal_pr=7, expected_head="f" * 40, merged_sha=None,
                    event_sha=gh.main, identity=IDENTITY)
     assert gh.writes == []
-    assert r.create_proposal(gh, artifact) == 2
+    assert create_proposal(gh, artifact) == 2
 
 
 @pytest.mark.parametrize("bad", ["marker", "branch", "base"])
 def test_genuine_bot_proposal_discovery_still_fails_closed(prepared, bad):
     _, gh, artifact = prepared
-    r.create_proposal(gh, artifact)
+    create_proposal(gh, artifact)
     if bad == "marker":
         gh.prs[1]["body"] = "Missing marker"
     elif bad == "branch":

@@ -1,13 +1,12 @@
 """Selected skills require explicit invocation in each generated harness."""
 
 import json
-from pathlib import Path
 
 import frontmatter
 import pytest
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
+from paths import RENDERED_ROOT
 SELECTED_SKILLS = {
     "authoring-tools": {"creating-skills", "creating-agents"},
     "engineering-workflow": {"planning", "researching"},
@@ -63,7 +62,7 @@ SELECTED_SKILLS = {
 
 @pytest.mark.parametrize("harness", ["claude", "copilot", "codex"])
 def test_invocation_policy_matches_supported_skills(harness):
-    plugins_dir = ROOT / "dist" / harness / "plugins"
+    plugins_dir = RENDERED_ROOT / "dist" / harness / "plugins"
     selected = set()
     for skill_md in sorted(plugins_dir.glob("*/skills/*/SKILL.md")):
         plugin = skill_md.parents[2].name
@@ -99,11 +98,11 @@ def test_invocation_policy_matches_supported_skills(harness):
 
 
 def test_shared_copilot_registry_routes_to_flagged_skills():
-    registry = json.loads((ROOT / ".github/plugin/marketplace.json").read_text())
+    registry = json.loads((RENDERED_ROOT / ".github/plugin/marketplace.json").read_text())
     plugin = next(p for p in registry["plugins"] if p["name"] == "engineering-workflow")
     assert plugin["source"] == "dist/copilot/plugins/engineering-workflow"
     for name in {"researching", "planning"}:
-        skill_md = ROOT / plugin["source"] / "skills" / name / "SKILL.md"
+        skill_md = RENDERED_ROOT / plugin["source"] / "skills" / name / "SKILL.md"
         assert frontmatter.load(str(skill_md)).metadata["disable-model-invocation"] is True
 
 
@@ -117,7 +116,7 @@ def test_shared_copilot_registry_routes_to_flagged_skills():
 )
 def test_researching_handoff_requires_user_invocation(harness, command):
     skill_md = (
-        ROOT / "dist" / harness / "plugins" / "engineering-workflow"
+        RENDERED_ROOT / "dist" / harness / "plugins" / "engineering-workflow"
         / "skills" / "researching" / "SKILL.md"
     )
     post = frontmatter.load(str(skill_md))
