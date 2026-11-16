@@ -1,0 +1,60 @@
+# Orchestration bookkeeping
+
+[Script](../scripts/orch/orch.py). Keep the plain-file store used by
+[Orchestrate](../playbooks/orchestrate.md). Requires Python 3.11+ on Linux or
+macOS. Frontier resolution also uses `git` and the selected `gh` or `origin` CLI.
+
+## Run
+
+Resolve the script from the installed nstack-flow directory without changing
+the project working directory. In Orchestrate, `orch` means:
+
+```bash
+python3 "<nstack-flow skill directory>/scripts/orch/orch.py" --store <artifact-directory> <command>
+```
+
+`--store` or `ORCH_STORE` selects the store. Run `--help`, or a command family's
+`--help`, for its exact arguments. `--json` returns complete JSON rather than
+the compact text view.
+
+| Command family | Use |
+| --- | --- |
+| `init` | Create missing store files without replacing existing contents |
+| `unit` | Add, update, inspect, list and count units |
+| `ledger` | Record or check verification keyed by PR and head SHA |
+| `inbox` | Push completion pointers, count, peek or drain them |
+| `gate` | Park, list and resolve recorded human decisions |
+| `frontier` | Resolve or show the ordered PR base chain |
+| `standing` | Read or append standing orders |
+| `status` | Regenerate `status.md` and report derived changes |
+
+For example, `orch frontier set --repo <repo-directory>` uses GitHub by default.
+Add `--forge origin` only when the program selected Origin. `ORCH_REPO` is the
+fallback for `--repo`. PR states come from the forge and SHAs from local branch
+refs. Missing, ambiguous or non-linear chains fail instead of being guessed.
+
+## Storage and side effects
+
+The script owns `units.tsv`, `ledger.tsv`, `inbox/`, `gates.md`,
+`preferences.md`, `frontier.json` and derived `status.md`. It does not create
+the program's overview or decision trail, launch agents, schedule wakeups,
+publish PRs or merge anything.
+
+Writes take a PID lock lazily. A demonstrably dead PID permits stale-lock
+replacement; a live or unknown holder blocks writes. `--force` steals that
+lock and requires a deliberate ownership decision. Reads remain unlocked.
+Files use same-directory temporary writes and replacement, not cross-file
+transactions. Inbox drain renames and recreates the inbox; pushes and frontier
+generation increments are not idempotent.
+
+## Results and failures
+
+Compact lists show at most four rows; inbox drain is unlimited. `--json` is
+the complete representation. `status` writes its Markdown file even when it
+reports no derived changes.
+
+Exit 0 means success, 1 means a usage, user or operation error, and 2 means
+not found. A missing `ledger check` writes `NOT-VERIFIED`, or its JSON verdict,
+to stdout and exits 2 with no stderr. It is not a successful verification.
+Other errors go to stderr. Inspect state after interrupted writes before
+repeating non-idempotent operations; never infer authority from a stored row.

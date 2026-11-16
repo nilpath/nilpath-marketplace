@@ -2,6 +2,17 @@
 
 Component release notes are generated above the legacy boundary.
 
+## nstack/v0.1.0
+
+### Added
+
+- Add twelve native playbooks (#48) ([fe42ad5](https://github.com/nilpath/nilpath-marketplace/commit/fe42ad5e727d619d9d3e34774ba03c5aee7bd67d))
+
+
+### Fixed
+
+- Separate source PRs from explicit plugin releases (#50) ([09e4ef5](https://github.com/nilpath/nilpath-marketplace/commit/09e4ef5fd69929abcec3b1544ec111ce5fe355fa))
+
 ## Legacy changelog
 
 The unchanged historical notes below, including Unreleased, are not generator input.
