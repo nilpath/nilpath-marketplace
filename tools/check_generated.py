@@ -28,7 +28,7 @@ def git(root, *args):
     result = subprocess.run(["git", "--no-pager", *args], cwd=root, capture_output=True)
     if result.returncode:
         raise ValueError(f"git failed: {result.stderr.decode(errors='replace')}")
-    return result.stdout.decode().strip()
+    return result.stdout.decode().removesuffix("\n")
 
 
 def main(argv=None):

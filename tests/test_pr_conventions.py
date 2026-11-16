@@ -125,7 +125,7 @@ def test_ci_checks_generated_ownership_once_alongside_title_validation():
     ]
 
 
-@pytest.mark.parametrize("change", ["source", "generated", "head-mismatch"])
+@pytest.mark.parametrize("change", ["source", "source-lookalike", "generated", "head-mismatch"])
 def test_ci_generated_check_works_without_release_tool_or_site_packages(tmp_path, change):
     for path in ("tools/check_generated.py", "tools/buildkit/src/buildkit/__init__.py",
                  "tools/buildkit/src/buildkit/ownership.py"):
@@ -137,7 +137,10 @@ def test_ci_generated_check_works_without_release_tool_or_site_packages(tmp_path
     commit = ["git", "-c", "user.name=Tester", "-c", "user.email=test@example.com", "commit", "-qm", "chore: fixture"]
     subprocess.run(commit, cwd=tmp_path, check=True)
     base = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=tmp_path, text=True).strip()
-    path = tmp_path / ("dist/file" if change == "generated" else "source.txt")
+    path = tmp_path / {
+        "generated": "dist/file",
+        "source-lookalike": " dist/file",
+    }.get(change, "source.txt")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("changed\n")
     subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
@@ -157,7 +160,7 @@ def test_ci_generated_check_works_without_release_tool_or_site_packages(tmp_path
         env={"PATH": os.pathsep.join([str(Path(sys.executable).parent), "/usr/bin", "/bin"]),
              "BASE_SHA": base, "GITHUB_EVENT_PATH": str(event)},
     )
-    if change == "source":
+    if change in {"source", "source-lookalike"}:
         assert result.returncode == 0, result.stderr
         assert result.stdout == "Ordinary PR preserves build-owned paths.\n"
     elif change == "generated":
