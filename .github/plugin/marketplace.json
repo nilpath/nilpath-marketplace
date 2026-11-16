@@ -66,7 +66,7 @@
       "name": "nstack",
       "source": "dist/copilot/plugins/nstack",
       "description": "Portable engineering backbone adapted from pstack. An explicit coordinator with engineering, experiment, PR, orchestration, recovery, and cleanup playbooks; how/why grounding; deliberate delegation; evidence-driven verification; and per-role models.",
-      "version": "0.1.0",
+      "version": "0.0.7",
       "author": {
         "name": "Christoffer Ahrling",
         "url": "https://github.com/nilpath"

@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "nstack",
-  "version": "0.1.0",
+  "version": "0.0.7",
   "description": "Portable engineering backbone adapted from pstack. An explicit coordinator with engineering, experiment, PR, orchestration, recovery, and cleanup playbooks; how/why grounding; deliberate delegation; evidence-driven verification; and per-role models.",
   "author": {
     "name": "Christoffer Ahrling",

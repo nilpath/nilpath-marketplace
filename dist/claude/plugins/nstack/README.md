@@ -2,7 +2,7 @@
 
 A portable engineering backbone for Claude Code, GitHub Copilot CLI, and Codex, adapted from [pstack](https://github.com/cursor/plugins/tree/dbf49813a39c1a5389c5e28cb8e4c1c2379e2454/pstack).
 
-Version 0.1.0 expands the coordinator to fifteen native playbooks, including bounded PR monitoring, experiments, dependency-aware execution, recovery, and exact-target cleanup. Product changes still require a proposal and user approval unless an explicit scoped grant covers autonomous implementation.
+The coordinator provides fifteen native playbooks, including bounded PR monitoring, experiments, dependency-aware execution, recovery, and exact-target cleanup. Product changes still require a proposal and user approval unless an explicit scoped grant covers autonomous implementation.
 
 The explicit coordinator selects a method from its [complete playbook index](skills/nstack-flow/SKILL.md#playbooks), grounds the work, obtains needed authority, delegates bounded units, and verifies actual results. Product delivery stays draft-only. Planning, experiments, monitoring and recovery have their own honest stopping points.
 
