@@ -4,7 +4,7 @@ import re
 import pytest
 from buildkit.config import load_config
 
-from paths import ROOT
+from paths import ROOT, RENDERED_ROOT
 
 
 def test_current_readme_version_fields_match_source_exactly():
@@ -30,7 +30,7 @@ def test_current_readme_version_fields_match_source_exactly():
 def test_generated_manifests_and_registry_match_sources(harness, manifest, registry_path):
     cfg = load_config(ROOT)
     sources = {plugin.name: plugin.version for plugin in cfg.plugins}
-    plugins = ROOT / cfg.harnesses[harness].dist_root / "plugins"
+    plugins = RENDERED_ROOT / cfg.harnesses[harness].dist_root / "plugins"
     actual = {}
     for plugin in sorted(plugins.iterdir()):
         data = json.loads((plugin / manifest).read_text())
@@ -40,7 +40,7 @@ def test_generated_manifests_and_registry_match_sources(harness, manifest, regis
         assert (plugin / "README.md").is_file(), f"{plugin.name}: missing README.md"
     if harness == "claude":
         assert set(actual) == set(sources)
-    registry = json.loads((ROOT / registry_path).read_text())
+    registry = json.loads((RENDERED_ROOT / registry_path).read_text())
     assert sorted(entry["name"] for entry in registry["plugins"]) == sorted(actual)
     if harness != "codex":
         assert registry["metadata"]["version"] == cfg.marketplace["version"]

@@ -18,11 +18,53 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: trusted
+          fetch-depth: 0
           persist-credentials: false
       - name: Check Conventional Commit title
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: tools/pr_conventions.sh --title "$PR_TITLE"
+        run: sh trusted/tools/pr_conventions.sh --title "$PR_TITLE"
+      - uses: actions/setup-python@v7.1.0
+        if: startsWith(github.head_ref, 'release/') && github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          python-version: "3.11"
+      - uses: astral-sh/setup-uv@v10.3.3
+        if: startsWith(github.head_ref, 'release/') && github.event.pull_request.head.repo.full_name == github.repository
+        with:
+          version: "0.12.23"
+          python-version: "3.11"
+      - name: Check exact prepared release with trusted base tools
+        id: release-check
+        if: startsWith(github.head_ref, 'release/') && github.event.pull_request.head.repo.full_name == github.repository
+        working-directory: trusted
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          make install VENV="$RUNNER_TEMP/nilpath-check"
+          git fetch --no-tags ../candidate "$HEAD_SHA"
+          export PATH="$RUNNER_TEMP/nilpath-check/bin:$PATH"
+          "$RUNNER_TEMP/nilpath-check/bin/python" tools/prepare_release.py \
+            --base-sha "$BASE_SHA" --head-sha "$HEAD_SHA" --head-ref "$HEAD_REF" --check
+      - name: Check generated files
+        working-directory: candidate
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EXACT_RELEASE: ${{ steps.release-check.outcome == 'success' }}
+        run: |
+          if [ "$EXACT_RELEASE" = true ]; then
+            echo "Exact selected-plugin release output was validated with trusted base tools."
+          else
+            sh tools/check_generated.sh "$BASE_SHA"
+          fi
 
   test-static:
     runs-on: ubuntu-latest
@@ -30,7 +72,6 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v7.1.0
         with:
@@ -40,32 +81,5 @@ jobs:
           version: "0.12.23"
           python-version: "3.11"
       - run: make install VENV="$RUNNER_TEMP/nilpath-ci"
-      - name: Check committed output before any rebuild
+      - name: Test a fresh temporary render
         run: make test-static VENV="$RUNNER_TEMP/nilpath-ci"
-
-  release-plan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: actions/setup-python@v7.1.0
-        with:
-          python-version: "3.11"
-      - uses: astral-sh/setup-uv@v10.3.3
-        with:
-          version: "0.12.23"
-          python-version: "3.11"
-      - run: make install VENV="$RUNNER_TEMP/nilpath-ci"
-      - name: Check release history and exact proposal boundary
-        env:
-          PROPOSAL_BRANCH: ${{ startsWith(github.head_ref, 'release/proposal-') }}
-          PROPOSAL_MARKER: ${{ contains(github.event.pull_request.body, '<!-- nilpath-release-proposal:') }}
-        run: |
-          if [ "$PROPOSAL_BRANCH" = true ] || [ "$PROPOSAL_MARKER" = true ]; then
-            "$RUNNER_TEMP/nilpath-ci/bin/python" tools/release.py check-proposal --base-sha "$(git rev-parse origin/main)"
-          else
-            "$RUNNER_TEMP/nilpath-ci/bin/python" tools/release.py check
-          fi

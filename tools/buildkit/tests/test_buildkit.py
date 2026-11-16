@@ -2,10 +2,11 @@
 
 from copy import deepcopy
 from pathlib import Path
+import shutil
 
 import pytest
 
-from buildkit.build import BuildResult, _build_hooks, _build_skill, build
+from buildkit.build import BuildResult, _build_hooks, _build_skill, build, check
 from buildkit.config import HarnessConfig, PluginConfig, load_config
 from buildkit.fm import (
     FrontmatterError,
@@ -18,6 +19,17 @@ from buildkit.toolmap import parse_entry, resolve_model_tier, split_tool_list, t
 from buildkit.render import make_environment
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+def test_release_snapshot_comparison_detects_mode_only_changes(tmp_path):
+    shutil.copytree(REPO_ROOT / "src", tmp_path / "src")
+    build(tmp_path)
+    assert check(tmp_path) == []
+    path = "dist/claude/plugins/git-tools/skills/git-commits/SKILL.md"
+    original = (tmp_path / path).read_bytes()
+    (tmp_path / path).chmod(0o755)
+    assert (tmp_path / path).read_bytes() == original
+    assert check(tmp_path) == [f"differs: {path}"]
 
 
 @pytest.fixture(scope="module")
@@ -471,24 +483,39 @@ class TestProseHelpers:
         finally:
             harness.raw["prose"] = saved
 
+    def test_python_internals_are_not_available_to_templates(self):
+        from jinja2.sandbox import SecurityError
+
+        with pytest.raises(SecurityError):
+            make_environment().from_string("{{ cycler.__init__.__globals__.os.name }}").render()
+
+    def test_normal_jinja_rendering_still_works(self, cfg):
+        from buildkit.render import render_text
+
+        assert render_text(
+            make_environment(), "{{ harness | upper }} {{ ['one', 'two'] | join(', ') }}\n",
+            cfg.harnesses["claude"], cfg,
+        ) == "CLAUDE one, two\n"
+
 
 class TestEmptyPluginTrees:
-    def test_authoring_tools_only_in_claude_tree(self):
+    def test_authoring_tools_only_in_claude_tree(self, tmp_path):
         import json
 
-        assert (REPO_ROOT / "dist/claude/plugins/authoring-tools/skills").is_dir()
-        assert not (REPO_ROOT / "dist/copilot/plugins/authoring-tools").exists()
-        assert not (REPO_ROOT / "dist/codex/plugins/authoring-tools").exists()
+        build(REPO_ROOT, out_root=tmp_path)
+        assert (tmp_path / "dist/claude/plugins/authoring-tools/skills").is_dir()
+        assert not (tmp_path / "dist/copilot/plugins/authoring-tools").exists()
+        assert not (tmp_path / "dist/codex/plugins/authoring-tools").exists()
         codex_registry = json.loads(
-            (REPO_ROOT / ".agents/plugins/marketplace.json").read_text()
+            (tmp_path / ".agents/plugins/marketplace.json").read_text()
         )
         assert "authoring-tools" not in [p["name"] for p in codex_registry["plugins"]]
         copilot_registry = json.loads(
-            (REPO_ROOT / ".github/plugin/marketplace.json").read_text()
+            (tmp_path / ".github/plugin/marketplace.json").read_text()
         )
         assert "authoring-tools" not in [p["name"] for p in copilot_registry["plugins"]]
         claude_registry = json.loads(
-            (REPO_ROOT / ".claude-plugin/marketplace.json").read_text()
+            (tmp_path / ".claude-plugin/marketplace.json").read_text()
         )
         assert "authoring-tools" in [p["name"] for p in claude_registry["plugins"]]
 

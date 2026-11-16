@@ -5,10 +5,10 @@ import yaml
 import pytest
 from behavioral.runner import run_skill_test
 from behavioral.assertions import assert_required_invocations, assert_expected_sequence
+from paths import CLAUDE_PLUGINS_DIR, PLUGIN_DIRS
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "behavioral"
-PLUGINS_ROOT = Path(__file__).parent.parent / "dist" / "claude" / "plugins"
-PLUGIN_DIRS = sorted(p for p in PLUGINS_ROOT.iterdir() if p.is_dir()) if PLUGINS_ROOT.exists() else []
+PLUGINS_ROOT = CLAUDE_PLUGINS_DIR
 
 
 def _collect_fixtures() -> list[Path]:

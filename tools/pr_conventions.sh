@@ -39,5 +39,5 @@ printf '  got: %s\n' "$TITLE" >&2
 printf '  expected: <type>[optional scope][optional !]: <summary>\n' >&2
 printf '  example: feat(nstack): add a verification skill\n' >&2
 printf '  types: %s\n' "$(printf '%s' "$TYPES" | tr '|' ' ')" >&2
-printf 'Retitle the PR so its squash commit has a clear type for release planning.\n' >&2
+printf 'Retitle the PR so its squash commit has a clear type for release notes.\n' >&2
 exit 1

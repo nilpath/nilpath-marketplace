@@ -101,15 +101,25 @@ Sources use a harness-neutral vocabulary — canonical tool names (`shell(git:*)
 
 ```bash
 make install          # venv + deps + buildkit
-make build            # render src/ -> dist/ (all harnesses)
-make check            # fail if committed output drifts from src/ (CI gate)
-make test-static      # structure tests over the generated output
+make check            # validate sources
+make test-static      # test a fresh temporary render
 ```
 
-**`dist/` and the root registry files are read-only.** buildkit generates them from `src/`, and hand edits are overwritten on the next build. To change a skill, agent, or manifest:
+**`dist/` and the root registry files are release-owned.** Ordinary PRs cannot change their content, paths, or modes. To change a skill, agent, or manifest:
 
 1. Edit the source under `src/`.
-2. Run `make build check` to regenerate `dist/` and confirm it matches `src/`. Run `build` before `check`; `check` fails until the output is regenerated.
-3. Commit the sources **and** `dist/` together.
+2. Run `make test-static`. Tests inspect current sources without updating installation files.
+3. Commit sources only. Release preparation updates versions and generated output together.
 
-See [ai_docs/release-workflow.md](ai_docs/release-workflow.md) for releases.
+After merging a plugin's changes, open its release PR:
+
+```bash
+make release PLUGIN=nstack BUMP=minor
+```
+
+The command bumps the source version, commits, pushes, and opens a draft PR in an
+isolated worktree. Your current checkout is unchanged. The Release workflow adds
+that plugin's changelog and generated output before review. Squash-merging the PR
+creates a tag at the merge commit and a draft GitHub release. Publishing is manual.
+
+See [ai_docs/release-workflow.md](ai_docs/release-workflow.md) for setup and recovery.
