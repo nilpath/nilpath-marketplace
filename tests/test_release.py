@@ -454,7 +454,6 @@ def test_actual_prepare_cli_buildkit_and_bundle(repo):
     commit(repo, "ci: accept shipping fixture baseline")
     write(repo, "src/plugins/alpha/skills/one/SKILL.md.j2",
           (repo / "src/plugins/alpha/skills/one/SKILL.md.j2").read_text() + "\nRepaired guidance.\n")
-    build(repo)
     sha = commit(repo, "fix(alpha): repair guidance")
     req = request(sha)
     request_path = repo.parent / (repo.name + "-request.json")
@@ -463,8 +462,6 @@ def test_actual_prepare_cli_buildkit_and_bundle(repo):
                              "--request", str(request_path)], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["releases"][0]["target"] == "1.2.4"
-    assert check(repo) != []
-    build(repo)
     assert check(repo) == []
     bundle = r.bundle(repo, req)
     files = r.validate_artifact(bundle)
@@ -476,6 +473,8 @@ def test_actual_prepare_cli_buildkit_and_bundle(repo):
         assert beta["version"] == "0.4.8"
     assert files["dist/codex/plugins/alpha/README.md"].startswith(b"# alpha\n\nVersion: **1.2.4**")
     assert bundle["plan"]["releases"][0]["commits"] == [sha]
+    for harness in ("claude", "copilot", "codex"):
+        assert files[f"dist/{harness}/plugins/alpha/skills/one/SKILL.md"].endswith(b"\nRepaired guidance.\n")
     commit(repo, "chore(release): accepted preparation")
     result = subprocess.run([sys.executable, str(ROOT / "tools/release.py"), "check", "--root", str(repo)],
                             text=True, capture_output=True)
@@ -488,6 +487,42 @@ def test_actual_prepare_cli_buildkit_and_bundle(repo):
     plan = r.propose(repo).plan
     assert [(item["component"], item["current"], item["target"], item["commits"]) for item in plan["releases"]] == [
         ("beta", "0.4.8", "0.4.9", [beta_sha])]
+
+
+@pytest.mark.parametrize("path", ["dist/claude/plugins/alpha/file", *r.REGISTRIES])
+@pytest.mark.parametrize("operation", ["add", "edit", "delete", "mode", "rename"])
+def test_ordinary_pr_rejects_every_generated_git_change(repo, path, operation):
+    if operation != "add":
+        write(repo, path, "released\n")
+    base = commit(repo, "chore: released snapshot")
+    if operation == "delete":
+        (repo / path).unlink()
+    elif operation == "mode":
+        (repo / path).chmod(0o755)
+    elif operation == "rename":
+        (repo / path).rename(repo / (path + ".renamed"))
+    else:
+        write(repo, path, "unversioned\n")
+    commit(repo, "fix: ordinary generated edit")
+    result = subprocess.run(
+        [sys.executable, "-S", str(ROOT / "tools/release.py"), "check-source-only",
+         "--root", str(repo), "--base-sha", base], capture_output=True, text=True,
+    )
+    assert result.returncode == 1
+    assert "Ordinary PR changes build-owned paths" in result.stderr
+    assert path in result.stderr
+
+
+def test_source_only_pr_preserves_installation_snapshot(repo):
+    write(repo, "dist/claude/plugins/alpha/file", "released\n")
+    base = commit(repo, "chore: released snapshot")
+    change(repo, "fix(alpha): source-only repair")
+    result = subprocess.run(
+        [sys.executable, "-S", str(ROOT / "tools/release.py"), "check-source-only",
+         "--root", str(repo), "--base-sha", base], capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert (repo / "dist/claude/plugins/alpha/file").read_text() == "released\n"
 
 
 def test_wrong_readme_selector_fails(repo):
