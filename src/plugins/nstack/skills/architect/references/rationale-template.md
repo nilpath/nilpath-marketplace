@@ -26,6 +26,13 @@ The prose alongside the scratch type sketch. Keep it proportionate to the change
 
 *Filled in by [candidate-graft](../../candidate-graft/SKILL.md). Records which candidate became the base and why, what was adapted from each of the others, and what was rejected and why.*
 
+## New constructs
+
+*Filled in by the necessity pass in [Phase B](../SKILL.md#phase-b-sketch). One row for every new class, type alias, function, method, option, and file in the sketch. A row with no requirement means the construct is deleted, not defended. List each cut below the table with its reason.*
+
+| Construct | Requirement that needs it | What fails without it |
+| --- | --- | --- |
+
 ## Tradeoffs accepted
 
 *One bullet per tradeoff the chosen shape makes. Form: "we accept X in exchange for Y." Name anything a future reader might mistake for an oversight, including things that look like premature optimization or premature simplification.*
