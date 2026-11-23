@@ -28,9 +28,9 @@ The prose alongside the scratch type sketch. Keep it proportionate to the change
 
 ## New constructs
 
-*Filled in by the necessity pass in [Phase B](../SKILL.md#phase-b-sketch). One row for every new class, type alias, function, method, option, and file in the sketch. A row with no requirement means the construct is deleted, not defended. List each cut below the table with its reason.*
+*Filled in by the necessity pass in [Phase B](../SKILL.md#phase-b-sketch). One row for every new class, type alias, function, method, option, and file in the sketch. A row with no requirement means the construct is deleted, not defended, unless it is a type that passes the two tests in Phase B. List each cut below the table with its reason.*
 
-| Construct | Requirement that needs it | What fails without it |
+| Construct | Requirement that needs it, or the existing shape it names | What fails without it |
 | --- | --- | --- |
 
 ## Tradeoffs accepted
