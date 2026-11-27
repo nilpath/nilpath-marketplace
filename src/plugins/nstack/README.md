@@ -114,6 +114,7 @@ This is guidance, not an enforced pause or cancellation. It does not cancel inde
 ## Requirements and limits
 
 - Python 3.11+ for the model hook, `setup-nstack`, and the standard-library orchestration, PR-watch and plan-checking helpers.
+- Automatic hooks use `pyenv exec python3` when `pyenv` is on `PATH`, otherwise `python3`. A pyenv failure does not trigger a retry with another interpreter.
 - The orchestration helper supports Linux and macOS only. Other platforms stop before store mutation or PID liveness checks; Python's Windows `os.kill(pid, 0)` is not a safe process probe.
 - `git`, an authenticated `gh` CLI for GitHub operations, and optional `origin` for the existing orchestration forge path. The unchanged Bash worktree audit also uses `jq`, `rg`, Unix utilities and its existing platform-specific metadata probes.
 - **Codex:** trust nstack's plugin hook once with `/hooks`. Until then, nstack agents reply that the hook did not run, and delegation stops.

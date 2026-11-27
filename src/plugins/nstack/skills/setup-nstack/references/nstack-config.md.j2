@@ -70,6 +70,11 @@ with its session payload. They emit client-specific hook JSON, not the
 administrative result format. Untagged launches pass through; tagged launches
 use the configured role/seat and append required-read guidance.
 
+All automatic hooks use `pyenv exec python3` when `pyenv` is on `PATH`.
+They use `python3` only when `pyenv` is unavailable.
+A pyenv failure does not trigger a retry with another interpreter.
+The launch and session-start hooks retain their error isolation; the Copilot failure hook retains nonzero diagnostic exits.
+
 Hook execution is independent of skill frontmatter approvals. Hooks step aside
 on unsupported Python or unexpected launch/session-start hook failures; a missing verified hook
 footer still blocks nstack delegates under their own instructions.

@@ -1,7 +1,10 @@
 {% set script = '$CLAUDE_PLUGIN_ROOT/' ~ ('com.github.copilot/hooks' if harness == 'copilot' else 'hooks') ~ '/nstack_config.py' -%}
-{% set launch = 'python3 "' ~ script ~ '" hook || true' -%}
-{% set session = 'python3 "' ~ script ~ '" session-start || true' -%}
-{% set failure = 'python3 "' ~ script ~ '" post-tool-failure' -%}
+{% macro run_python(command) -%}
+if command -v pyenv >/dev/null 2>&1; then pyenv exec python3 "{{ script }}" {{ command }}; else python3 "{{ script }}" {{ command }}; fi
+{%- endmacro %}
+{% set launch = run_python('hook') ~ ' || true' -%}
+{% set session = run_python('session-start') ~ ' || true' -%}
+{% set failure = run_python('post-tool-failure') -%}
 {% if harness == "copilot" -%}
 {
   "version": 1,
