@@ -2,6 +2,25 @@
 
 Component release notes are generated above the legacy boundary.
 
+## nstack/v0.2.0
+
+### Added
+
+- Handle model selection failures ([67dd8ae](https://github.com/nilpath/nilpath-marketplace/commit/67dd8ae7e108e027764dc522bc6688012cc84553))
+
+- Handle model selection failures (#53) ([1b7be84](https://github.com/nilpath/nilpath-marketplace/commit/1b7be845cd23f00843d630703bc1aef7f2c57a60))
+
+- Add a necessity pass to architect ([956b52f](https://github.com/nilpath/nilpath-marketplace/commit/956b52fe698a083118f4afa9c1d9c1a61a32ecbe))
+
+- Keep domain types in necessity pass ([c8bfcf4](https://github.com/nilpath/nilpath-marketplace/commit/c8bfcf4ff5d29a34e23ddb475b04ea6bfd7e24b6))
+
+- Add a necessity pass that keeps domain types (#52) ([dd44e92](https://github.com/nilpath/nilpath-marketplace/commit/dd44e927ca70c90ae03d9c54a1f9378b18722a2a))
+
+
+### Fixed
+
+- Prefer pyenv for hook execution ([cda647f](https://github.com/nilpath/nilpath-marketplace/commit/cda647fe6bad9952d3e1e512b432ce5682fa6f23))
+
 ## nstack/v0.1.0
 
 ### Added

@@ -1,10 +1,11 @@
+
 {
   "version": 1,
   "hooks": {
     "sessionStart": [
       {
         "type": "command",
-        "bash": "python3 \"$CLAUDE_PLUGIN_ROOT/com.github.copilot/hooks/nstack_config.py\" session-start || true",
+        "bash": "if command -v pyenv \u003e/dev/null 2\u003e\u00261; then pyenv exec python3 \"$CLAUDE_PLUGIN_ROOT/com.github.copilot/hooks/nstack_config.py\" session-start; else python3 \"$CLAUDE_PLUGIN_ROOT/com.github.copilot/hooks/nstack_config.py\" session-start; fi || true",
         "timeoutSec": 15
       }
     ],
@@ -12,7 +13,14 @@
       {
         "type": "command",
         "matcher": "task",
-        "bash": "python3 \"$CLAUDE_PLUGIN_ROOT/com.github.copilot/hooks/nstack_config.py\" hook || true",
+        "bash": "if command -v pyenv \u003e/dev/null 2\u003e\u00261; then pyenv exec python3 \"$CLAUDE_PLUGIN_ROOT/com.github.copilot/hooks/nstack_config.py\" hook; else python3 \"$CLAUDE_PLUGIN_ROOT/com.github.copilot/hooks/nstack_config.py\" hook; fi || true",
+        "timeoutSec": 15
+      }
+    ],
+    "postToolUseFailure": [
+      {
+        "type": "command",
+        "bash": "if command -v pyenv \u003e/dev/null 2\u003e\u00261; then pyenv exec python3 \"$CLAUDE_PLUGIN_ROOT/com.github.copilot/hooks/nstack_config.py\" post-tool-failure; else python3 \"$CLAUDE_PLUGIN_ROOT/com.github.copilot/hooks/nstack_config.py\" post-tool-failure; fi",
         "timeoutSec": 15
       }
     ]
