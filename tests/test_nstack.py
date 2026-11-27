@@ -6,6 +6,7 @@ import ast
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tomllib
@@ -162,6 +163,49 @@ def test_hooks_run_the_script_at_launch_and_session_start(harness):
         assert group["matcher"] == ("Agent" if harness == "claude" else "spawn_agent")
         assert group["hooks"][0]["command"] == hook_command(harness, "hook")
         assert hooks["SessionStart"][0]["hooks"][0]["command"] == hook_command(harness, "session-start")
+        assert "postToolUseFailure" not in hooks and "PostToolUseFailure" not in hooks
+
+
+def test_rendered_copilot_failure_command_delivers_json_and_preserves_errors(tmp_path):
+    root = tmp_path / "plugin with spaces"
+    shutil.copytree(plugin_dir("copilot"), root)
+    hooks = json.loads((root / HOOK_FILES["copilot"]).read_text())["hooks"]
+    (registration,) = hooks["postToolUseFailure"]
+    command = registration["bash"]
+    assert registration == {
+        "type": "command",
+        "bash": 'python3 "$CLAUDE_PLUGIN_ROOT/com.github.copilot/hooks/nstack_config.py" post-tool-failure',
+        "timeoutSec": 15,
+    }
+    env = {k: v for k, v in os.environ.items() if k != "NSTACK_HOME"}
+    env["CLAUDE_PLUGIN_ROOT"] = str(root)
+    env["HOME"] = str(tmp_path / "home")
+    args = {
+        "agent_type": "nstack:nstack-agent",
+        "description": "[nstack role=review-panel-reviewer seat=2] Work.",
+        "prompt": "Work.", "model": "caller-model",
+    }
+    before = subprocess.run(
+        ["bash", "-c", hooks["preToolUse"][0]["bash"]], env=env, text=True, capture_output=True,
+        input=json.dumps({"toolName": "task", "toolArgs": args}),
+    )
+    assert (before.returncode, before.stderr) == (0, "")
+    effective = json.loads(before.stdout)["modifiedArgs"]
+    assert (effective["model"], effective["agent_type"]) == ("gpt-6.1-sol", "nstack:nstack-reader")
+    error = ('Model "gpt-6.1-sol" is not allowed by policy. '
+             'Allowed model globs from host allowedModels: "diagnostic-parent". Fallback model: "diagnostic-parent".')
+    after = subprocess.run(
+        ["bash", "-c", command], env=env, text=True, capture_output=True,
+        input=json.dumps({"toolName": "task", "toolArgs": effective, "error": error}),
+    )
+    assert (after.returncode, after.stderr) == (0, "")
+    guidance = json.loads(after.stdout)["additionalContext"]
+    assert "review-panel-reviewer seat 2 failed model selection." in guidance
+    assert "Model in failure task arguments: gpt-6.1-sol." in guidance
+    assert json.dumps(error) in guidance
+    broken = subprocess.run(["bash", "-c", command], env=env, text=True, capture_output=True, input="{broken")
+    assert (broken.returncode, broken.stdout) == (1, "")
+    assert "nstack post-tool-failure error:" in broken.stderr
 
 
 LAUNCH_SYNTAX = {

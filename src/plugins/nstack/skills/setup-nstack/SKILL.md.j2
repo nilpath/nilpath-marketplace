@@ -23,6 +23,21 @@ nstack's plugin hook reads the `[nstack role=<role> seat=<n>]` tag on each launc
 
 Read the [configuration helper reference](references/nstack-config.md) for its installed path, input format and result handling. Use its `<helper>` path in the steps below. Never hand-write `models.json`.
 
+{% if harness == "copilot" %}
+## Recover from a selection failure
+
+For recognized host model or explicit effort rejections, the failure hook supplies guidance to explain the original error as diagnostic data.
+Use `ask_user` and wait before retrying, changing models or settings, or continuing dependent work.
+Offer retrying the same selection, reviewing/changing the role configuration here, or cancelling the affected task.
+A choice to review configuration does not authorize saving it or retrying.
+Keep the preview and explicit confirmation steps below, then ask for a retry decision.
+If configuration changed since launch, disclose it before retrying and seek a renewed decision.
+Manually changing the next task's `model` is not a one-off bypass; the pre-hook overwrites it.
+If you cannot call `ask_user`, return a blocked recovery request to the coordinator, which calls `ask_user`.
+Without an interactive user channel, report the work as blocked.
+This guidance does not enforce a pause or cancel independent running tasks.
+Successful silent fallback is not detected.
+{% endif %}
 Open a todolist with one entry per step before starting.
 
 ## 1. Load the current state
