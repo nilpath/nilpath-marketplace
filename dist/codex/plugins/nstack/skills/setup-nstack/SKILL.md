@@ -11,6 +11,7 @@ nstack's plugin hook reads the `[nstack role=<role> seat=<n>]` tag on each launc
 
 Read the [configuration helper reference](references/nstack-config.md) for its installed path, input format and result handling. Use its `<helper>` path in the steps below. Never hand-write `models.json`.
 
+
 Open a todolist with one entry per step before starting.
 
 ## 1. Load the current state

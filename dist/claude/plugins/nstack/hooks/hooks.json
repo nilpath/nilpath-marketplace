@@ -1,3 +1,4 @@
+
 {
   "hooks": {
     "SessionStart": [
@@ -5,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PLUGIN_ROOT/hooks/nstack_config.py\" session-start || true",
+            "command": "if command -v pyenv \u003e/dev/null 2\u003e\u00261; then pyenv exec python3 \"$CLAUDE_PLUGIN_ROOT/hooks/nstack_config.py\" session-start; else python3 \"$CLAUDE_PLUGIN_ROOT/hooks/nstack_config.py\" session-start; fi || true",
             "timeout": 15
           }
         ]
@@ -17,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PLUGIN_ROOT/hooks/nstack_config.py\" hook || true",
+            "command": "if command -v pyenv \u003e/dev/null 2\u003e\u00261; then pyenv exec python3 \"$CLAUDE_PLUGIN_ROOT/hooks/nstack_config.py\" hook; else python3 \"$CLAUDE_PLUGIN_ROOT/hooks/nstack_config.py\" hook; fi || true",
             "timeout": 15
           }
         ]

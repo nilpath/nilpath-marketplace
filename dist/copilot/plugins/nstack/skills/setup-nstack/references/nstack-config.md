@@ -2,7 +2,7 @@
 
 [Script](../../../com.github.copilot/hooks/nstack_config.py).
 Inspect or change the current client's role models and record dispatch evidence.
-The same file implements the plugin's automatic launch and session-start hooks.
+The same file implements the plugin's automatic launch and session-start hooks, plus failure recovery guidance.
 Requires Python 3.11+, standard library only.
 
 ## Installed path
@@ -65,10 +65,48 @@ with its session payload. They emit client-specific hook JSON, not the
 administrative result format. Untagged launches pass through; tagged launches
 use the configured role/seat and append required-read guidance.
 
+All automatic hooks use `pyenv exec python3` when `pyenv` is on `PATH`.
+They use `python3` only when `pyenv` is unavailable.
+A pyenv failure does not trigger a retry with another interpreter.
+The launch and session-start hooks retain their error isolation; the Copilot failure hook retains nonzero diagnostic exits.
+
 Hook execution is independent of skill frontmatter approvals. Hooks step aside
-on unsupported Python or unexpected hook failures; a missing verified hook
+on unsupported Python or unexpected launch/session-start hook failures; a missing verified hook
 footer still blocks nstack delegates under their own instructions.
 Do not invoke these entrypoints as substitutes for host dispatch.
+
+
+### Copilot failure recovery
+
+The host invokes `post-tool-failure` for `postToolUseFailure`.
+Recognized nstack task model or explicit effort rejections emit
+`{"additionalContext": "<guidance>"}` on stdout and exit 0.
+Other failures emit nothing and exit 0.
+Malformed supported input and integration failures emit a stderr diagnostic and exit 1.
+The command has no `|| true`, so integration errors retain their exit status.
+The rendered product hooks delivered JSON context in an isolated native task policy rejection, preserving the original error and post-prehook-rewrite `toolArgs`.
+Plain stdout or JSON with exit 2 dropped context in that runtime, despite the documented exit-2 mechanism.
+
+Classification uses anchored host error formats tied to the attempted model or explicit effort in `toolArgs`, supplied as an object or JSON object string.
+It does not read `models.json` or the brief's footer.
+An omitted model is reported as inherited, not as a known dispatched model.
+Inherited choices match only an explicit effort rejection; a model-policy error cannot establish their attempted model.
+Missing required managed-call fields or a literal `inherit` model argument are integration errors, not guessed selections.
+The task policy format has native failure evidence.
+Other supported reasoning rejection formats have static compiled-runtime evidence only.
+
+Guidance tells Copilot to explain the original error as data, use `ask_user`, and wait before retrying, changing models or settings, or continuing dependent work.
+Choices are retrying the same selection, reviewing/changing the role configuration through setup preview and explicit confirmation, or cancelling the affected task.
+Reviewing configuration does not authorize persistence or retry.
+Changing the next task's `model` cannot bypass the pre-hook.
+Agents without `ask_user` return a blocked request to their coordinator, which calls `ask_user`.
+No interactive user channel means blocked work.
+
+This is agent-directed guidance, not an enforced pause or cancellation.
+There is no automatic recovery, model availability query, or successful silent-fallback detection.
+Missing Python, disabled or timed-out hooks, and integration errors leave normal host failure handling in place.
+Copilot actually calling `ask_user` and waiting is not verified.
+Asynchronous background rejection routing and other selection-failure delivery paths are not verified.
 
 [Setup nstack](../SKILL.md) owns model choice, probe ordering and user reporting.
 A configuration or subagent self-report is not execution evidence. Record

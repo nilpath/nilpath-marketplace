@@ -103,18 +103,26 @@ nstack works without setup: every delegated role has a built-in default model, a
 | Copilot CLI | Model ids, such as `claude-opus-5.5` | `low` to `max` | `claude-sonnet-5` medium / `claude-opus-5.5` high / `claude-opus-5.5` + `gpt-6.1-sol` high |
 | Codex | Model ids, such as `gpt-5.6-sol` | `minimal` to `ultra` | `gpt-5.6-luna` medium / `gpt-5.6-sol` high / `gpt-5.6-sol` + `gpt-5.6-terra` high |
 
-Defaults are suggestions: an account may not have every model. A model the client rejects fails the launch visibly; nstack never falls back to another model.
+Defaults are suggestions; an account may not have every model. Malformed model IDs, including trailing newlines, are rejected. nstack never substitutes a model automatically. A host can silently fall back on a successful launch; nstack does not detect that.
+
+Copilot CLI's `postToolUseFailure` command hook supplies recovery guidance for narrowly recognized host model or explicit effort rejections on nstack tasks. It tells Copilot to explain the original failure as diagnostic data, call `ask_user`, and wait before retrying, changing models or settings, or continuing dependent work.
+The choices are retrying the same selection, reviewing/changing the role configuration through `setup-nstack` preview and explicit confirmation, or cancelling the affected task.
+Choosing configuration review does not authorize persistence or retry. A changed configuration requires disclosure and a renewed retry decision.
+Manually changing the next task's `model` is not a one-off bypass; the pre-hook overwrites it. Agents without `ask_user` return a blocked recovery request to their coordinator.
+This is guidance, not an enforced pause or cancellation. It does not cancel independent running tasks or recover automatically. Claude Code and Codex have no new post-failure handling.
 
 ## Requirements and limits
 
 - Python 3.11+ for the model hook, `setup-nstack`, and the standard-library orchestration, PR-watch and plan-checking helpers.
+- Automatic hooks use `pyenv exec python3` when `pyenv` is on `PATH`, otherwise `python3`. A pyenv failure does not trigger a retry with another interpreter.
 - The orchestration helper supports Linux and macOS only. Other platforms stop before store mutation or PID liveness checks; Python's Windows `os.kill(pid, 0)` is not a safe process probe.
 - `git`, an authenticated `gh` CLI for GitHub operations, and optional `origin` for the existing orchestration forge path. The unchanged Bash worktree audit also uses `jq`, `rg`, Unix utilities and its existing platform-specific metadata probes.
 - **Codex:** trust nstack's plugin hook once with `/hooks`. Until then, nstack agents reply that the hook did not run, and delegation stops.
 - Read access to the plugin's install directory: skills and subagents read their reference files there. Interactive sessions ask for approval; non-interactive runs must pre-approve it (for example, Copilot CLI's `--add-dir`).
-- The model hook is verified for Copilot CLI and Claude Code plugins, and with the same hook command in Codex. Codex loading it from an installed plugin is not yet verified. Native Copilot use inside VS Code is unsupported. Copilot CLI in a VS Code terminal remains CLI usage.
+- The pre-tool model hook is verified for Copilot CLI and Claude Code plugins, and with the same hook command in Codex. Codex loading it from an installed plugin is not yet verified. Native Copilot use inside VS Code is unsupported. Copilot CLI in a VS Code terminal remains CLI usage.
 - Skill approvals do not control plugin hooks. Broad Claude shell grants for orchestration stay unchanged. Copilot skill approval emission is disabled, so those declarations do not become blanket CLI approvals. `show-me-your-work` preapproves only its rooted logger on Claude. Resolve its installed absolute path and use ordinary approval on Copilot CLI and Codex.
-- If `python3` is missing or older than 3.11, the hook steps aside rather than blocking other tools; nstack agents then report that the hook did not run.
+- If `python3` is missing or older than 3.11, the launch and session-start hooks step aside rather than blocking other tools; nstack agents then report that the hook did not run. The Copilot failure command reports integration errors on stderr and exits 1. Missing, disabled, broken, or timed-out failure hooks leave normal host handling in place; no recovery question is guaranteed.
+- The rendered product hooks delivered recovery guidance in an isolated native task policy rejection, using pre-hook-rewritten arguments and JSON `additionalContext` with exit 0. The original failure stayed intact and no inference requests were made. Exit 2 dropped context on that runtime. Other reasoning rejection formats have static runtime evidence only. Copilot calling `ask_user` and waiting, asynchronous background rejection routing, and other failure delivery paths remain unverified.
 - `git` and an authenticated `gh` CLI for draft pull requests.
 - Copilot CLI namespaces plugin skill commands (`/nstack:how`, `/nstack:nstack-flow`), but the skill names the model sees (`how`, `why`, `swarm`, and the others) can still collide with skills from other plugins. In Copilot CLI's non-interactive prompt mode (`-p`), slash commands are not expanded into skills, so start `nstack-flow` and `setup-nstack` interactively.
 - Delegation quality depends on the session model following the skill's procedure. In testing, a small session model (`gpt-5-mini`) loaded an nstack skill and then answered inline without delegating; use a capable model for the coordinating session.
