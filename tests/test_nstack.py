@@ -6,6 +6,7 @@ import ast
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tomllib
@@ -89,7 +90,9 @@ HOOK_DIRS = {"claude": "hooks", "copilot": "com.github.copilot/hooks", "codex": 
 
 
 def hook_command(harness: str, command: str) -> str:
-    return f'python3 "$CLAUDE_PLUGIN_ROOT/{HOOK_DIRS[harness]}/nstack_config.py" {command} || true'
+    invocation = f'python3 "$CLAUDE_PLUGIN_ROOT/{HOOK_DIRS[harness]}/nstack_config.py" {command}'
+    result = f"if command -v pyenv >/dev/null 2>&1; then pyenv exec {invocation}; else {invocation}; fi"
+    return result if command == "post-tool-failure" else result + " || true"
 MANIFESTS = {
     "claude": ".claude-plugin/plugin.json",
     "copilot": "plugin.json",
@@ -162,6 +165,94 @@ def test_hooks_run_the_script_at_launch_and_session_start(harness):
         assert group["matcher"] == ("Agent" if harness == "claude" else "spawn_agent")
         assert group["hooks"][0]["command"] == hook_command(harness, "hook")
         assert hooks["SessionStart"][0]["hooks"][0]["command"] == hook_command(harness, "session-start")
+        assert "postToolUseFailure" not in hooks and "PostToolUseFailure" not in hooks
+
+
+@pytest.mark.parametrize("harness, entrypoint", [
+    *[(harness, entrypoint) for harness in HARNESSES for entrypoint in ("hook", "session-start")],
+    ("copilot", "post-tool-failure"),
+])
+@pytest.mark.parametrize("pyenv_status", [None, 0, 23], ids=["no-pyenv", "pyenv", "pyenv-fails"])
+@pytest.mark.parametrize("shell", ["sh", "bash"])
+def test_hooks_choose_python_without_retrying_pyenv_failures(tmp_path, harness, entrypoint, pyenv_status, shell):
+    hooks = json.loads((plugin_dir(harness) / HOOK_FILES[harness]).read_text())["hooks"]
+    if harness == "copilot":
+        event = {"hook": "preToolUse", "session-start": "sessionStart", "post-tool-failure": "postToolUseFailure"}[entrypoint]
+        command = hooks[event][0]["bash"]
+    else:
+        event = "PreToolUse" if entrypoint == "hook" else "SessionStart"
+        command = hooks[event][0]["hooks"][0]["command"]
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for executable, status in (("python3", 23), ("pyenv", pyenv_status)):
+        if status is None:
+            continue
+        stub = bin_dir / executable
+        stub.write_text(
+            f"#!/bin/sh\nprintf '%s\\n' '{executable}' \"$@\"\n"
+            f"IFS= read -r payload\nprintf '%s\\n' \"$payload\"\nexit {status}\n"
+        )
+        stub.chmod(0o755)
+    root = tmp_path / "plugin with spaces"
+    proc = subprocess.run(
+        [shutil.which(shell), "-c", command], text=True, capture_output=True,
+        input="hook payload\n",
+        env={"PATH": str(bin_dir), "CLAUDE_PLUGIN_ROOT": str(root)},
+    )
+    expected = ["python3"] if pyenv_status is None else ["pyenv", "exec", "python3"]
+    assert proc.stdout.splitlines() == [
+        *expected, str(root / HOOK_DIRS[harness] / "nstack_config.py"), entrypoint, "hook payload",
+    ]
+    status = 23 if pyenv_status is None else pyenv_status
+    assert proc.returncode == (status if entrypoint == "post-tool-failure" else 0)
+    assert proc.stderr == ""
+
+
+def test_rendered_copilot_failure_command_delivers_json_and_preserves_errors(tmp_path):
+    root = tmp_path / "plugin with spaces"
+    shutil.copytree(plugin_dir("copilot"), root)
+    hooks = json.loads((root / HOOK_FILES["copilot"]).read_text())["hooks"]
+    (registration,) = hooks["postToolUseFailure"]
+    command = registration["bash"]
+    assert registration == {
+        "type": "command",
+        "bash": hook_command("copilot", "post-tool-failure"),
+        "timeoutSec": 15,
+    }
+    env = {k: v for k, v in os.environ.items() if k != "NSTACK_HOME"}
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "python3").symlink_to(sys.executable)
+    env["PATH"] = str(bin_dir)
+    env["CLAUDE_PLUGIN_ROOT"] = str(root)
+    env["HOME"] = str(tmp_path / "home")
+    bash = shutil.which("bash")
+    args = {
+        "agent_type": "nstack:nstack-agent",
+        "description": "[nstack role=review-panel-reviewer seat=2] Work.",
+        "prompt": "Work.", "model": "caller-model",
+    }
+    before = subprocess.run(
+        [bash, "-c", hooks["preToolUse"][0]["bash"]], env=env, text=True, capture_output=True,
+        input=json.dumps({"toolName": "task", "toolArgs": args}),
+    )
+    assert (before.returncode, before.stderr) == (0, "")
+    effective = json.loads(before.stdout)["modifiedArgs"]
+    assert (effective["model"], effective["agent_type"]) == ("gpt-6.1-sol", "nstack:nstack-reader")
+    error = ('Model "gpt-6.1-sol" is not allowed by policy. '
+             'Allowed model globs from host allowedModels: "diagnostic-parent". Fallback model: "diagnostic-parent".')
+    after = subprocess.run(
+        [bash, "-c", command], env=env, text=True, capture_output=True,
+        input=json.dumps({"toolName": "task", "toolArgs": effective, "error": error}),
+    )
+    assert (after.returncode, after.stderr) == (0, "")
+    guidance = json.loads(after.stdout)["additionalContext"]
+    assert "review-panel-reviewer seat 2 failed model selection." in guidance
+    assert "Model in failure task arguments: gpt-6.1-sol." in guidance
+    assert json.dumps(error) in guidance
+    broken = subprocess.run([bash, "-c", command], env=env, text=True, capture_output=True, input="{broken")
+    assert (broken.returncode, broken.stdout) == (1, "")
+    assert "nstack post-tool-failure error:" in broken.stderr
 
 
 LAUNCH_SYNTAX = {

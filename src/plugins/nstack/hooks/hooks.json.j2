@@ -1,7 +1,10 @@
-{#- The script ships next to this file. `|| true`: a missing python3 must never block anything; Copilot hooks are fail-closed. -#}
 {% set script = '$CLAUDE_PLUGIN_ROOT/' ~ ('com.github.copilot/hooks' if harness == 'copilot' else 'hooks') ~ '/nstack_config.py' -%}
-{% set launch = 'python3 "' ~ script ~ '" hook || true' -%}
-{% set session = 'python3 "' ~ script ~ '" session-start || true' -%}
+{% macro run_python(command) -%}
+if command -v pyenv >/dev/null 2>&1; then pyenv exec python3 "{{ script }}" {{ command }}; else python3 "{{ script }}" {{ command }}; fi
+{%- endmacro %}
+{% set launch = run_python('hook') ~ ' || true' -%}
+{% set session = run_python('session-start') ~ ' || true' -%}
+{% set failure = run_python('post-tool-failure') -%}
 {% if harness == "copilot" -%}
 {
   "version": 1,
@@ -18,6 +21,13 @@
         "type": "command",
         "matcher": "task",
         "bash": {{ launch | tojson }},
+        "timeoutSec": 15
+      }
+    ],
+    "postToolUseFailure": [
+      {
+        "type": "command",
+        "bash": {{ failure | tojson }},
         "timeoutSec": 15
       }
     ]
